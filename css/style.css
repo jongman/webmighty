@@ -205,6 +205,81 @@ body {
 	background: url(/images/background.jpg) repeat;
 }
 
+.card { width: 71px; height: 96px; background-image: url(/images/cards.png); float: left; }
+.card.s1 { background-position: -0px -0px; }
+.card.s2 { background-position: -71px -0px; }
+.card.s3 { background-position: -142px -0px; }
+.card.s4 { background-position: -213px -0px; }
+.card.s5 { background-position: -284px -0px; }
+.card.s6 { background-position: -355px -0px; }
+.card.s7 { background-position: -426px -0px; }
+.card.s8 { background-position: -497px -0px; }
+.card.s9 { background-position: -568px -0px; }
+.card.s10 { background-position: -639px -0px; }
+.card.sj { background-position: -710px -0px; }
+.card.sk { background-position: -781px -0px; }
+.card.sq { background-position: -852px -0px; }
+.card.d1 { background-position: -0px -96px; }
+.card.d2 { background-position: -71px -96px; }
+.card.d3 { background-position: -142px -96px; }
+.card.d4 { background-position: -213px -96px; }
+.card.d5 { background-position: -284px -96px; }
+.card.d6 { background-position: -355px -96px; }
+.card.d7 { background-position: -426px -96px; }
+.card.d8 { background-position: -497px -96px; }
+.card.d9 { background-position: -568px -96px; }
+.card.d10 { background-position: -639px -96px; }
+.card.dj { background-position: -710px -96px; }
+.card.dk { background-position: -781px -96px; }
+.card.dq { background-position: -852px -96px; }
+.card.h1 { background-position: -0px -192px; }
+.card.h2 { background-position: -71px -192px; }
+.card.h3 { background-position: -142px -192px; }
+.card.h4 { background-position: -213px -192px; }
+.card.h5 { background-position: -284px -192px; }
+.card.h6 { background-position: -355px -192px; }
+.card.h7 { background-position: -426px -192px; }
+.card.h8 { background-position: -497px -192px; }
+.card.h9 { background-position: -568px -192px; }
+.card.h10 { background-position: -639px -192px; }
+.card.hj { background-position: -710px -192px; }
+.card.hk { background-position: -781px -192px; }
+.card.hq { background-position: -852px -192px; }
+.card.c1 { background-position: -0px -288px; }
+.card.c2 { background-position: -71px -288px; }
+.card.c3 { background-position: -142px -288px; }
+.card.c4 { background-position: -213px -288px; }
+.card.c5 { background-position: -284px -288px; }
+.card.c6 { background-position: -355px -288px; }
+.card.c7 { background-position: -426px -288px; }
+.card.c8 { background-position: -497px -288px; }
+.card.c9 { background-position: -568px -288px; }
+.card.c10 { background-position: -639px -288px; }
+.card.cj { background-position: -710px -288px; }
+.card.ck { background-position: -781px -288px; }
+.card.cq { background-position: -852px -288px; }
+.card.joker { background-position: -0px -384px; }
+.card.jr { background-position: -71px -384px; }
+.card.back { background-position: -142px -384px; }
+
+.card.horizontal {
+	-moz-transform: rotate(90deg);
+	-webkit-transform: rotate(90deg);
+	-o-transform: rotate(90deg);
+	-ms-transform: rotate(90deg);
+}
+
+#playing_field {
+	position: relative;
+	width: 600px;
+	height: 400px;
+	margin: 20px;
+	overflow: hidden;
+	position: relative;
+	background-color: rgba(196, 196, 196, 0.6);
+	border: 1px solid #666;
+	box-shadow: 0 0 8px #333;
+}
 
 /* ==================
    Initializr Theme
