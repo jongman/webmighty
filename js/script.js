@@ -193,7 +193,7 @@ PlayingField.prototype.deal = function(cards, startFrom) {
 		$(".group" + group2).animate({top: "+=2"}, 0).animate({left: "-=37"}, 100);
 		if(repeat > 1) 
 			return schedule(function() { return split(repeat-1); }, 100);
-		return schedule(function() { return deal_card(0); }, 0);		
+		return schedule(function() { return deal_card(0); }, 100);		
 	}
 
 	function split(repeat, direction) {
@@ -212,7 +212,7 @@ PlayingField.prototype.deal = function(cards, startFrom) {
 								center.y - Math.floor(idx / 4) * 2, 
 								["group" + (Math.floor(idx / 4) % 2)]));
 		if(idx == 52) 
-			return schedule(function() { return split(2); }, 5);
+			return schedule(function() { return split(2); }, 100);
 		return schedule(function() { return addCard(idx+1); }, 5);
 	}
 
