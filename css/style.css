@@ -202,10 +202,10 @@ table { border-collapse: collapse; border-spacing: 0; }
    ========================================================================== */
 
 body {
-	background: url(/images/background.jpg) repeat;
+	background: url(../images/background.jpg) repeat;
 }
 
-.card { width: 71px; height: 96px; background-image: url(/images/cards.png); float: left; }
+.card { width: 71px; height: 96px; background-image: url(../images/cards.png); float: left; }
 .card.s1 { background-position: -0px -0px; }
 .card.s2 { background-position: -71px -0px; }
 .card.s3 { background-position: -142px -0px; }
