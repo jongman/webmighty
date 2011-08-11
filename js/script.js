@@ -3,7 +3,7 @@
 var CARD_WIDTH = 71;
 var CARD_HEIGHT = 96;
 var CARD_OVERLAP = 16;
-var DEALING_SPEED = 30;
+var DEALING_SPEED = 100;
 
 // 5인 플레이시, 6인 플레이시 각 플레이어의 위치
 var PLAYER_LOCATION = {
@@ -12,44 +12,31 @@ var PLAYER_LOCATION = {
 		   "location": [0.5, 0.5, 0.25, 0.75, 0.5]
 	   }
 };
-
-// GLOBAL UTILITIES ======================================
-
-function schedule(func, time) {
-	return {func: func, time: time}
-}
-
-function run_async(scheduled) {
-	function runner(func) {
-		return function() {
-			var ret = func();
-			if(ret === null || ret === undefined) return;
-			setTimeout(runner(ret.func), ret.time);
-		}
-	}
-	setTimeout(runner(scheduled.func), scheduled.time);
-}
-
 // MODELS ======================================
 
-function Card(playing_field, face, direction, x, y, classes) {
+function Card(playing_field, face, direction, x, y, classes, hidden) {
 	this.playing_field = playing_field;
 	this.face = face;
 	this.direction = direction;	
 	this.elem = $("#card_template")
 		.clone()
 		.addClass(face)
-		.addClass(direction)
-		.appendTo(playing_field.elem);
+		.addClass(direction);
+	
+	if(!hidden) 
+		this.elem.show();
+	else
+		this.elem.hide();
+
+	this.elem.appendTo(playing_field.elem);
 
 	for(var i in classes)
-		$(this.elem).addClass(classes[i]);
-	var width = $(this.elem).width();
-	var height = $(this.elem).height();
+		this.elem.addClass(classes[i]);
+
+	var size = this.getSize();
 	$(this.elem)
-		.css("left", (x - Math.floor(width/2)) + "px")
-		.css("top", (y - Math.floor(height/2)) + "px")
-		.show();
+		.css("left", (x - Math.floor(size.width / 2)) + "px")
+		.css("top", (y - Math.floor(size.height / 2)) + "px");
 
 	// 자기 자신을 등록한다
 	this.playing_field.addCard(this);
@@ -61,12 +48,13 @@ Card.prototype.getSize = function() {
 	return {height: CARD_WIDTH, width: CARD_HEIGHT};
 }
 
-Card.prototype.moveTo = function(cx, cy, duration) {
+Card.prototype.moveTo = function(cx, cy, duration, delay) {
+	if(!delay) delay = 0;
 	var th = $(this.elem);
 	var size = this.getSize();
 	var left = cx - Math.floor(size.width / 2);
 	var top = cy - Math.floor(size.height / 2);
-	th.animate({left: left, top: top}, duration);
+	th.delay(delay).animate({left: left, top: top}, duration);
 }
 
 Card.prototype.setFace = function(face) {
@@ -162,13 +150,62 @@ PlayingField.prototype.convertRelativePosition = function(x, y) {
 
 PlayingField.prototype.deal = function(cards, startFrom) {
 	this.clear();
-	var center = this.convertRelativePosition(0.5, 0.5);
-	var me = this;
 	this.players = cards.length;
 	var players = cards.length;
+	var me = this;
 
+	var center = this.convertRelativePosition(0.5, 0.5);
 	var cardStack = [];
 
+	// 카드를 주르륵 쌓는다
+	for(var i = 0; i < 53; ++i) {
+		var card = new Card(this, "back", "vertical", 
+							center.x, center.y - Math.floor(i / 4) * 2, 
+							["group" + (Math.floor(i / 4) % 2)], true);
+		card.elem.delay(i * 5).fadeIn(0);
+		cardStack.push(card);
+	}
+
+	// 마지막 카드가 보여지고 나면 셔플 동작을 한다
+	cardStack[52].elem.promise().done(function() {
+		for(var i = 0; i < 2; ++i) {
+			$(".group0")
+				.animate({left: "-=37"}, 100)
+				.animate({top: "-=2"}, 0)
+				.animate({left: "+=74"}, 200)
+				.animate({top: "+=2"}, 0)
+				.animate({left: "-=37"}, 100);
+			$(".group1")
+				.animate({left: "+=37"}, 100)
+				.animate({top: "+=2"}, 0)
+				.animate({left: "-=74"}, 200)
+				.animate({top: "-=2"}, 0)
+				.animate({left: "+=37"}, 100);
+		}
+		// 셔플을 다 하고 나면 카드를 돌린다
+		$(".group1").promise().done(function() {
+			console.log("done!");
+			var dealt = 0;
+			for(var i = 0; i < cards[0].length; ++i) {
+				for(var j = 0; j < players; ++j) {
+					var face = cards[j][i];
+					var card = cardStack.pop();
+
+					function getDeal(card, face, player, index) {
+						return function() {
+							card.setFace(face);
+							card.setDirection(me.getCardDirection(player));
+							var position = me.getCardPosition(player, cards[0].length, index);
+							card.moveTo(position.x, position.y, DEALING_SPEED);
+						}
+					}		
+					setTimeout(getDeal(card, face, j, i), dealt * DEALING_SPEED);
+					dealt++;										
+				}
+			}
+		});
+	});
+	/*
 	function deal_card(card_index) {		
 		var player = card_index % players;
 		var idx = Math.floor(card_index / players);
@@ -217,6 +254,7 @@ PlayingField.prototype.deal = function(cards, startFrom) {
 	}
 
 	run_async(schedule(function() { return addCard(0); }, 5));
+	*/
 }
 
 var field = null;
