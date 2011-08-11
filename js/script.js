@@ -205,56 +205,6 @@ PlayingField.prototype.deal = function(cards, startFrom) {
 			}
 		});
 	});
-	/*
-	function deal_card(card_index) {		
-		var player = card_index % players;
-		var idx = Math.floor(card_index / players);
-		if(idx >= cards[player].length) {
-			console.log("bye bye");
-			return;
-		}
-		var face = cards[player][idx];
-		var card = cardStack.pop();
-		//console.log("player=" + player + " idx=" + idx + " length=" + cards[player].length + " face=" + face);
-		card.setFace(face);
-		card.setDirection(me.getCardDirection(player));
-		var position = me.getCardPosition(player, cards[player].length, idx);
-		card.moveTo(position.x, position.y, DEALING_SPEED);
-		return schedule(function() { return deal_card(card_index+1); }, DEALING_SPEED);
-	}
-
-	function shift(repeat) {
-		var group1 = repeat % 2;
-		var group2 = (repeat + 1) % 2;
-		$(".group" + group1).animate({top: "-=2"}, 0).animate({left: "+=37"}, 100);
-		$(".group" + group2).animate({top: "+=2"}, 0).animate({left: "-=37"}, 100);
-		if(repeat > 1) 
-			return schedule(function() { return split(repeat-1); }, 100);
-		return schedule(function() { return deal_card(0); }, 100);		
-	}
-
-	function split(repeat, direction) {
-		var group1 = repeat % 2;
-		var group2 = (repeat + 1) % 2;
-		$(".group" + group1).animate({left: "-=37"}, 100);
-		$(".group" + group2).animate({left: "+=37"}, 100);
-		return schedule(function() { return shift(repeat); }, 100);
-	}
-
-	function addCard(idx) {
-		cardStack.push(new Card(me, 
-							    "back", 
-								"vertical", 
-								center.x,
-								center.y - Math.floor(idx / 4) * 2, 
-								["group" + (Math.floor(idx / 4) % 2)]));
-		if(idx == 52) 
-			return schedule(function() { return split(2); }, 100);
-		return schedule(function() { return addCard(idx+1); }, 5);
-	}
-
-	run_async(schedule(function() { return addCard(0); }, 5));
-	*/
 }
 
 var field = null;
