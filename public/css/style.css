@@ -205,6 +205,8 @@ body {
 	background: url(../images/background.jpg) repeat;
 }
 
+body, textarea, input, select { font-family: Helvetica, NanumGothic,나눔고딕; }
+
 .card { background-image: url(../images/cards_all.png); float: left; }
 .card.vertical { width: 71px; height: 96px; }
 .card.horizontal { width: 96px; height: 71px; }
@@ -322,14 +324,14 @@ body {
 .card.vertical.sq { background-position: -13px -960px; }
 .card.vertical.st { background-position: -109px -960px; }
 
-/*
-.card.horizontal {
-	-moz-transform: rotate(90deg);
-	-webkit-transform: rotate(90deg);
-	-o-transform: rotate(90deg);
-	-ms-transform: rotate(90deg);
+a, a:visited {
+	text-decoration: none;
+	color: #AE432E;
 }
-	*/
+
+a:hover {
+	color: #2E43AE;
+}
 
 #playing_field {
 	position: relative;
@@ -342,6 +344,75 @@ body {
 	border: 1px solid #666;
 	box-shadow: 0 0 8px #333;
 }
+
+#playing_field .profile {
+	position: absolute;
+}
+
+#playing_field .profile.top,
+#playing_field .profile.bottom
+{
+	width: 258px;
+	top: 100px;
+	left: 100px;
+}
+#playing_field .profile.left,
+#playing_field .profile.right 
+{
+	width: 200px;
+	top: 280px;
+	left: 100px;
+}
+
+#playing_field .profile a {
+	font-weight: bold;
+}
+
+#playing_field dl {
+	margin: 0;
+}
+
+#playing_field .profile.top dl > *,
+#playing_field .profile.bottom dl > *{
+	float: left;
+}
+
+#playing_field .profile.right dl > * {
+	float: right;
+}
+
+#playing_field .profile.top dd,
+#playing_field .profile.bottom dd {
+	margin-left: 4px;
+}
+
+#playing_field .profile dt {
+	overflow: hidden;
+}
+
+#playing_field .profile dd {
+	margin: 0;
+	min-height: 42px;
+	width: 190px;
+	padding: 4px;
+	background-color: rgba(255, 255, 255, 0.1);
+	line-height: 150%;
+	border: 1px solid #999;
+
+	border-radius: 4px;
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+
+}
+
+#playing_field .profile .message_type {
+	font-weight: bold;
+}
+
+#playing_field .profile .message {
+	color: #666;
+}
+
 
 /* ==================
    Initializr Theme

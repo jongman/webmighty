@@ -1,5 +1,7 @@
 
 # CONSTANTS
+PROFILE_WIDTH = 250
+PROFILE_CARD_GAP = 10
 CARD_WIDTH = 71
 CARD_HEIGHT = 96
 CARD_OVERLAP = 24
@@ -64,15 +66,15 @@ class Card
 class PlayingField
 	constructor: (@elem) ->
 		@cards = []
-		@players = 5
+		@players = []
 
 	getCardDirection: (player) ->
-		side = PLAYER_LOCATION[@players][player].side
+		side = PLAYER_LOCATION[@players.length][player].side
 		if side in ["top", "bottom"] then "vertical" else "horizontal"
 
 	# 플레이어 x가 y장 카드를 가지고 있을 때, z번 카드의 가운데 위치는?
 	getCardPosition: (player, cards, index) ->
-		{side: side, location: location} = PLAYER_LOCATION[@players][player]
+		{side: side, location: location} = PLAYER_LOCATION[@players.length][player]
 		# 깔끔하게 구현하고 싶지만.. -_-
 		dx = dy = 0
 		if side in ["top", "bottom"]
@@ -96,6 +98,24 @@ class PlayingField
 		fy = cy + dy * (floor(totalWidth / 2) - CARD_WIDTH / 2)
 		{x: floor(fx - dx * CARD_OVERLAP * index), y: floor(fy - dy * CARD_OVERLAP * index)}
 
+	getProfilePosition: (player) ->
+		{side: side, location: location} = PLAYER_LOCATION[@players.length][player]
+		# 깔끔하게 구현하고 싶지만.. -_-
+		width = if side in ["top", "bottom"] then 254 else 200
+		height = if side in ["top", "bottom"] then 50 else 104
+		if side in ["top", "bottom"]
+			return {
+				side: side,
+				x: @convertRelativePosition(location, 0).x - width / 2,
+				y: if side == "top" then CARD_HEIGHT + PROFILE_CARD_GAP else @getSize().height - CARD_HEIGHT - PROFILE_CARD_GAP - height
+			}
+		else
+			return {
+				side: side,
+				y: @convertRelativePosition(0, location).y - height / 2,
+				x: if side == "left" then CARD_HEIGHT + PROFILE_CARD_GAP else @getSize().width - CARD_HEIGHT - PROFILE_CARD_GAP - width
+			}
+
 	clearCards: ->
 		@cards.pop().remove() while @cards.length > 0
 		null
@@ -113,8 +133,8 @@ class PlayingField
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
 	deal: (cards, startFrom, done=->) ->
 		@clearCards()
-		@players = cards.length
-		@hands = ([] for i in [0..@players-1])
+		assert(cards.length == @players.length)
+		@hands = ([] for i in [0..@players.length-1])
 		center = @convertRelativePosition(0.5, 0.5)
 		@cardStack = []
 		for i in [0..52]
@@ -140,8 +160,8 @@ class PlayingField
 			$(".group1").promise().done(=>
 				dealt = 0
 				for index in [0..cards[0].length-1]
-					for pl in [0..@players-1]
-						player = (startFrom + pl) % @players
+					for pl in [0..@players.length-1]
+						player = (startFrom + pl) % @players.length
 						card = @cardStack.pop()
 						@hands[player].push(card)
 						face = cards[player][index]
@@ -169,7 +189,8 @@ class PlayingField
 			null
 		)
 		null
-	
+
+	# cardStack 에 남은 카드들을 player 에게 준다.
 	dealAdditionalCards: (faces, player) ->
 		console.log(faces)
 		n = faces.length
@@ -190,9 +211,38 @@ class PlayingField
 						null
 					, idx * DEALING_SPEED_SLOW
 				)
-				
-				
+
+
 		null
+
+	playerMessage: (player, type, message, clearAfter=0) ->
+		elem = @players[player].profile_elem
+		if @players[player].clearMessageEventId
+			clearTimeout(@players[player].clearMessageEventId)
+			@players[player].clearMessageEventId = null
+		elem.find(".message_type").html(type)
+		elem.find(".message_content").html(message)
+		if clearAfter > 0
+			@players[player].clearMessageEventId = setTimeout(
+				->
+					elem.find(".message_type").html("")
+					elem.find(".message_content").html("")
+				, clearAfter)
+
+	setPlayers: (players) ->
+		@players = players
+		for i in [0..@players.length-1]
+			{side: side, y: y, x: x} = @getProfilePosition(i)
+			elem = $("#profile_template")
+				.clone()
+				.addClass(side)
+				.appendTo(@elem)
+			elem.find(".picture").attr({src: @players[i].picture})
+			elem.find(".name").html(@players[i].name)
+			elem.css({left: x, top: y})
+			elem.show()
+			@players[i].profile_elem = elem
+
 
 field = null
 
@@ -204,7 +254,46 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
+	window.field.setPlayers([
+		{name: "JongMan Koo", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"}
+		{name: "Wonha Ryu", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/41489_100000758278961_2887_q.jpg"}
+		{name: "Jinho Kim", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/161338_100000247121062_7309182_q.jpg"}
+		{name: "DoKyoung Lee", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/273911_100001947905915_2944452_q.jpg"}
+		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
+	])
 	window.field.deal TEST_CARDS, 1, ->
-		window.field.dealAdditionalCards(["sq", "jr", "hk"], 0)
+		setTimeout(
+			->
+				window.field.playerMessage(1, "선거", "패스", 5000)
+			, 100)
+		setTimeout(
+			->
+				window.field.playerMessage(2, "공약", "다이아몬드 14")
+			, 1100)
+		setTimeout(
+			->
+				window.field.playerMessage(3, "공약", "클로버 15")
+			, 2400)
+		setTimeout(
+			->
+				window.field.playerMessage(4, "선거", "패스", 5000)
+			, 4000)
+		setTimeout(
+			->
+				window.field.playerMessage(0, "공약", "스페이드 16")
+			, 6000)
+		setTimeout(
+			->
+				window.field.playerMessage(2, "선거", "패스", 5000)
+			, 6500)
+		setTimeout(
+			->
+				window.field.playerMessage(3, "선거", "패스", 5000)
+				window.field.playerMessage(0, "당선", "스페이드 16")
+			, 7000)
+		setTimeout(
+			->
+				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0)
+			, 8000)
 
 )
