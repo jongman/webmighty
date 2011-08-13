@@ -2,8 +2,9 @@
 # CONSTANTS
 CARD_WIDTH = 71
 CARD_HEIGHT = 96
-CARD_OVERLAP = 16
-DEALING_SPEED = 20
+CARD_OVERLAP = 24
+DEALING_SPEED_FAST = 20
+DEALING_SPEED_SLOW = 300
 PLAYER_LOCATION =
 	5: [
 		{ side: "bottom", location: 0.5 }
@@ -15,6 +16,10 @@ PLAYER_LOCATION =
 
 # UTILITIES
 floor = Math.floor
+assert = (conditional, message = "") ->
+	if not conditional
+		console.log(message)
+		alert(message)
 
 # MODELS
 class Card
@@ -106,7 +111,7 @@ class PlayingField
 		{x: floor(sz.width * x), y: floor(sz.height * y)}
 
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
-	deal: (cards, startFrom) ->
+	deal: (cards, startFrom, done=->) ->
 		@clear()
 		@players = cards.length
 		@hands = ([] for i in [0..@players-1])
@@ -118,7 +123,7 @@ class PlayingField
 			@cardStack.push(card)
 		# 마지막 카드가 보여지고 나면 셔플 동작을 한다
 		@cardStack[52].elem.promise().done(=>
-			for i in [0..1]
+			for i in [0..0]
 				$(".group0")
 					.animate({left: "-=37"}, 100)
 					.animate({top: "-=2"}, 0)
@@ -146,9 +151,9 @@ class PlayingField
 									card.setFace face
 									card.setDirection @getCardDirection player
 									pos = @getCardPosition(player, cards[0].length, index)
-									card.moveTo(pos.x, pos.y, DEALING_SPEED)
+									card.moveTo(pos.x, pos.y, DEALING_SPEED_FAST)
 									null
-								, dealt * DEALING_SPEED)
+								, dealt * DEALING_SPEED_FAST)
 						dealt++
 
 				setTimeout(
@@ -156,24 +161,38 @@ class PlayingField
 						for i in [0..@cardStack.length-1]
 							@cardStack[i].elem.animate({top: "-=#{i * 2}", left: "-=#{ i * 2 }"}, 50)
 						null
-					, dealt * DEALING_SPEED
+					, dealt * DEALING_SPEED_FAST
 				)
+				setTimeout(done, dealt * DEALING_SPEED_FAST)
 				null
 			)
 			null
 		)
 		null
 	
-	###
-	dealAdditionalCards: (cardStack, player) ->
-		for i in [0..cardStack.length-1]
-			card = cardStack.pop()
-			do (i, card) ->
+	dealAdditionalCards: (faces, player) ->
+		console.log(faces)
+		n = faces.length
+		assert(n == @cardStack.length)
+		for idx in [0..n-1]
+			card = @cardStack.pop()
+			do (idx, card) =>
+				console.log(idx)
 				setTimeout(
-					->
+					=>
+						card.setFace(faces[idx])
+						console.log("dealing", faces[idx], idx)
+						card.setDirection @getCardDirection player
+						@hands[player].push(card)
+						for i in [0..@hands[player].length-1]
+							pos = @getCardPosition(player, @hands[player].length, i)
+							@hands[player][i].moveTo(pos.x, pos.y, DEALING_SPEED_SLOW)
+						null
+					, idx * DEALING_SPEED_SLOW
+				)
+				
 				
 		null
-	###
 
 field = null
 
@@ -185,5 +204,7 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
-	window.field.deal TEST_CARDS, 1
+	window.field.deal TEST_CARDS, 1, ->
+		window.field.dealAdditionalCards(["sq", "jr", "hk"], 0)
+
 )
