@@ -270,6 +270,15 @@ PlayingField = (function() {
     }, this));
     return null;
   };
+  PlayingField.prototype.repositionCards = function(player, speed) {
+    var i, pos, _ref, _results;
+    _results = [];
+    for (i = 0, _ref = this.hands[player].length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+      pos = this.getCardPosition(player, this.hands[player].length, i);
+      _results.push(this.hands[player][i].moveTo(pos.x, pos.y, speed));
+    }
+    return _results;
+  };
   PlayingField.prototype.dealAdditionalCards = function(faces, player, done) {
     var card, idx, n, _fn, _ref;
     if (done == null) {
@@ -281,15 +290,11 @@ PlayingField = (function() {
     _fn = __bind(function(idx, card) {
       console.log(idx);
       return setTimeout(__bind(function() {
-        var i, pos, _ref2;
         card.setFace(faces[idx]);
         console.log("dealing", faces[idx], idx);
         card.setDirection(this.getCardDirection(player));
         this.hands[player].push(card);
-        for (i = 0, _ref2 = this.hands[player].length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
-          pos = this.getCardPosition(player, this.hands[player].length, i);
-          this.hands[player][i].moveTo(pos.x, pos.y, DEALING_SPEED_SLOW);
-        }
+        this.repositionCards(player, DEALING_SPEED_SLOW);
         return null;
       }, this), idx * DEALING_SPEED_SLOW);
     }, this);
@@ -336,6 +341,23 @@ PlayingField = (function() {
       _results.push(this.players[i].profile_elem = elem);
     }
     return _results;
+  };
+  PlayingField.prototype.throwAwayCards = function(player, cards) {
+    var i, _ref;
+    for (i = 0, _ref = cards.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+      cards[i].elem.delay(i * DEALING_SPEED_FAST).animate({
+        top: "+=" + CARD_HEIGHT
+      }, DEALING_SPEED_FAST).fadeOut(0);
+      this.hands[player].remove(cards[i]);
+    }
+    return setTimeout(__bind(function() {
+      var card, _i, _len;
+      for (_i = 0, _len = cards.length; _i < _len; _i++) {
+        card = cards[_i];
+        card.remove();
+      }
+      return this.repositionCards(player, DEALING_SPEED_FAST);
+    }, this), cards.length * DEALING_SPEED_FAST);
   };
   PlayingField.prototype.chooseMultipleCards = function(player, choose, done) {
     var card, finished, getHandlers, handlers, multiple, _i, _len, _ref;
@@ -438,7 +460,7 @@ $(document).ready(function() {
     }
   ]);
   window.field.globalMessage("새 게임을 시작합니다");
-  GAP = DEALING_SPEED_FAST = DEALING_SPEED_SLOW = 10;
+  GAP = 100;
   return window.field.deal(TEST_CARDS, 1, function() {
     window.field.globalMessage("선거가 시작됩니다!");
     setTimeout(function() {
@@ -468,13 +490,12 @@ $(document).ready(function() {
       return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
         window.field.globalMessage("버릴 3장의 카드를 골라주세요.");
         return window.field.chooseMultipleCards(0, 3, function(chosen) {
-          var card, _i, _len, _results;
-          _results = [];
+          var card, _i, _len;
           for (_i = 0, _len = chosen.length; _i < _len; _i++) {
             card = chosen[_i];
-            _results.push(console.log("chosen", card.face));
+            console.log("chosen", card.face);
           }
-          return _results;
+          return window.field.throwAwayCards(0, chosen);
         });
       });
     }, GAP * 8);

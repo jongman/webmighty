@@ -194,6 +194,11 @@ class PlayingField
 		)
 		null
 
+	repositionCards: (player, speed) ->
+		for i in [0..@hands[player].length-1]
+			pos = @getCardPosition(player, @hands[player].length, i)
+			@hands[player][i].moveTo(pos.x, pos.y, speed)
+
 	# cardStack 에 남은 카드들을 player 에게 준다.
 	dealAdditionalCards: (faces, player, done=->) ->
 		console.log(faces)
@@ -209,9 +214,7 @@ class PlayingField
 						console.log("dealing", faces[idx], idx)
 						card.setDirection @getCardDirection player
 						@hands[player].push(card)
-						for i in [0..@hands[player].length-1]
-							pos = @getCardPosition(player, @hands[player].length, i)
-							@hands[player][i].moveTo(pos.x, pos.y, DEALING_SPEED_SLOW)
+						@repositionCards(player, DEALING_SPEED_SLOW)
 						null
 					, idx * DEALING_SPEED_SLOW
 				)
@@ -245,6 +248,16 @@ class PlayingField
 			elem.css({left: x, top: y})
 			elem.show()
 			@players[i].profile_elem = elem
+
+	throwAwayCards: (player, cards) ->
+		for i in [0..cards.length-1]
+			cards[i].elem.delay(i * DEALING_SPEED_FAST).animate({top: "+=#{CARD_HEIGHT}"}, DEALING_SPEED_FAST).fadeOut(0)
+			@hands[player].remove(cards[i])
+		setTimeout(
+			=>
+				card.remove() for card in cards
+				@repositionCards(player, DEALING_SPEED_FAST)
+			, cards.length * DEALING_SPEED_FAST)
 
 	chooseMultipleCards: (player, choose, done=->) ->
 		@chosen = []
@@ -329,7 +342,8 @@ $(document).ready(->
 		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
 	])
 	window.field.globalMessage("새 게임을 시작합니다")
-	GAP = DEALING_SPEED_FAST = DEALING_SPEED_SLOW = 10
+	GAP = 100
+	#	GAP = DEALING_SPEED_FAST = DEALING_SPEED_SLOW = 10
 	window.field.deal TEST_CARDS, 1, ->
 		window.field.globalMessage("선거가 시작됩니다!")
 		setTimeout(
@@ -367,10 +381,11 @@ $(document).ready(->
 				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0,
 				->
 					window.field.globalMessage("버릴 3장의 카드를 골라주세요.")
-					window.field.chooseMultipleCards(0, 3, 
+					window.field.chooseMultipleCards(0, 3,
 						(chosen) ->
 							for card in chosen
 								console.log("chosen", card.face)
+							window.field.throwAwayCards(0, chosen)
 					)
 				)
 			, GAP*8)
