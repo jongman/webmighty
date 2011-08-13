@@ -134,8 +134,8 @@ class PlayingField
 				dealt = 0
 				for index in [0..cards[0].length-1]
 					console.log("index", index)
-					for player in [0..@players-1]
-						console.log("player", player)
+					for pl in [0..@players-1]
+						player = (startFrom + pl) % @players
 						card = cardStack.pop()
 						face = cards[player][index]
 						do (card, face, player, index, dealt) =>
@@ -165,5 +165,5 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
-	window.field.deal TEST_CARDS, 0
+	window.field.deal TEST_CARDS, 1
 )
