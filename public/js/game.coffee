@@ -7,10 +7,10 @@ DEALING_SPEED = 100
 PLAYER_LOCATION =
 	5: [
 		{ side: "bottom", location: 0.5 }
-		{ side: "left", location: 0.5 }
+		{ side: "left", location: 0.6 }
 		{ side: "top", location: 0.25 }
 		{ side: "top", location: 0.75 }
-		{ side: "right", location: 0.5 }
+		{ side: "right", location: 0.6 }
 	]
 
 # UTILITIES

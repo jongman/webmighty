@@ -205,69 +205,131 @@ body {
 	background: url(../images/background.jpg) repeat;
 }
 
-.card { width: 71px; height: 96px; background-image: url(../images/cards.png); float: left; }
-.card.s1 { background-position: -0px -0px; }
-.card.s2 { background-position: -71px -0px; }
-.card.s3 { background-position: -142px -0px; }
-.card.s4 { background-position: -213px -0px; }
-.card.s5 { background-position: -284px -0px; }
-.card.s6 { background-position: -355px -0px; }
-.card.s7 { background-position: -426px -0px; }
-.card.s8 { background-position: -497px -0px; }
-.card.s9 { background-position: -568px -0px; }
-.card.s10 { background-position: -639px -0px; }
-.card.sj { background-position: -710px -0px; }
-.card.sk { background-position: -781px -0px; }
-.card.sq { background-position: -852px -0px; }
-.card.d1 { background-position: -0px -96px; }
-.card.d2 { background-position: -71px -96px; }
-.card.d3 { background-position: -142px -96px; }
-.card.d4 { background-position: -213px -96px; }
-.card.d5 { background-position: -284px -96px; }
-.card.d6 { background-position: -355px -96px; }
-.card.d7 { background-position: -426px -96px; }
-.card.d8 { background-position: -497px -96px; }
-.card.d9 { background-position: -568px -96px; }
-.card.d10 { background-position: -639px -96px; }
-.card.dj { background-position: -710px -96px; }
-.card.dk { background-position: -781px -96px; }
-.card.dq { background-position: -852px -96px; }
-.card.h1 { background-position: -0px -192px; }
-.card.h2 { background-position: -71px -192px; }
-.card.h3 { background-position: -142px -192px; }
-.card.h4 { background-position: -213px -192px; }
-.card.h5 { background-position: -284px -192px; }
-.card.h6 { background-position: -355px -192px; }
-.card.h7 { background-position: -426px -192px; }
-.card.h8 { background-position: -497px -192px; }
-.card.h9 { background-position: -568px -192px; }
-.card.h10 { background-position: -639px -192px; }
-.card.hj { background-position: -710px -192px; }
-.card.hk { background-position: -781px -192px; }
-.card.hq { background-position: -852px -192px; }
-.card.c1 { background-position: -0px -288px; }
-.card.c2 { background-position: -71px -288px; }
-.card.c3 { background-position: -142px -288px; }
-.card.c4 { background-position: -213px -288px; }
-.card.c5 { background-position: -284px -288px; }
-.card.c6 { background-position: -355px -288px; }
-.card.c7 { background-position: -426px -288px; }
-.card.c8 { background-position: -497px -288px; }
-.card.c9 { background-position: -568px -288px; }
-.card.c10 { background-position: -639px -288px; }
-.card.cj { background-position: -710px -288px; }
-.card.ck { background-position: -781px -288px; }
-.card.cq { background-position: -852px -288px; }
-.card.joker { background-position: -0px -384px; }
-.card.jr { background-position: -71px -384px; }
-.card.back { background-position: -142px -384px; }
+.card { background-image: url(../images/cards_all.png); float: left; }
+.card.vertical { width: 71px; height: 96px; }
+.card.horizontal { width: 96px; height: 71px; }
 
+.card.horizontal.back { background-position: -0px -13px; }
+.card.horizontal.c1 { background-position: -96px -13px; }
+.card.horizontal.c2 { background-position: -192px -13px; }
+.card.horizontal.c3 { background-position: -288px -13px; }
+.card.horizontal.c4 { background-position: -384px -13px; }
+.card.horizontal.c5 { background-position: -480px -13px; }
+.card.horizontal.c6 { background-position: -576px -13px; }
+.card.horizontal.c7 { background-position: -672px -13px; }
+.card.horizontal.c8 { background-position: -768px -13px; }
+.card.horizontal.c9 { background-position: -864px -13px; }
+.card.horizontal.cj { background-position: -960px -13px; }
+.card.horizontal.ck { background-position: -0px -109px; }
+.card.horizontal.cq { background-position: -96px -109px; }
+.card.horizontal.ct { background-position: -192px -109px; }
+.card.horizontal.d1 { background-position: -288px -109px; }
+.card.horizontal.d2 { background-position: -384px -109px; }
+.card.horizontal.d3 { background-position: -480px -109px; }
+.card.horizontal.d4 { background-position: -576px -109px; }
+.card.horizontal.d5 { background-position: -672px -109px; }
+.card.horizontal.d6 { background-position: -768px -109px; }
+.card.horizontal.d7 { background-position: -864px -109px; }
+.card.horizontal.d8 { background-position: -960px -109px; }
+.card.horizontal.d9 { background-position: -0px -205px; }
+.card.horizontal.dj { background-position: -96px -205px; }
+.card.horizontal.dk { background-position: -192px -205px; }
+.card.horizontal.dq { background-position: -288px -205px; }
+.card.horizontal.dt { background-position: -384px -205px; }
+.card.horizontal.ec { background-position: -480px -205px; }
+.card.horizontal.h1 { background-position: -576px -205px; }
+.card.horizontal.h2 { background-position: -672px -205px; }
+.card.horizontal.h3 { background-position: -768px -205px; }
+.card.horizontal.h4 { background-position: -864px -205px; }
+.card.horizontal.h5 { background-position: -960px -205px; }
+.card.horizontal.h6 { background-position: -0px -301px; }
+.card.horizontal.h7 { background-position: -96px -301px; }
+.card.horizontal.h8 { background-position: -192px -301px; }
+.card.horizontal.h9 { background-position: -288px -301px; }
+.card.horizontal.hj { background-position: -384px -301px; }
+.card.horizontal.hk { background-position: -480px -301px; }
+.card.horizontal.hq { background-position: -576px -301px; }
+.card.horizontal.ht { background-position: -672px -301px; }
+.card.horizontal.jb { background-position: -768px -301px; }
+.card.horizontal.jr { background-position: -864px -301px; }
+.card.horizontal.s1 { background-position: -960px -301px; }
+.card.horizontal.s2 { background-position: -0px -397px; }
+.card.horizontal.s3 { background-position: -96px -397px; }
+.card.horizontal.s4 { background-position: -192px -397px; }
+.card.horizontal.s5 { background-position: -288px -397px; }
+.card.horizontal.s6 { background-position: -384px -397px; }
+.card.horizontal.s7 { background-position: -480px -397px; }
+.card.horizontal.s8 { background-position: -576px -397px; }
+.card.horizontal.s9 { background-position: -672px -397px; }
+.card.horizontal.sj { background-position: -768px -397px; }
+.card.horizontal.sk { background-position: -864px -397px; }
+.card.horizontal.sq { background-position: -960px -397px; }
+.card.horizontal.st { background-position: -0px -493px; }
+.card.vertical.back { background-position: -109px -480px; }
+.card.vertical.c1 { background-position: -205px -480px; }
+.card.vertical.c2 { background-position: -301px -480px; }
+.card.vertical.c3 { background-position: -397px -480px; }
+.card.vertical.c4 { background-position: -493px -480px; }
+.card.vertical.c5 { background-position: -589px -480px; }
+.card.vertical.c6 { background-position: -685px -480px; }
+.card.vertical.c7 { background-position: -781px -480px; }
+.card.vertical.c8 { background-position: -877px -480px; }
+.card.vertical.c9 { background-position: -973px -480px; }
+.card.vertical.cj { background-position: -13px -576px; }
+.card.vertical.ck { background-position: -109px -576px; }
+.card.vertical.cq { background-position: -205px -576px; }
+.card.vertical.ct { background-position: -301px -576px; }
+.card.vertical.d1 { background-position: -397px -576px; }
+.card.vertical.d2 { background-position: -493px -576px; }
+.card.vertical.d3 { background-position: -589px -576px; }
+.card.vertical.d4 { background-position: -685px -576px; }
+.card.vertical.d5 { background-position: -781px -576px; }
+.card.vertical.d6 { background-position: -877px -576px; }
+.card.vertical.d7 { background-position: -973px -576px; }
+.card.vertical.d8 { background-position: -13px -672px; }
+.card.vertical.d9 { background-position: -109px -672px; }
+.card.vertical.dj { background-position: -205px -672px; }
+.card.vertical.dk { background-position: -301px -672px; }
+.card.vertical.dq { background-position: -397px -672px; }
+.card.vertical.dt { background-position: -493px -672px; }
+.card.vertical.ec { background-position: -589px -672px; }
+.card.vertical.h1 { background-position: -685px -672px; }
+.card.vertical.h2 { background-position: -781px -672px; }
+.card.vertical.h3 { background-position: -877px -672px; }
+.card.vertical.h4 { background-position: -973px -672px; }
+.card.vertical.h5 { background-position: -13px -768px; }
+.card.vertical.h6 { background-position: -109px -768px; }
+.card.vertical.h7 { background-position: -205px -768px; }
+.card.vertical.h8 { background-position: -301px -768px; }
+.card.vertical.h9 { background-position: -397px -768px; }
+.card.vertical.hj { background-position: -493px -768px; }
+.card.vertical.hk { background-position: -589px -768px; }
+.card.vertical.hq { background-position: -685px -768px; }
+.card.vertical.ht { background-position: -781px -768px; }
+.card.vertical.jb { background-position: -877px -768px; }
+.card.vertical.jr { background-position: -973px -768px; }
+.card.vertical.s1 { background-position: -13px -864px; }
+.card.vertical.s2 { background-position: -109px -864px; }
+.card.vertical.s3 { background-position: -205px -864px; }
+.card.vertical.s4 { background-position: -301px -864px; }
+.card.vertical.s5 { background-position: -397px -864px; }
+.card.vertical.s6 { background-position: -493px -864px; }
+.card.vertical.s7 { background-position: -589px -864px; }
+.card.vertical.s8 { background-position: -685px -864px; }
+.card.vertical.s9 { background-position: -781px -864px; }
+.card.vertical.sj { background-position: -877px -864px; }
+.card.vertical.sk { background-position: -973px -864px; }
+.card.vertical.sq { background-position: -13px -960px; }
+.card.vertical.st { background-position: -109px -960px; }
+
+/*
 .card.horizontal {
 	-moz-transform: rotate(90deg);
 	-webkit-transform: rotate(90deg);
 	-o-transform: rotate(90deg);
 	-ms-transform: rotate(90deg);
 }
+	*/
 
 #playing_field {
 	position: relative;
