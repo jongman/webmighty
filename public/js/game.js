@@ -1,7 +1,12 @@
 var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DEALING_SPEED_FAST, DEALING_SPEED_SLOW, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, TEST_CARDS, assert, field, floor;
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __indexOf = Array.prototype.indexOf || function(item) {
+  for (var i = 0, l = this.length; i < l; i++) {
+    if (this[i] === item) return i;
+  }
+  return -1;
+};
 PROFILE_WIDTH = 250;
-PROFILE_CARD_GAP = 10;
+PROFILE_CARD_GAP = 15;
 CARD_WIDTH = 71;
 CARD_HEIGHT = 96;
 CARD_OVERLAP = 24;
@@ -36,6 +41,10 @@ assert = function(conditional, message) {
     console.log(message);
     return alert(message);
   }
+};
+Array.prototype.remove = function(elem) {
+  this.splice(this.indexOf(elem), 1);
+  return null;
 };
 Card = (function() {
   function Card(playing_field, face, direction, x, y) {
@@ -261,8 +270,11 @@ PlayingField = (function() {
     }, this));
     return null;
   };
-  PlayingField.prototype.dealAdditionalCards = function(faces, player) {
+  PlayingField.prototype.dealAdditionalCards = function(faces, player, done) {
     var card, idx, n, _fn, _ref;
+    if (done == null) {
+      done = function() {};
+    }
     console.log(faces);
     n = faces.length;
     assert(n === this.cardStack.length);
@@ -285,6 +297,7 @@ PlayingField = (function() {
       card = this.cardStack.pop();
       _fn(idx, card);
     }
+    setTimeout(done, n * DEALING_SPEED_SLOW);
     return null;
   };
   PlayingField.prototype.globalMessage = function(message, fadeOutAfter) {
@@ -296,11 +309,7 @@ PlayingField = (function() {
   PlayingField.prototype.playerMessage = function(player, type, message) {
     var elem;
     elem = this.players[player].profile_elem;
-    if (this.players[player].fadeEventId) {
-      clearTimeout(this.players[player].fadeEventId);
-      this.players[player].fadeEventId = null;
-    }
-    elem.find("dd").stop().animate({
+    elem.find("dd").clearQueue().stop().animate({
       "background-color": "rgba(255, 255, 255, 0.8)"
     }, 150).animate({
       "background-color": "rgba(255, 255, 255, 0)"
@@ -328,11 +337,67 @@ PlayingField = (function() {
     }
     return _results;
   };
+  PlayingField.prototype.chooseMultipleCards = function(player, choose) {
+    var card, getHandlers, handlers, _i, _len, _ref;
+    this.chosen = [];
+    getHandlers = __bind(function(card) {
+      var deraise, raise, raised;
+      raised = false;
+      raise = function() {
+        if (!raised) {
+          raised = true;
+          return card.elem.animate({
+            top: "-=10"
+          }, 40);
+        }
+      };
+      deraise = function() {
+        if (raised) {
+          raised = false;
+          return card.elem.animate({
+            top: "+=10"
+          }, 40);
+        }
+      };
+      return {
+        onMouseOver: __bind(function() {
+          if (this.chosen.length < choose && __indexOf.call(this.chosen, card) < 0) {
+            return raise();
+          }
+        }, this),
+        onMouseDown: __bind(function() {
+          if (this.chosen.length < choose && __indexOf.call(this.chosen, card) < 0) {
+            this.chosen.push(card);
+            card.elem.addClass("chosen");
+            raise();
+          } else if (__indexOf.call(this.chosen, card) >= 0) {
+            this.chosen.remove(card);
+            card.elem.removeClass("chosen");
+            deraise();
+          }
+          return console.log(this.chosen);
+        }, this),
+        onMouseOut: __bind(function() {
+          if (__indexOf.call(this.chosen, card) < 0) {
+            return deraise();
+          }
+        }, this)
+      };
+    }, this);
+    _ref = this.hands[player];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      card = _ref[_i];
+      handlers = getHandlers(card);
+      card.elem.addClass("canChoose").mouseover(handlers.onMouseOver).mousedown(handlers.onMouseDown).mouseout(handlers.onMouseOut);
+    }
+    return null;
+  };
   return PlayingField;
 })();
 field = null;
 TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]];
 $(document).ready(function() {
+  var GAP;
   window.field = new PlayingField($("#playing_field"));
   window.field.setPlayers([
     {
@@ -353,33 +418,37 @@ $(document).ready(function() {
     }
   ]);
   window.field.globalMessage("새 게임을 시작합니다");
+  GAP = DEALING_SPEED_FAST = DEALING_SPEED_SLOW = 10;
   return window.field.deal(TEST_CARDS, 1, function() {
     window.field.globalMessage("선거가 시작됩니다!");
     setTimeout(function() {
       return window.field.playerMessage(1, "선거", "패스");
-    }, 100);
+    }, GAP);
     setTimeout(function() {
       return window.field.playerMessage(2, "공약", "다이아몬드 14");
-    }, 1100);
+    }, GAP * 2);
     setTimeout(function() {
       return window.field.playerMessage(3, "공약", "클로버 15");
-    }, 2400);
+    }, GAP * 3);
     setTimeout(function() {
       return window.field.playerMessage(4, "선거", "패스");
-    }, 4000);
+    }, GAP * 4);
     setTimeout(function() {
       return window.field.playerMessage(0, "공약", "스페이드 16");
-    }, 6000);
+    }, GAP * 5);
     setTimeout(function() {
       return window.field.playerMessage(2, "선거", "패스");
-    }, 6500);
+    }, GAP * 6);
     setTimeout(function() {
       window.field.playerMessage(3, "선거", "패스");
       window.field.globalMessage("JongMan Koo 님이 당선되었습니다!");
       return window.field.playerMessage(0, "당선", "스페이드 16");
-    }, 7000);
+    }, GAP * 7);
     return setTimeout(function() {
-      return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0);
-    }, 8000);
+      return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
+        window.field.globalMessage("버릴 3장의 카드를 골라주세요.");
+        return window.field.chooseMultipleCards(0, 3);
+      });
+    }, GAP * 8);
   });
 });

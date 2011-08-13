@@ -1,7 +1,7 @@
 
 # CONSTANTS
 PROFILE_WIDTH = 250
-PROFILE_CARD_GAP = 10
+PROFILE_CARD_GAP = 15
 CARD_WIDTH = 71
 CARD_HEIGHT = 96
 CARD_OVERLAP = 24
@@ -22,6 +22,10 @@ assert = (conditional, message = "") ->
 	if not conditional
 		console.log(message)
 		alert(message)
+		
+Array::remove = (elem) ->
+	@splice(@indexOf(elem), 1)
+	null
 
 # MODELS
 class Card
@@ -191,7 +195,7 @@ class PlayingField
 		null
 
 	# cardStack 에 남은 카드들을 player 에게 준다.
-	dealAdditionalCards: (faces, player) ->
+	dealAdditionalCards: (faces, player, done=->) ->
 		console.log(faces)
 		n = faces.length
 		assert(n == @cardStack.length)
@@ -211,20 +215,17 @@ class PlayingField
 						null
 					, idx * DEALING_SPEED_SLOW
 				)
-
-
+		setTimeout(done, n * DEALING_SPEED_SLOW)
 		null
 
 	globalMessage: (message, fadeOutAfter=5000) ->
-		$("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500);
+		$("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500)
 
 
 	playerMessage: (player, type, message) ->
 		elem = @players[player].profile_elem
-		if @players[player].fadeEventId
-			clearTimeout(@players[player].fadeEventId)
-			@players[player].fadeEventId = null
 		elem.find("dd")
+			.clearQueue()
 			.stop()
 			.animate({"background-color": "rgba(255, 255, 255, 0.8)"}, 150)
 			.animate({"background-color": "rgba(255, 255, 255, 0)"}, 4000)
@@ -245,6 +246,51 @@ class PlayingField
 			elem.show()
 			@players[i].profile_elem = elem
 
+	chooseMultipleCards: (player, choose) ->
+		@chosen = []
+
+		getHandlers = (card) =>
+			raised = false
+
+			raise = ->
+				if not raised
+					raised = true
+					card.elem.animate({top: "-=10"}, 40)
+			deraise = ->
+				if raised
+					raised = false
+					card.elem.animate({top: "+=10"}, 40)
+
+			{
+				onMouseOver: =>
+					if @chosen.length < choose and card not in @chosen
+						raise()
+				onMouseDown: =>
+					if @chosen.length < choose and card not in @chosen
+						@chosen.push(card)
+						card.elem.addClass("chosen")
+						raise()
+					else if card in @chosen
+						@chosen.remove(card)
+						card.elem.removeClass("chosen")
+						deraise()
+					console.log(@chosen)
+				onMouseOut: =>
+					if card not in @chosen
+						deraise()
+			}
+
+		for card in @hands[player]
+			handlers = getHandlers(card)
+			card.elem
+				.addClass("canChoose")
+				.mouseover(handlers.onMouseOver)
+				.mousedown(handlers.onMouseDown)
+				.mouseout(handlers.onMouseOut)
+		null
+
+
+
 
 field = null
 
@@ -264,41 +310,46 @@ $(document).ready(->
 		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
 	])
 	window.field.globalMessage("새 게임을 시작합니다")
+	GAP = DEALING_SPEED_FAST = DEALING_SPEED_SLOW = 10
 	window.field.deal TEST_CARDS, 1, ->
 		window.field.globalMessage("선거가 시작됩니다!")
 		setTimeout(
 			->
 				window.field.playerMessage(1, "선거", "패스")
-			, 100)
+			, GAP)
 		setTimeout(
 			->
 				window.field.playerMessage(2, "공약", "다이아몬드 14")
-			, 1100)
+			, GAP*2)
 		setTimeout(
 			->
 				window.field.playerMessage(3, "공약", "클로버 15")
-			, 2400)
+			, GAP*3)
 		setTimeout(
 			->
 				window.field.playerMessage(4, "선거", "패스")
-			, 4000)
+			, GAP*4)
 		setTimeout(
 			->
 				window.field.playerMessage(0, "공약", "스페이드 16")
-			, 6000)
+			, GAP*5)
 		setTimeout(
 			->
 				window.field.playerMessage(2, "선거", "패스")
-			, 6500)
+			, GAP*6)
 		setTimeout(
 			->
 				window.field.playerMessage(3, "선거", "패스")
 				window.field.globalMessage("JongMan Koo 님이 당선되었습니다!")
 				window.field.playerMessage(0, "당선", "스페이드 16")
-			, 7000)
+			, GAP*7)
 		setTimeout(
 			->
-				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0)
-			, 8000)
+				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0,
+				->
+					window.field.globalMessage("버릴 3장의 카드를 골라주세요.")
+					window.field.chooseMultipleCards(0, 3)
+				)
+			, GAP*8)
 
 )
