@@ -105,9 +105,11 @@ class PlayingField
 		sz = @getSize()
 		{x: floor(sz.width * x), y: floor(sz.height * y)}
 
+	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
 	deal: (cards, startFrom) ->
 		@clear()
 		@players = cards.length
+		@hands = ([] for i in [0..@players-1])
 		center = @convertRelativePosition(0.5, 0.5)
 		cardStack = []
 		for i in [0..52]
@@ -133,17 +135,17 @@ class PlayingField
 			$(".group1").promise().done(=>
 				dealt = 0
 				for index in [0..cards[0].length-1]
-					console.log("index", index)
 					for pl in [0..@players-1]
 						player = (startFrom + pl) % @players
 						card = cardStack.pop()
+						@hands[player].push(card)
 						face = cards[player][index]
 						do (card, face, player, index, dealt) =>
 							setTimeout(
 								=>
 									card.setFace face
-									card.setDirection this.getCardDirection player
-									pos = this.getCardPosition(player, cards[0].length, index)
+									card.setDirection @getCardDirection player
+									pos = @getCardPosition(player, cards[0].length, index)
 									card.moveTo(pos.x, pos.y, DEALING_SPEED)
 									null
 								, dealt * DEALING_SPEED)
