@@ -111,13 +111,13 @@ class PlayingField
 		@players = cards.length
 		@hands = ([] for i in [0..@players-1])
 		center = @convertRelativePosition(0.5, 0.5)
-		cardStack = []
+		@cardStack = []
 		for i in [0..52]
 			card = new Card(this, "back", "vertical", center.x, center.y - floor(i / 4) * 2)
 			card.elem.addClass("group" + (floor(i / 4) %2)).delay(i * 5).fadeIn(0)
-			cardStack.push(card)
+			@cardStack.push(card)
 		# 마지막 카드가 보여지고 나면 셔플 동작을 한다
-		cardStack[52].elem.promise().done(=>
+		@cardStack[52].elem.promise().done(=>
 			for i in [0..1]
 				$(".group0")
 					.animate({left: "-=37"}, 100)
@@ -137,7 +137,7 @@ class PlayingField
 				for index in [0..cards[0].length-1]
 					for pl in [0..@players-1]
 						player = (startFrom + pl) % @players
-						card = cardStack.pop()
+						card = @cardStack.pop()
 						@hands[player].push(card)
 						face = cards[player][index]
 						do (card, face, player, index, dealt) =>
@@ -153,8 +153,8 @@ class PlayingField
 
 				setTimeout(
 					->
-						for i in [0..cardStack.length-1]
-							cardStack[i].elem.animate({top: "-=#{i * 2}", left: "-=#{ i * 2 }"}, 50)
+						for i in [0..@cardStack.length-1]
+							@cardStack[i].elem.animate({top: "-=#{i * 2}", left: "-=#{ i * 2 }"}, 50)
 						null
 					, dealt * DEALING_SPEED
 				)
@@ -163,6 +163,17 @@ class PlayingField
 			null
 		)
 		null
+	
+	###
+	dealAdditionalCards: (cardStack, player) ->
+		for i in [0..cardStack.length-1]
+			card = cardStack.pop()
+			do (i, card) ->
+				setTimeout(
+					->
+				
+		null
+	###
 
 field = null
 
