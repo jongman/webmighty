@@ -3,7 +3,7 @@
 CARD_WIDTH = 71
 CARD_HEIGHT = 96
 CARD_OVERLAP = 16
-DEALING_SPEED = 100
+DEALING_SPEED = 20
 PLAYER_LOCATION =
 	5: [
 		{ side: "bottom", location: 0.5 }
@@ -149,6 +149,12 @@ class PlayingField
 								, dealt * DEALING_SPEED)
 						dealt++
 
+				setTimeout(
+					->
+						for i in [0..cardStack.length-1]
+							cardStack[i].elem.animate({top: "-=#{i * 2}", left: "-=#{ i * 2 }"}, 50)
+					, dealt * DEALING_SPEED
+				)
 				null
 			)
 			null
