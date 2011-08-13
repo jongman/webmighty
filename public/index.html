@@ -21,6 +21,15 @@
 <body>
 	<div id="playing_field">
 		<div id="global_message"></div>
+		<div id="dialog">
+			<div class="choose_multiple" style="display: none;">
+				<div class="title">
+					<span class="choose_count">?</span>장의 카드를 골라주세요
+					<br/>
+					<button class="confirm" disabled>확인</button>
+				</div>
+			</div>
+		</div>
 		<div class="card" id="card_template" style="position: absolute; top: 0px; left: 0px; display: none;"></div>
 		<div class="profile" id="profile_template" style="display: none;">
 			<dl>
@@ -35,24 +44,6 @@
 				</dd>
 			</dl>
 		</div>
-		<!--
-		<div class="profile left" id="profile_template">
-			<dl>
-				<dt>
-					<img class="picture" src="http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"/>
-				</dt>
-				<dd>
-					<a class="name" href="#">JongMan Koo</a>
-					<br/>
-					<span class="message_type">
-						공약
-					</span>
-					<span class="message promise">
-						다이아몬드 14
-					</span>
-				</dd>
-			</dl>
-		</div>-->
 	</div>
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
 	<script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.15/jquery-ui.min.js"></script>

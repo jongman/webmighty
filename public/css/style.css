@@ -366,6 +366,58 @@ a:hover {
 	text-shadow: 1px 1px 6px #fff;
 }
 
+#playing_field #dialog {
+	position: absolute;
+	height: 200px;
+	width: 400px;
+	text-align: center;
+	top: 220px;
+	left: 200px;
+	z-index: 99;
+}
+
+#playing_field #dialog > div {
+	margin: 0px auto;
+	background-color: rgba(0, 0, 0, 0.1);
+	border: 1px solid silver;
+
+	box-shadow: 0px 0px 8px #eee;
+	-moz-box-shadow: 0px 0px 8px #eee;
+	-webkit-box-shadow: 0px 0px 8px #eee;
+	padding: 8px;
+}
+
+#playing_field #dialog .title {
+	font-size: 16px;
+	color: #fff;
+	font-weight: bold;
+}
+
+#playing_field #dialog button {
+	background: none;
+	border: 1px solid white;
+	font-size: 12px;
+	font-weight: bold;
+	color: white;
+	padding: 4px;
+}
+
+#playing_field #dialog button:hover {
+	color: black;
+	background-color: rgba(255, 255, 255, 0.5);
+}
+
+#playing_field #dialog button:disabled,
+#playing_field #dialog button[disabled="disabled"] {
+	color: #aaa;
+	border: 1px solid #aaa;
+}
+
+#playing_field #dialog .choose_multiple {
+	width: 200px;
+	line-height: 200%;
+}
+
 #playing_field .profile {
 	position: absolute;
 }
@@ -417,8 +469,13 @@ a:hover {
 	width: 190px;
 	padding: 4px;
 	/* background-color: rgba(255, 255, 255, 0.1); */
+	background-color: rgba(0, 0, 0, 0.1);
 	line-height: 150%;
 	border: 1px solid #999;
+
+	box-shadow: 0px 0px 8px #eee;
+	-moz-box-shadow: 0px 0px 8px #eee;
+	-webkit-box-shadow: 0px 0px 8px #eee;
 
 	border-radius: 4px;
 	-moz-border-radius: 4px;

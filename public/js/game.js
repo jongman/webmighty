@@ -312,7 +312,7 @@ PlayingField = (function() {
     elem.find("dd").clearQueue().stop().animate({
       "background-color": "rgba(255, 255, 255, 0.8)"
     }, 150).animate({
-      "background-color": "rgba(255, 255, 255, 0)"
+      "background-color": "rgba(0, 0, 0, 0.1)"
     }, 4000);
     elem.find(".message_type").html(type);
     return elem.find(".message_content").html(message);
@@ -337,9 +337,25 @@ PlayingField = (function() {
     }
     return _results;
   };
-  PlayingField.prototype.chooseMultipleCards = function(player, choose) {
-    var card, getHandlers, handlers, _i, _len, _ref;
+  PlayingField.prototype.chooseMultipleCards = function(player, choose, done) {
+    var card, finished, getHandlers, handlers, multiple, _i, _len, _ref;
+    if (done == null) {
+      done = function() {};
+    }
     this.chosen = [];
+    multiple = this.elem.find(".choose_multiple");
+    multiple.find(".choose_count").html(choose);
+    multiple.fadeIn(500);
+    finished = __bind(function() {
+      var card, _i, _len, _ref;
+      multiple.fadeOut(500);
+      _ref = this.hands[player];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        card = _ref[_i];
+        card.elem.removeClass("canChoose").unbind("mouseover").unbind("mousedown").unbind("mouseout");
+      }
+      return done(this.chosen);
+    }, this);
     getHandlers = __bind(function(card) {
       var deraise, raise, raised;
       raised = false;
@@ -375,7 +391,11 @@ PlayingField = (function() {
             card.elem.removeClass("chosen");
             deraise();
           }
-          return console.log(this.chosen);
+          if (this.chosen.length === choose) {
+            return multiple.find("button").removeAttr("disabled").click(finished);
+          } else {
+            return multiple.find("button").attr("disabled", "");
+          }
         }, this),
         onMouseOut: __bind(function() {
           if (__indexOf.call(this.chosen, card) < 0) {
@@ -447,7 +467,15 @@ $(document).ready(function() {
     return setTimeout(function() {
       return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
         window.field.globalMessage("버릴 3장의 카드를 골라주세요.");
-        return window.field.chooseMultipleCards(0, 3);
+        return window.field.chooseMultipleCards(0, 3, function(chosen) {
+          var card, _i, _len, _results;
+          _results = [];
+          for (_i = 0, _len = chosen.length; _i < _len; _i++) {
+            card = chosen[_i];
+            _results.push(console.log("chosen", card.face));
+          }
+          return _results;
+        });
       });
     }, GAP * 8);
   });

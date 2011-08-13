@@ -22,7 +22,7 @@ assert = (conditional, message = "") ->
 	if not conditional
 		console.log(message)
 		alert(message)
-		
+
 Array::remove = (elem) ->
 	@splice(@indexOf(elem), 1)
 	null
@@ -228,7 +228,7 @@ class PlayingField
 			.clearQueue()
 			.stop()
 			.animate({"background-color": "rgba(255, 255, 255, 0.8)"}, 150)
-			.animate({"background-color": "rgba(255, 255, 255, 0)"}, 4000)
+			.animate({"background-color": "rgba(0, 0, 0, 0.1)"}, 4000)
 		elem.find(".message_type").html(type)
 		elem.find(".message_content").html(message)
 
@@ -246,8 +246,21 @@ class PlayingField
 			elem.show()
 			@players[i].profile_elem = elem
 
-	chooseMultipleCards: (player, choose) ->
+	chooseMultipleCards: (player, choose, done=->) ->
 		@chosen = []
+		multiple = @elem.find(".choose_multiple")
+		multiple.find(".choose_count").html(choose)
+		multiple.fadeIn(500)
+
+		finished = () =>
+			multiple.fadeOut(500)
+			for card in @hands[player]
+				card.elem
+					.removeClass("canChoose")
+					.unbind("mouseover")
+					.unbind("mousedown")
+					.unbind("mouseout")
+			done(@chosen)
 
 		getHandlers = (card) =>
 			raised = false
@@ -274,7 +287,13 @@ class PlayingField
 						@chosen.remove(card)
 						card.elem.removeClass("chosen")
 						deraise()
-					console.log(@chosen)
+					if @chosen.length == choose
+						multiple.find("button")
+							.removeAttr("disabled")
+							.click(finished)
+					else
+						multiple.find("button").attr("disabled", "")
+
 				onMouseOut: =>
 					if card not in @chosen
 						deraise()
@@ -348,7 +367,11 @@ $(document).ready(->
 				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0,
 				->
 					window.field.globalMessage("버릴 3장의 카드를 골라주세요.")
-					window.field.chooseMultipleCards(0, 3)
+					window.field.chooseMultipleCards(0, 3, 
+						(chosen) ->
+							for card in chosen
+								console.log("chosen", card.face)
+					)
 				)
 			, GAP*8)
 
