@@ -1,4 +1,4 @@
-var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DEALING_SPEED_FAST, DEALING_SPEED_SLOW, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, TEST_CARDS, assert, field, floor;
+var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DEALING_SPEED_FAST, DEALING_SPEED_SLOW, DISAPPEAR_DIRECTION, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, TEST_CARDS, VALUE_ORDER, assert, field, floor, lexicographic_compare;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __indexOf = Array.prototype.indexOf || function(item) {
   for (var i = 0, l = this.length; i < l; i++) {
     if (this[i] === item) return i;
@@ -9,7 +9,7 @@ PROFILE_WIDTH = 250;
 PROFILE_CARD_GAP = 15;
 CARD_WIDTH = 71;
 CARD_HEIGHT = 96;
-CARD_OVERLAP = 24;
+CARD_OVERLAP = 20;
 DEALING_SPEED_FAST = 40;
 DEALING_SPEED_SLOW = 300;
 PLAYER_LOCATION = {
@@ -32,7 +32,23 @@ PLAYER_LOCATION = {
     }
   ]
 };
+DISAPPEAR_DIRECTION = {
+  left: [-CARD_HEIGHT, 0],
+  right: [CARD_HEIGHT, 0],
+  top: [0, -CARD_HEIGHT],
+  bottom: [0, CARD_HEIGHT]
+};
+VALUE_ORDER = "23456789tjqk1";
 floor = Math.floor;
+lexicographic_compare = function(a, b) {
+  if (a === b) {
+    return 0;
+  } else if (a < b) {
+    return -1;
+  } else {
+    return 1;
+  }
+};
 assert = function(conditional, message) {
   if (message == null) {
     message = "";
@@ -43,8 +59,7 @@ assert = function(conditional, message) {
   }
 };
 Array.prototype.remove = function(elem) {
-  this.splice(this.indexOf(elem), 1);
-  return null;
+  return this.splice(this.indexOf(elem), 1)[0];
 };
 Card = (function() {
   function Card(playing_field, face, direction, x, y) {
@@ -182,6 +197,30 @@ PlayingField = (function() {
       y: floor(sz.height * y)
     };
   };
+  PlayingField.prototype.sortHands = function(player, speed) {
+    var i, n, _ref;
+    if (speed == null) {
+      speed = DEALING_SPEED_SLOW;
+    }
+    if (this.hands[player].length === 0 || this.hands[player][0].face[0] === "b") {
+      return;
+    }
+    this.hands[player].sort(function(a, b) {
+      if (a.face[0] !== b.face[0]) {
+        return lexicographic_compare(a.face[0], b.face[0]);
+      } else {
+        return VALUE_ORDER.indexOf(a.face[1]) - VALUE_ORDER.indexOf(b.face[1]);
+      }
+    });
+    n = this.hands[player].length;
+    for (i = 0, _ref = n - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+      console.log("sorted", i, this.hands[player][i].face);
+      this.hands[player][i].elem.css({
+        "z-index": n - i
+      });
+    }
+    return this.repositionCards(player, speed);
+  };
   PlayingField.prototype.deal = function(cards, startFrom, done) {
     var card, center, i;
     if (done == null) {
@@ -254,12 +293,15 @@ PlayingField = (function() {
           }
         }
         setTimeout(__bind(function() {
-          var i, _ref3;
+          var i, player, _ref3, _ref4;
           for (i = 0, _ref3 = this.cardStack.length - 1; 0 <= _ref3 ? i <= _ref3 : i >= _ref3; 0 <= _ref3 ? i++ : i--) {
             this.cardStack[i].elem.animate({
               top: "-=" + (i * 2),
               left: "-=" + (i * 2)
             }, 50);
+          }
+          for (player = 0, _ref4 = this.players.length - 1; 0 <= _ref4 ? player <= _ref4 : player >= _ref4; 0 <= _ref4 ? player++ : player--) {
+            this.sortHands(player);
           }
           return null;
         }, this), dealt * DEALING_SPEED_FAST);
@@ -302,7 +344,10 @@ PlayingField = (function() {
       card = this.cardStack.pop();
       _fn(idx, card);
     }
-    setTimeout(done, n * DEALING_SPEED_SLOW);
+    setTimeout(__bind(function() {
+      this.sortHands(player);
+      return done();
+    }, this), n * DEALING_SPEED_SLOW);
     return null;
   };
   PlayingField.prototype.globalMessage = function(message, fadeOutAfter) {
@@ -313,6 +358,9 @@ PlayingField = (function() {
   };
   PlayingField.prototype.playerMessage = function(player, type, message) {
     var elem;
+    if (message == null) {
+      message = "";
+    }
     elem = this.players[player].profile_elem;
     elem.find("dd").clearQueue().stop().animate({
       "background-color": "rgba(255, 255, 255, 0.8)"
@@ -342,13 +390,18 @@ PlayingField = (function() {
     }
     return _results;
   };
-  PlayingField.prototype.throwAwayCards = function(player, cards) {
-    var i, _ref;
-    for (i = 0, _ref = cards.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+  PlayingField.prototype.takeCards = function(player, cards) {
+    var cx, cy, dx, dy, home, i, _ref, _ref2;
+    home = this.getCardPosition(player, 1, 0);
+    _ref = DISAPPEAR_DIRECTION[PLAYER_LOCATION[this.players.length][player].side], dx = _ref[0], dy = _ref[1];
+    cx = home.x + dx;
+    cy = home.y + dy;
+    for (i = 0, _ref2 = cards.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
+      console.log("moving to", cx, cy);
       cards[i].elem.delay(i * DEALING_SPEED_FAST).animate({
-        top: "+=" + CARD_HEIGHT
+        top: cy,
+        left: cx
       }, DEALING_SPEED_FAST).fadeOut(0);
-      this.hands[player].remove(cards[i]);
     }
     return setTimeout(__bind(function() {
       var card, _i, _len;
@@ -464,7 +517,7 @@ $(document).ready(function() {
   return window.field.deal(TEST_CARDS, 1, function() {
     window.field.globalMessage("선거가 시작됩니다!");
     setTimeout(function() {
-      return window.field.playerMessage(1, "선거", "패스");
+      return window.field.playerMessage(1, "패스");
     }, GAP);
     setTimeout(function() {
       return window.field.playerMessage(2, "공약", "다이아몬드 14");
@@ -473,29 +526,34 @@ $(document).ready(function() {
       return window.field.playerMessage(3, "공약", "클로버 15");
     }, GAP * 3);
     setTimeout(function() {
-      return window.field.playerMessage(4, "선거", "패스");
+      return window.field.playerMessage(4, "패스");
     }, GAP * 4);
     setTimeout(function() {
       return window.field.playerMessage(0, "공약", "스페이드 16");
     }, GAP * 5);
     setTimeout(function() {
-      return window.field.playerMessage(2, "선거", "패스");
+      return window.field.playerMessage(2, "패스");
     }, GAP * 6);
     setTimeout(function() {
-      window.field.playerMessage(3, "선거", "패스");
+      window.field.playerMessage(3, "패스");
       window.field.globalMessage("JongMan Koo 님이 당선되었습니다!");
       return window.field.playerMessage(0, "당선", "스페이드 16");
     }, GAP * 7);
     return setTimeout(function() {
-      return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
+      /*
+      				window.field.dealAdditionalCards(["back", "back", "back"], 1,
+      				->
+      					window.field.takeCards(1, (window.field.hands[1].pop() for i in [0..2]))
+      				)
+      				*/      return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
         window.field.globalMessage("버릴 3장의 카드를 골라주세요.");
         return window.field.chooseMultipleCards(0, 3, function(chosen) {
           var card, _i, _len;
           for (_i = 0, _len = chosen.length; _i < _len; _i++) {
             card = chosen[_i];
-            console.log("chosen", card.face);
+            window.field.hands[0].remove(card);
           }
-          return window.field.throwAwayCards(0, chosen);
+          return window.field.takeCards(0, chosen);
         });
       });
     }, GAP * 8);

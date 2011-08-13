@@ -4,7 +4,7 @@ PROFILE_WIDTH = 250
 PROFILE_CARD_GAP = 15
 CARD_WIDTH = 71
 CARD_HEIGHT = 96
-CARD_OVERLAP = 24
+CARD_OVERLAP = 20
 DEALING_SPEED_FAST = 40
 DEALING_SPEED_SLOW = 300
 PLAYER_LOCATION =
@@ -15,17 +15,30 @@ PLAYER_LOCATION =
 		{ side: "top", location: 0.75 }
 		{ side: "right", location: 0.6 }
 	]
+DISAPPEAR_DIRECTION =
+	left: [-CARD_HEIGHT, 0]
+	right: [CARD_HEIGHT, 0]
+	top: [0, -CARD_HEIGHT]
+	bottom: [0, CARD_HEIGHT] 
+
+VALUE_ORDER = "23456789tjqk1"
 
 # UTILITIES
 floor = Math.floor
+lexicographic_compare = (a, b) ->
+	if a == b
+		0
+	else if a < b
+		-1
+	else
+		1
 assert = (conditional, message = "") ->
 	if not conditional
 		console.log(message)
 		alert(message)
 
 Array::remove = (elem) ->
-	@splice(@indexOf(elem), 1)
-	null
+	@splice(@indexOf(elem), 1)[0]
 
 # MODELS
 class Card
@@ -134,6 +147,22 @@ class PlayingField
 		sz = @getSize()
 		{x: floor(sz.width * x), y: floor(sz.height * y)}
 
+	sortHands: (player, speed=DEALING_SPEED_SLOW) ->
+		if @hands[player].length == 0 or @hands[player][0].face[0] == "b"
+			return
+		@hands[player].sort((a, b) ->
+			if a.face[0] != b.face[0]
+				lexicographic_compare(a.face[0], b.face[0])
+			else
+				VALUE_ORDER.indexOf(a.face[1]) - VALUE_ORDER.indexOf(b.face[1])
+		)
+		n = @hands[player].length
+		for i in [0..n-1]
+			console.log("sorted", i, @hands[player][i].face)
+			@hands[player][i].elem.css({"z-index": n-i})
+		@repositionCards(player, speed)
+
+
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
 	deal: (cards, startFrom, done=->) ->
 		@clearCards()
@@ -184,6 +213,8 @@ class PlayingField
 					=>
 						for i in [0..@cardStack.length-1]
 							@cardStack[i].elem.animate({top: "-=#{i * 2}", left: "-=#{ i * 2 }"}, 50)
+						for player in [0..@players.length-1]
+							@sortHands(player)
 						null
 					, dealt * DEALING_SPEED_FAST
 				)
@@ -218,14 +249,18 @@ class PlayingField
 						null
 					, idx * DEALING_SPEED_SLOW
 				)
-		setTimeout(done, n * DEALING_SPEED_SLOW)
+		setTimeout(
+			=>
+				@sortHands player
+				done()
+			, n * DEALING_SPEED_SLOW)
 		null
 
 	globalMessage: (message, fadeOutAfter=5000) ->
 		$("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500)
 
 
-	playerMessage: (player, type, message) ->
+	playerMessage: (player, type, message = "") ->
 		elem = @players[player].profile_elem
 		elem.find("dd")
 			.clearQueue()
@@ -249,10 +284,18 @@ class PlayingField
 			elem.show()
 			@players[i].profile_elem = elem
 
-	throwAwayCards: (player, cards) ->
+	takeCards: (player, cards) ->
+		home = @getCardPosition(player, 1, 0)
+		[dx, dy] = DISAPPEAR_DIRECTION[PLAYER_LOCATION[@players.length][player].side]
+		cx = home.x + dx
+		cy = home.y + dy
+
 		for i in [0..cards.length-1]
-			cards[i].elem.delay(i * DEALING_SPEED_FAST).animate({top: "+=#{CARD_HEIGHT}"}, DEALING_SPEED_FAST).fadeOut(0)
-			@hands[player].remove(cards[i])
+			console.log("moving to", cx, cy)
+			cards[i].elem
+				.delay(i * DEALING_SPEED_FAST)
+				.animate({top: cy, left: cx}, DEALING_SPEED_FAST)
+				.fadeOut(0)
 		setTimeout(
 			=>
 				card.remove() for card in cards
@@ -348,7 +391,7 @@ $(document).ready(->
 		window.field.globalMessage("선거가 시작됩니다!")
 		setTimeout(
 			->
-				window.field.playerMessage(1, "선거", "패스")
+				window.field.playerMessage(1, "패스")
 			, GAP)
 		setTimeout(
 			->
@@ -360,7 +403,7 @@ $(document).ready(->
 			, GAP*3)
 		setTimeout(
 			->
-				window.field.playerMessage(4, "선거", "패스")
+				window.field.playerMessage(4, "패스")
 			, GAP*4)
 		setTimeout(
 			->
@@ -368,26 +411,32 @@ $(document).ready(->
 			, GAP*5)
 		setTimeout(
 			->
-				window.field.playerMessage(2, "선거", "패스")
+				window.field.playerMessage(2, "패스")
 			, GAP*6)
 		setTimeout(
 			->
-				window.field.playerMessage(3, "선거", "패스")
+				window.field.playerMessage(3, "패스")
 				window.field.globalMessage("JongMan Koo 님이 당선되었습니다!")
 				window.field.playerMessage(0, "당선", "스페이드 16")
 			, GAP*7)
 		setTimeout(
 			->
+				###
+				window.field.dealAdditionalCards(["back", "back", "back"], 1,
+				->
+					window.field.takeCards(1, (window.field.hands[1].pop() for i in [0..2]))
+				)
+				###
 				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0,
 				->
 					window.field.globalMessage("버릴 3장의 카드를 골라주세요.")
 					window.field.chooseMultipleCards(0, 3,
 						(chosen) ->
-							for card in chosen
-								console.log("chosen", card.face)
-							window.field.throwAwayCards(0, chosen)
+							window.field.hands[0].remove(card) for card in chosen
+							window.field.takeCards(0, chosen)
 					)
 				)
+				# ##
 			, GAP*8)
 
 )
