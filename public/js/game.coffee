@@ -96,7 +96,7 @@ class PlayingField
 		fy = cy + dy * (floor(totalWidth / 2) - CARD_WIDTH / 2)
 		{x: floor(fx - dx * CARD_OVERLAP * index), y: floor(fy - dy * CARD_OVERLAP * index)}
 
-	clear: ->
+	clearCards: ->
 		@cards.pop().remove() while @cards.length > 0
 		null
 
@@ -112,7 +112,7 @@ class PlayingField
 
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
 	deal: (cards, startFrom, done=->) ->
-		@clear()
+		@clearCards()
 		@players = cards.length
 		@hands = ([] for i in [0..@players-1])
 		center = @convertRelativePosition(0.5, 0.5)
