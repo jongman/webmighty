@@ -231,17 +231,14 @@ class PlayingField
 
 	# cardStack 에 남은 카드들을 player 에게 준다.
 	dealAdditionalCards: (faces, player, done=->) ->
-		console.log(faces)
 		n = faces.length
 		assert(n == @cardStack.length)
 		for idx in [0..n-1]
 			card = @cardStack.pop()
 			do (idx, card) =>
-				console.log(idx)
 				setTimeout(
 					=>
 						card.setFace(faces[idx])
-						console.log("dealing", faces[idx], idx)
 						card.setDirection @getCardDirection player
 						@hands[player].push(card)
 						@repositionCards(player)
@@ -384,6 +381,7 @@ $(document).ready(->
 	])
 	window.field.globalMessage("새 게임을 시작합니다")
 	GAP = 100
+	SPEED_BASE = 10
 	#	GAP = SPEED_BASE = SPEED_BASE*5 = 10
 	window.field.deal TEST_CARDS, 1, ->
 		window.field.globalMessage("선거가 시작됩니다!")

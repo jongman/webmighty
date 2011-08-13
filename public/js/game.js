@@ -327,14 +327,11 @@ PlayingField = (function() {
     if (done == null) {
       done = function() {};
     }
-    console.log(faces);
     n = faces.length;
     assert(n === this.cardStack.length);
     _fn = __bind(function(idx, card) {
-      console.log(idx);
       return setTimeout(__bind(function() {
         card.setFace(faces[idx]);
-        console.log("dealing", faces[idx], idx);
         card.setDirection(this.getCardDirection(player));
         this.hands[player].push(card);
         this.repositionCards(player);
@@ -517,6 +514,7 @@ $(document).ready(function() {
   ]);
   window.field.globalMessage("새 게임을 시작합니다");
   GAP = 100;
+  SPEED_BASE = 10;
   return window.field.deal(TEST_CARDS, 1, function() {
     window.field.globalMessage("선거가 시작됩니다!");
     setTimeout(function() {
