@@ -287,27 +287,20 @@ PlayingField = (function() {
     }
     return null;
   };
-  PlayingField.prototype.playerMessage = function(player, type, message, fadeOutAfter) {
+  PlayingField.prototype.playerMessage = function(player, type, message) {
     var elem;
-    if (fadeOutAfter == null) {
-      fadeOutAfter = 500;
-    }
     elem = this.players[player].profile_elem;
     if (this.players[player].fadeEventId) {
       clearTimeout(this.players[player].fadeEventId);
       this.players[player].fadeEventId = null;
     }
     elem.find("dd").stop().animate({
-      "background-color": "rgba(255, 255, 255, 0.5)"
-    }, 150);
+      "background-color": "rgba(255, 255, 255, 0.8)"
+    }, 150).animate({
+      "background-color": "rgba(255, 255, 255, 0)"
+    }, 4000);
     elem.find(".message_type").html(type);
-    elem.find(".message_content").html(message);
-    return this.players[player].fadeEventId = setTimeout(function() {
-      console.log("fadeout");
-      return elem.find("dd").animate({
-        "background-color": "rgba(255, 255, 255, 0.0)"
-      }, 2000);
-    }, fadeOutAfter);
+    return elem.find(".message_content").html(message);
   };
   PlayingField.prototype.setPlayers = function(players) {
     var elem, i, side, x, y, _ref, _ref2, _results;

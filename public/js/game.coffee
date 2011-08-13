@@ -215,22 +215,17 @@ class PlayingField
 
 		null
 
-	playerMessage: (player, type, message, fadeOutAfter=500) ->
+	playerMessage: (player, type, message) ->
 		elem = @players[player].profile_elem
 		if @players[player].fadeEventId
 			clearTimeout(@players[player].fadeEventId)
 			@players[player].fadeEventId = null
 		elem.find("dd")
 			.stop()
-			.animate({"background-color": "rgba(255, 255, 255, 0.5)"}, 150)
+			.animate({"background-color": "rgba(255, 255, 255, 0.8)"}, 150)
+			.animate({"background-color": "rgba(255, 255, 255, 0)"}, 4000)
 		elem.find(".message_type").html(type)
 		elem.find(".message_content").html(message)
-		@players[player].fadeEventId = setTimeout(
-				->
-					console.log("fadeout")
-
-					elem.find("dd").animate({"background-color": "rgba(255, 255, 255, 0.0)"}, 2000)
-				, fadeOutAfter)
 
 	setPlayers: (players) ->
 		@players = players
