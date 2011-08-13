@@ -152,7 +152,7 @@ class PlayingField
 						dealt++
 
 				setTimeout(
-					->
+					=>
 						for i in [0..@cardStack.length-1]
 							@cardStack[i].elem.animate({top: "-=#{i * 2}", left: "-=#{ i * 2 }"}, 50)
 						null
