@@ -395,14 +395,13 @@ a:hover {
 	min-height: 42px;
 	width: 190px;
 	padding: 4px;
-	background-color: rgba(255, 255, 255, 0.1);
+	/* background-color: rgba(255, 255, 255, 0.1); */
 	line-height: 150%;
 	border: 1px solid #999;
 
 	border-radius: 4px;
 	-moz-border-radius: 4px;
 	-webkit-border-radius: 4px;
-
 }
 
 #playing_field .profile .message_type {

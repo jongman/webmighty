@@ -215,19 +215,22 @@ class PlayingField
 
 		null
 
-	playerMessage: (player, type, message, clearAfter=0) ->
+	playerMessage: (player, type, message, fadeOutAfter=500) ->
 		elem = @players[player].profile_elem
-		if @players[player].clearMessageEventId
-			clearTimeout(@players[player].clearMessageEventId)
-			@players[player].clearMessageEventId = null
+		if @players[player].fadeEventId
+			clearTimeout(@players[player].fadeEventId)
+			@players[player].fadeEventId = null
+		elem.find("dd")
+			.stop()
+			.animate({"background-color": "rgba(255, 255, 255, 0.5)"}, 150)
 		elem.find(".message_type").html(type)
 		elem.find(".message_content").html(message)
-		if clearAfter > 0
-			@players[player].clearMessageEventId = setTimeout(
+		@players[player].fadeEventId = setTimeout(
 				->
-					elem.find(".message_type").html("")
-					elem.find(".message_content").html("")
-				, clearAfter)
+					console.log("fadeout")
+
+					elem.find("dd").animate({"background-color": "rgba(255, 255, 255, 0.0)"}, 2000)
+				, fadeOutAfter)
 
 	setPlayers: (players) ->
 		@players = players
@@ -264,7 +267,7 @@ $(document).ready(->
 	window.field.deal TEST_CARDS, 1, ->
 		setTimeout(
 			->
-				window.field.playerMessage(1, "선거", "패스", 5000)
+				window.field.playerMessage(1, "선거", "패스")
 			, 100)
 		setTimeout(
 			->
@@ -276,7 +279,7 @@ $(document).ready(->
 			, 2400)
 		setTimeout(
 			->
-				window.field.playerMessage(4, "선거", "패스", 5000)
+				window.field.playerMessage(4, "선거", "패스")
 			, 4000)
 		setTimeout(
 			->
@@ -284,11 +287,11 @@ $(document).ready(->
 			, 6000)
 		setTimeout(
 			->
-				window.field.playerMessage(2, "선거", "패스", 5000)
+				window.field.playerMessage(2, "선거", "패스")
 			, 6500)
 		setTimeout(
 			->
-				window.field.playerMessage(3, "선거", "패스", 5000)
+				window.field.playerMessage(3, "선거", "패스")
 				window.field.playerMessage(0, "당선", "스페이드 16")
 			, 7000)
 		setTimeout(

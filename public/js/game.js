@@ -287,24 +287,27 @@ PlayingField = (function() {
     }
     return null;
   };
-  PlayingField.prototype.playerMessage = function(player, type, message, clearAfter) {
+  PlayingField.prototype.playerMessage = function(player, type, message, fadeOutAfter) {
     var elem;
-    if (clearAfter == null) {
-      clearAfter = 0;
+    if (fadeOutAfter == null) {
+      fadeOutAfter = 500;
     }
     elem = this.players[player].profile_elem;
-    if (this.players[player].clearMessageEventId) {
-      clearTimeout(this.players[player].clearMessageEventId);
-      this.players[player].clearMessageEventId = null;
+    if (this.players[player].fadeEventId) {
+      clearTimeout(this.players[player].fadeEventId);
+      this.players[player].fadeEventId = null;
     }
+    elem.find("dd").stop().animate({
+      "background-color": "rgba(255, 255, 255, 0.5)"
+    }, 150);
     elem.find(".message_type").html(type);
     elem.find(".message_content").html(message);
-    if (clearAfter > 0) {
-      return this.players[player].clearMessageEventId = setTimeout(function() {
-        elem.find(".message_type").html("");
-        return elem.find(".message_content").html("");
-      }, clearAfter);
-    }
+    return this.players[player].fadeEventId = setTimeout(function() {
+      console.log("fadeout");
+      return elem.find("dd").animate({
+        "background-color": "rgba(255, 255, 255, 0.0)"
+      }, 2000);
+    }, fadeOutAfter);
   };
   PlayingField.prototype.setPlayers = function(players) {
     var elem, i, side, x, y, _ref, _ref2, _results;
@@ -352,7 +355,7 @@ $(document).ready(function() {
   ]);
   return window.field.deal(TEST_CARDS, 1, function() {
     setTimeout(function() {
-      return window.field.playerMessage(1, "선거", "패스", 5000);
+      return window.field.playerMessage(1, "선거", "패스");
     }, 100);
     setTimeout(function() {
       return window.field.playerMessage(2, "공약", "다이아몬드 14");
@@ -361,16 +364,16 @@ $(document).ready(function() {
       return window.field.playerMessage(3, "공약", "클로버 15");
     }, 2400);
     setTimeout(function() {
-      return window.field.playerMessage(4, "선거", "패스", 5000);
+      return window.field.playerMessage(4, "선거", "패스");
     }, 4000);
     setTimeout(function() {
       return window.field.playerMessage(0, "공약", "스페이드 16");
     }, 6000);
     setTimeout(function() {
-      return window.field.playerMessage(2, "선거", "패스", 5000);
+      return window.field.playerMessage(2, "선거", "패스");
     }, 6500);
     setTimeout(function() {
-      window.field.playerMessage(3, "선거", "패스", 5000);
+      window.field.playerMessage(3, "선거", "패스");
       return window.field.playerMessage(0, "당선", "스페이드 16");
     }, 7000);
     return setTimeout(function() {
