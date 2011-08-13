@@ -215,6 +215,10 @@ class PlayingField
 
 		null
 
+	globalMessage: (message, fadeOutAfter=5000) ->
+		$("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500);
+
+
 	playerMessage: (player, type, message) ->
 		elem = @players[player].profile_elem
 		if @players[player].fadeEventId
@@ -259,7 +263,9 @@ $(document).ready(->
 		{name: "DoKyoung Lee", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/273911_100001947905915_2944452_q.jpg"}
 		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
 	])
+	window.field.globalMessage("새 게임을 시작합니다")
 	window.field.deal TEST_CARDS, 1, ->
+		window.field.globalMessage("선거가 시작됩니다!")
 		setTimeout(
 			->
 				window.field.playerMessage(1, "선거", "패스")
@@ -287,6 +293,7 @@ $(document).ready(->
 		setTimeout(
 			->
 				window.field.playerMessage(3, "선거", "패스")
+				window.field.globalMessage("JongMan Koo 님이 당선되었습니다!")
 				window.field.playerMessage(0, "당선", "스페이드 16")
 			, 7000)
 		setTimeout(

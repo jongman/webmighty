@@ -345,6 +345,18 @@ a:hover {
 	box-shadow: 0 0 8px #333;
 }
 
+#playing_field #global_message {
+	position: absolute;
+	width: 400px;
+	top: 180px;
+	left: 200px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 20px;
+	color: #fff;
+	text-shadow: 1px 1px 6px #fff;
+}
+
 #playing_field .profile {
 	position: absolute;
 }

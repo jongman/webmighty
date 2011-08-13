@@ -287,6 +287,12 @@ PlayingField = (function() {
     }
     return null;
   };
+  PlayingField.prototype.globalMessage = function(message, fadeOutAfter) {
+    if (fadeOutAfter == null) {
+      fadeOutAfter = 5000;
+    }
+    return $("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500);
+  };
   PlayingField.prototype.playerMessage = function(player, type, message) {
     var elem;
     elem = this.players[player].profile_elem;
@@ -346,7 +352,9 @@ $(document).ready(function() {
       picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"
     }
   ]);
+  window.field.globalMessage("새 게임을 시작합니다");
   return window.field.deal(TEST_CARDS, 1, function() {
+    window.field.globalMessage("선거가 시작됩니다!");
     setTimeout(function() {
       return window.field.playerMessage(1, "선거", "패스");
     }, 100);
@@ -367,6 +375,7 @@ $(document).ready(function() {
     }, 6500);
     setTimeout(function() {
       window.field.playerMessage(3, "선거", "패스");
+      window.field.globalMessage("JongMan Koo 님이 당선되었습니다!");
       return window.field.playerMessage(0, "당선", "스페이드 16");
     }, 7000);
     return setTimeout(function() {
