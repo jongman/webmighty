@@ -5,8 +5,7 @@ PROFILE_CARD_GAP = 15
 CARD_WIDTH = 71
 CARD_HEIGHT = 96
 CARD_OVERLAP = 20
-DEALING_SPEED_FAST = 40
-DEALING_SPEED_SLOW = 300
+SPEED_BASE = 50
 PLAYER_LOCATION =
 	5: [
 		{ side: "bottom", location: 0.5 }
@@ -19,7 +18,7 @@ DISAPPEAR_DIRECTION =
 	left: [-CARD_HEIGHT, 0]
 	right: [CARD_HEIGHT, 0]
 	top: [0, -CARD_HEIGHT]
-	bottom: [0, CARD_HEIGHT] 
+	bottom: [0, CARD_HEIGHT]
 
 VALUE_ORDER = "23456789tjqk1"
 
@@ -147,7 +146,7 @@ class PlayingField
 		sz = @getSize()
 		{x: floor(sz.width * x), y: floor(sz.height * y)}
 
-	sortHands: (player, speed=DEALING_SPEED_SLOW) ->
+	sortHands: (player) ->
 		if @hands[player].length == 0 or @hands[player][0].face[0] == "b"
 			return
 		@hands[player].sort((a, b) ->
@@ -160,7 +159,7 @@ class PlayingField
 		for i in [0..n-1]
 			console.log("sorted", i, @hands[player][i].face)
 			@hands[player][i].elem.css({"z-index": n-i})
-		@repositionCards(player, speed)
+		@repositionCards(player)
 
 
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
@@ -172,23 +171,23 @@ class PlayingField
 		@cardStack = []
 		for i in [0..52]
 			card = new Card(this, "back", "vertical", center.x, center.y - floor(i / 4) * 2)
-			card.elem.addClass("group" + (floor(i / 4) %2)).delay(i * 5).fadeIn(0)
+			card.elem.addClass("group" + (floor(i / 4) %2)).delay(i * SPEED_BASE / 10).fadeIn(0)
 			@cardStack.push(card)
 		# 마지막 카드가 보여지고 나면 셔플 동작을 한다
 		@cardStack[52].elem.promise().done(=>
 			for i in [0..0]
 				$(".group0")
-					.animate({left: "-=37"}, 100)
+					.animate({left: "-=37"}, SPEED_BASE*3)
 					.animate({top: "-=2"}, 0)
-					.animate({left: "+=74"}, 200)
+					.animate({left: "+=74"}, SPEED_BASE*6)
 					.animate({top: "+=2"}, 0)
-					.animate({left: "-=37"}, 100)
+					.animate({left: "-=37"}, SPEED_BASE*3)
 				$(".group1")
-					.animate({left: "+=37"}, 100)
+					.animate({left: "+=37"}, SPEED_BASE*3)
 					.animate({top: "+=2"}, 0)
-					.animate({left: "-=74"}, 200)
+					.animate({left: "-=74"}, SPEED_BASE*6)
 					.animate({top: "-=2"}, 0)
-					.animate({left: "+=37"}, 100)
+					.animate({left: "+=37"}, SPEED_BASE*3)
 			# 셔플을 다 하고 나면 카드를 돌린다
 			$(".group1").promise().done(=>
 				dealt = 0
@@ -204,9 +203,9 @@ class PlayingField
 									card.setFace face
 									card.setDirection @getCardDirection player
 									pos = @getCardPosition(player, cards[0].length, index)
-									card.moveTo(pos.x, pos.y, DEALING_SPEED_FAST)
+									card.moveTo(pos.x, pos.y, SPEED_BASE)
 									null
-								, dealt * DEALING_SPEED_FAST)
+								, dealt * SPEED_BASE)
 						dealt++
 
 				setTimeout(
@@ -216,19 +215,19 @@ class PlayingField
 						for player in [0..@players.length-1]
 							@sortHands(player)
 						null
-					, dealt * DEALING_SPEED_FAST
+					, dealt * SPEED_BASE
 				)
-				setTimeout(done, dealt * DEALING_SPEED_FAST)
+				setTimeout(done, dealt * SPEED_BASE)
 				null
 			)
 			null
 		)
 		null
 
-	repositionCards: (player, speed) ->
+	repositionCards: (player) ->
 		for i in [0..@hands[player].length-1]
 			pos = @getCardPosition(player, @hands[player].length, i)
-			@hands[player][i].moveTo(pos.x, pos.y, speed)
+			@hands[player][i].moveTo(pos.x, pos.y, SPEED_BASE * 5)
 
 	# cardStack 에 남은 카드들을 player 에게 준다.
 	dealAdditionalCards: (faces, player, done=->) ->
@@ -245,15 +244,15 @@ class PlayingField
 						console.log("dealing", faces[idx], idx)
 						card.setDirection @getCardDirection player
 						@hands[player].push(card)
-						@repositionCards(player, DEALING_SPEED_SLOW)
+						@repositionCards(player)
 						null
-					, idx * DEALING_SPEED_SLOW
+					, idx * SPEED_BASE*5
 				)
 		setTimeout(
 			=>
-				@sortHands player
+				@sortHands(player)
 				done()
-			, n * DEALING_SPEED_SLOW)
+			, n * SPEED_BASE*5)
 		null
 
 	globalMessage: (message, fadeOutAfter=5000) ->
@@ -284,23 +283,22 @@ class PlayingField
 			elem.show()
 			@players[i].profile_elem = elem
 
-	takeCards: (player, cards) ->
+	takeCards: (player, cards, done = ->) ->
 		home = @getCardPosition(player, 1, 0)
 		[dx, dy] = DISAPPEAR_DIRECTION[PLAYER_LOCATION[@players.length][player].side]
 		cx = home.x + dx
 		cy = home.y + dy
 
 		for i in [0..cards.length-1]
-			console.log("moving to", cx, cy)
 			cards[i].elem
-				.delay(i * DEALING_SPEED_FAST)
-				.animate({top: cy, left: cx}, DEALING_SPEED_FAST)
+				.delay(i * SPEED_BASE)
+				.animate({top: cy, left: cx}, SPEED_BASE)
 				.fadeOut(0)
 		setTimeout(
 			=>
 				card.remove() for card in cards
-				@repositionCards(player, DEALING_SPEED_FAST)
-			, cards.length * DEALING_SPEED_FAST)
+				done()
+			, cards.length * SPEED_BASE)
 
 	chooseMultipleCards: (player, choose, done=->) ->
 		@chosen = []
@@ -386,7 +384,7 @@ $(document).ready(->
 	])
 	window.field.globalMessage("새 게임을 시작합니다")
 	GAP = 100
-	#	GAP = DEALING_SPEED_FAST = DEALING_SPEED_SLOW = 10
+	#	GAP = SPEED_BASE = SPEED_BASE*5 = 10
 	window.field.deal TEST_CARDS, 1, ->
 		window.field.globalMessage("선거가 시작됩니다!")
 		setTimeout(
@@ -432,8 +430,11 @@ $(document).ready(->
 					window.field.globalMessage("버릴 3장의 카드를 골라주세요.")
 					window.field.chooseMultipleCards(0, 3,
 						(chosen) ->
-							window.field.hands[0].remove(card) for card in chosen
-							window.field.takeCards(0, chosen)
+							window.field.takeCards(0, chosen,
+								->
+									window.field.hands[0].remove(card) for card in chosen
+									window.field.repositionCards(0)
+							)
 					)
 				)
 				# ##

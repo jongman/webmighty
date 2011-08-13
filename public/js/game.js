@@ -1,4 +1,4 @@
-var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DEALING_SPEED_FAST, DEALING_SPEED_SLOW, DISAPPEAR_DIRECTION, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, TEST_CARDS, VALUE_ORDER, assert, field, floor, lexicographic_compare;
+var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SPEED_BASE, TEST_CARDS, VALUE_ORDER, assert, field, floor, lexicographic_compare;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __indexOf = Array.prototype.indexOf || function(item) {
   for (var i = 0, l = this.length; i < l; i++) {
     if (this[i] === item) return i;
@@ -10,8 +10,7 @@ PROFILE_CARD_GAP = 15;
 CARD_WIDTH = 71;
 CARD_HEIGHT = 96;
 CARD_OVERLAP = 20;
-DEALING_SPEED_FAST = 40;
-DEALING_SPEED_SLOW = 300;
+SPEED_BASE = 50;
 PLAYER_LOCATION = {
   5: [
     {
@@ -197,11 +196,8 @@ PlayingField = (function() {
       y: floor(sz.height * y)
     };
   };
-  PlayingField.prototype.sortHands = function(player, speed) {
+  PlayingField.prototype.sortHands = function(player) {
     var i, n, _ref;
-    if (speed == null) {
-      speed = DEALING_SPEED_SLOW;
-    }
     if (this.hands[player].length === 0 || this.hands[player][0].face[0] === "b") {
       return;
     }
@@ -219,7 +215,7 @@ PlayingField = (function() {
         "z-index": n - i
       });
     }
-    return this.repositionCards(player, speed);
+    return this.repositionCards(player);
   };
   PlayingField.prototype.deal = function(cards, startFrom, done) {
     var card, center, i;
@@ -240,7 +236,7 @@ PlayingField = (function() {
     this.cardStack = [];
     for (i = 0; i <= 52; i++) {
       card = new Card(this, "back", "vertical", center.x, center.y - floor(i / 4) * 2);
-      card.elem.addClass("group" + (floor(i / 4) % 2)).delay(i * 5).fadeIn(0);
+      card.elem.addClass("group" + (floor(i / 4) % 2)).delay(i * SPEED_BASE / 10).fadeIn(0);
       this.cardStack.push(card);
     }
     this.cardStack[52].elem.promise().done(__bind(function() {
@@ -248,26 +244,26 @@ PlayingField = (function() {
       for (i = 0; i <= 0; i++) {
         $(".group0").animate({
           left: "-=37"
-        }, 100).animate({
+        }, SPEED_BASE * 3).animate({
           top: "-=2"
         }, 0).animate({
           left: "+=74"
-        }, 200).animate({
+        }, SPEED_BASE * 6).animate({
           top: "+=2"
         }, 0).animate({
           left: "-=37"
-        }, 100);
+        }, SPEED_BASE * 3);
         $(".group1").animate({
           left: "+=37"
-        }, 100).animate({
+        }, SPEED_BASE * 3).animate({
           top: "+=2"
         }, 0).animate({
           left: "-=74"
-        }, 200).animate({
+        }, SPEED_BASE * 6).animate({
           top: "-=2"
         }, 0).animate({
           left: "+=37"
-        }, 100);
+        }, SPEED_BASE * 3);
       }
       $(".group1").promise().done(__bind(function() {
         var dealt, face, index, pl, player, _fn, _ref, _ref2;
@@ -279,9 +275,9 @@ PlayingField = (function() {
               card.setFace(face);
               card.setDirection(this.getCardDirection(player));
               pos = this.getCardPosition(player, cards[0].length, index);
-              card.moveTo(pos.x, pos.y, DEALING_SPEED_FAST);
+              card.moveTo(pos.x, pos.y, SPEED_BASE);
               return null;
-            }, this), dealt * DEALING_SPEED_FAST);
+            }, this), dealt * SPEED_BASE);
           }, this);
           for (pl = 0, _ref2 = this.players.length - 1; 0 <= _ref2 ? pl <= _ref2 : pl >= _ref2; 0 <= _ref2 ? pl++ : pl--) {
             player = (startFrom + pl) % this.players.length;
@@ -304,20 +300,20 @@ PlayingField = (function() {
             this.sortHands(player);
           }
           return null;
-        }, this), dealt * DEALING_SPEED_FAST);
-        setTimeout(done, dealt * DEALING_SPEED_FAST);
+        }, this), dealt * SPEED_BASE);
+        setTimeout(done, dealt * SPEED_BASE);
         return null;
       }, this));
       return null;
     }, this));
     return null;
   };
-  PlayingField.prototype.repositionCards = function(player, speed) {
+  PlayingField.prototype.repositionCards = function(player) {
     var i, pos, _ref, _results;
     _results = [];
     for (i = 0, _ref = this.hands[player].length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
       pos = this.getCardPosition(player, this.hands[player].length, i);
-      _results.push(this.hands[player][i].moveTo(pos.x, pos.y, speed));
+      _results.push(this.hands[player][i].moveTo(pos.x, pos.y, SPEED_BASE * 5));
     }
     return _results;
   };
@@ -336,9 +332,9 @@ PlayingField = (function() {
         console.log("dealing", faces[idx], idx);
         card.setDirection(this.getCardDirection(player));
         this.hands[player].push(card);
-        this.repositionCards(player, DEALING_SPEED_SLOW);
+        this.repositionCards(player);
         return null;
-      }, this), idx * DEALING_SPEED_SLOW);
+      }, this), idx * SPEED_BASE * 5);
     }, this);
     for (idx = 0, _ref = n - 1; 0 <= _ref ? idx <= _ref : idx >= _ref; 0 <= _ref ? idx++ : idx--) {
       card = this.cardStack.pop();
@@ -347,7 +343,7 @@ PlayingField = (function() {
     setTimeout(__bind(function() {
       this.sortHands(player);
       return done();
-    }, this), n * DEALING_SPEED_SLOW);
+    }, this), n * SPEED_BASE * 5);
     return null;
   };
   PlayingField.prototype.globalMessage = function(message, fadeOutAfter) {
@@ -390,18 +386,20 @@ PlayingField = (function() {
     }
     return _results;
   };
-  PlayingField.prototype.takeCards = function(player, cards) {
+  PlayingField.prototype.takeCards = function(player, cards, done) {
     var cx, cy, dx, dy, home, i, _ref, _ref2;
+    if (done == null) {
+      done = function() {};
+    }
     home = this.getCardPosition(player, 1, 0);
     _ref = DISAPPEAR_DIRECTION[PLAYER_LOCATION[this.players.length][player].side], dx = _ref[0], dy = _ref[1];
     cx = home.x + dx;
     cy = home.y + dy;
     for (i = 0, _ref2 = cards.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
-      console.log("moving to", cx, cy);
-      cards[i].elem.delay(i * DEALING_SPEED_FAST).animate({
+      cards[i].elem.delay(i * SPEED_BASE).animate({
         top: cy,
         left: cx
-      }, DEALING_SPEED_FAST).fadeOut(0);
+      }, SPEED_BASE).fadeOut(0);
     }
     return setTimeout(__bind(function() {
       var card, _i, _len;
@@ -409,8 +407,8 @@ PlayingField = (function() {
         card = cards[_i];
         card.remove();
       }
-      return this.repositionCards(player, DEALING_SPEED_FAST);
-    }, this), cards.length * DEALING_SPEED_FAST);
+      return done();
+    }, this), cards.length * SPEED_BASE);
   };
   PlayingField.prototype.chooseMultipleCards = function(player, choose, done) {
     var card, finished, getHandlers, handlers, multiple, _i, _len, _ref;
@@ -548,12 +546,14 @@ $(document).ready(function() {
       				*/      return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
         window.field.globalMessage("버릴 3장의 카드를 골라주세요.");
         return window.field.chooseMultipleCards(0, 3, function(chosen) {
-          var card, _i, _len;
-          for (_i = 0, _len = chosen.length; _i < _len; _i++) {
-            card = chosen[_i];
-            window.field.hands[0].remove(card);
-          }
-          return window.field.takeCards(0, chosen);
+          return window.field.takeCards(0, chosen, function() {
+            var card, _i, _len;
+            for (_i = 0, _len = chosen.length; _i < _len; _i++) {
+              card = chosen[_i];
+              window.field.hands[0].remove(card);
+            }
+            return window.field.repositionCards(0);
+          });
         });
       });
     }, GAP * 8);
