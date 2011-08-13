@@ -6,13 +6,14 @@ CARD_WIDTH = 71
 CARD_HEIGHT = 96
 CARD_OVERLAP = 20
 SPEED_BASE = 50
+PI = Math.PI
 PLAYER_LOCATION =
 	5: [
-		{ side: "bottom", location: 0.5 }
-		{ side: "left", location: 0.6 }
-		{ side: "top", location: 0.25 }
-		{ side: "top", location: 0.75 }
-		{ side: "right", location: 0.6 }
+		{ side: "bottom", location: 0.5, angle: PI * (3 / 4)}
+		{ side: "left", location: 0.6, angle: PI * (3 / 4 - 1 / 5) }
+		{ side: "top", location: 0.25, angle: PI * (3 / 4 - 2 / 5) }
+		{ side: "top", location: 0.75, angle: PI * (3 / 4 - 3 / 5) }
+		{ side: "right", location: 0.6, angle: PI * (3 / 4 - 4 / 5) }
 	]
 DISAPPEAR_DIRECTION =
 	left: [-CARD_HEIGHT, 0]
@@ -157,7 +158,6 @@ class PlayingField
 		)
 		n = @hands[player].length
 		for i in [0..n-1]
-			console.log("sorted", i, @hands[player][i].face)
 			@hands[player][i].elem.css({"z-index": n-i})
 		@repositionCards(player)
 

@@ -1,4 +1,4 @@
-var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SPEED_BASE, TEST_CARDS, VALUE_ORDER, assert, field, floor, lexicographic_compare;
+var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PI, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SPEED_BASE, TEST_CARDS, VALUE_ORDER, assert, field, floor, lexicographic_compare;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __indexOf = Array.prototype.indexOf || function(item) {
   for (var i = 0, l = this.length; i < l; i++) {
     if (this[i] === item) return i;
@@ -11,23 +11,29 @@ CARD_WIDTH = 71;
 CARD_HEIGHT = 96;
 CARD_OVERLAP = 20;
 SPEED_BASE = 50;
+PI = Math.PI;
 PLAYER_LOCATION = {
   5: [
     {
       side: "bottom",
-      location: 0.5
+      location: 0.5,
+      angle: PI * (3 / 4)
     }, {
       side: "left",
-      location: 0.6
+      location: 0.6,
+      angle: PI * (3 / 4 - 1 / 5)
     }, {
       side: "top",
-      location: 0.25
+      location: 0.25,
+      angle: PI * (3 / 4 - 2 / 5)
     }, {
       side: "top",
-      location: 0.75
+      location: 0.75,
+      angle: PI * (3 / 4 - 3 / 5)
     }, {
       side: "right",
-      location: 0.6
+      location: 0.6,
+      angle: PI * (3 / 4 - 4 / 5)
     }
   ]
 };
@@ -210,7 +216,6 @@ PlayingField = (function() {
     });
     n = this.hands[player].length;
     for (i = 0, _ref = n - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
-      console.log("sorted", i, this.hands[player][i].face);
       this.hands[player][i].elem.css({
         "z-index": n - i
       });
