@@ -333,8 +333,8 @@ body {
 
 #playing_field {
 	position: relative;
-	width: 600px;
-	height: 400px;
+	width: 800px;
+	height: 600px;
 	margin: 20px;
 	overflow: hidden;
 	position: relative;
