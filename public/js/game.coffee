@@ -84,14 +84,19 @@ class PlayingField
 	constructor: (@elem) ->
 		@cards = []
 		@players = []
+		@playedCards = []
+
+	getLocationInfo: (player) ->
+		 PLAYER_LOCATION[@players.length][player]
 
 	getCardDirection: (player) ->
-		side = PLAYER_LOCATION[@players.length][player].side
+		side = @getLocationInfo(player).side
 		if side in ["top", "bottom"] then "vertical" else "horizontal"
 
 	# 플레이어 x가 y장 카드를 가지고 있을 때, z번 카드의 가운데 위치는?
 	getCardPosition: (player, cards, index) ->
-		{side: side, location: location} = PLAYER_LOCATION[@players.length][player]
+		{side: side, location: location} = @getLocationInfo(player)
+		PLAYER_LOCATION[@players.length][player]
 		# 깔끔하게 구현하고 싶지만.. -_-
 		dx = dy = 0
 		if side in ["top", "bottom"]
@@ -116,7 +121,7 @@ class PlayingField
 		{x: floor(fx - dx * CARD_OVERLAP * index), y: floor(fy - dy * CARD_OVERLAP * index)}
 
 	getProfilePosition: (player) ->
-		{side: side, location: location} = PLAYER_LOCATION[@players.length][player]
+		{side: side, location: location} = @getLocationInfo(player)
 		# 깔끔하게 구현하고 싶지만.. -_-
 		width = if side in ["top", "bottom"] then 254 else 200
 		height = if side in ["top", "bottom"] then 50 else 104
@@ -280,9 +285,18 @@ class PlayingField
 			elem.show()
 			@players[i].profile_elem = elem
 
+	playCard: (player, card) ->
+		if typeof(card) == "string"
+			face = card
+			for card in @hands[player]
+				if card.face == face
+					break
+		
+
+
 	takeCards: (player, cards, done = ->) ->
 		home = @getCardPosition(player, 1, 0)
-		[dx, dy] = DISAPPEAR_DIRECTION[PLAYER_LOCATION[@players.length][player].side]
+		[dx, dy] = DISAPPEAR_DIRECTION[@getLocationInfo(player).side]
 		cx = home.x + dx
 		cy = home.y + dy
 

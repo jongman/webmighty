@@ -119,10 +119,14 @@ PlayingField = (function() {
     this.elem = elem;
     this.cards = [];
     this.players = [];
+    this.playedCards = [];
   }
+  PlayingField.prototype.getLocationInfo = function(player) {
+    return PLAYER_LOCATION[this.players.length][player];
+  };
   PlayingField.prototype.getCardDirection = function(player) {
     var side;
-    side = PLAYER_LOCATION[this.players.length][player].side;
+    side = this.getLocationInfo(player).side;
     if (side === "top" || side === "bottom") {
       return "vertical";
     } else {
@@ -131,7 +135,8 @@ PlayingField = (function() {
   };
   PlayingField.prototype.getCardPosition = function(player, cards, index) {
     var cx, cy, dx, dy, fx, fy, location, side, totalWidth, _ref;
-    _ref = PLAYER_LOCATION[this.players.length][player], side = _ref.side, location = _ref.location;
+    _ref = this.getLocationInfo(player), side = _ref.side, location = _ref.location;
+    PLAYER_LOCATION[this.players.length][player];
     dx = dy = 0;
     if (side === "top" || side === "bottom") {
       cx = this.convertRelativePosition(location, 0).x;
@@ -162,7 +167,7 @@ PlayingField = (function() {
   };
   PlayingField.prototype.getProfilePosition = function(player) {
     var height, location, side, width, _ref;
-    _ref = PLAYER_LOCATION[this.players.length][player], side = _ref.side, location = _ref.location;
+    _ref = this.getLocationInfo(player), side = _ref.side, location = _ref.location;
     width = side === "top" || side === "bottom" ? 254 : 200;
     height = side === "top" || side === "bottom" ? 50 : 104;
     if (side === "top" || side === "bottom") {
@@ -388,13 +393,28 @@ PlayingField = (function() {
     }
     return _results;
   };
+  PlayingField.prototype.playCard = function(player, card) {
+    var face, _i, _len, _ref, _results;
+    if (typeof card === "string") {
+      face = card;
+      _ref = this.hands[player];
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        card = _ref[_i];
+        if (card.face === face) {
+          break;
+        }
+      }
+      return _results;
+    }
+  };
   PlayingField.prototype.takeCards = function(player, cards, done) {
     var cx, cy, dx, dy, home, i, _ref, _ref2;
     if (done == null) {
       done = function() {};
     }
     home = this.getCardPosition(player, 1, 0);
-    _ref = DISAPPEAR_DIRECTION[PLAYER_LOCATION[this.players.length][player].side], dx = _ref[0], dy = _ref[1];
+    _ref = DISAPPEAR_DIRECTION[this.getLocationInfo(player).side], dx = _ref[0], dy = _ref[1];
     cx = home.x + dx;
     cy = home.y + dy;
     for (i = 0, _ref2 = cards.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
