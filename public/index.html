@@ -22,6 +22,36 @@
 	<div id="playing_field">
 		<div id="global_message"></div>
 		<div id="dialog">
+			<div class="choose_promise" style="display: none;">
+				<div class="title">
+					공약을 정해 주세요
+				</div>
+				<ul class="promise">
+					<li class="header">
+						<ul>
+							<li class="select_suit">무늬</li>
+							<li class="select_promise">공약</li>
+						</ul>
+					</li>
+					<li class="body">
+						<ul>
+							<li class="select_suit">
+								<button class="suit spades selected">&spades;</button>
+								<button class="suit diamonds">&diams;</button>
+								<button class="suit hearts">&hearts;</button>
+								<button class="suit clubs">&clubs;</button>
+							</li>
+							<li class="select_promise">
+								<button class="minus_promise">-</button>
+								<span class="promise">14</span>
+								<button class="plus_promise">+</button>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<button class="confirm">출마</button>
+				<button class="cancel">패스</button>
+			</div>
 			<div class="choose_multiple" style="display: none;">
 				<div class="title">
 					<span class="choose_count">?</span>장의 카드를 골라주세요

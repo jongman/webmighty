@@ -671,8 +671,8 @@ $(document).ready(function() {
     }
   ]);
   window.field.globalMessage("새 게임을 시작합니다");
-  GAP = 1000;
   SPEED_BASE = 50;
+  GAP = SPEED_BASE * 20;
   return window.field.deal(TEST_CARDS, 1, function() {
     window.field.globalMessage("선거가 시작됩니다!");
     setTimeout(function() {
@@ -706,7 +706,7 @@ $(document).ready(function() {
       					window.field.takeCards(1, (window.field.hands[1].pop() for i in [0..2]))
       				)
       				*/      return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
-        window.field.globalMessage("버릴 3장의 카드를 골라주세요.");
+        window.field.globalMessage("JongMan Koo님이 당을 재정비하고 있습니다.");
         return window.field.chooseMultipleCards(3, function(chosen) {
           return window.field.takeCards(0, chosen, function() {
             var card, _i, _len;
@@ -719,8 +719,8 @@ $(document).ready(function() {
             window.field.playerMessage(0, "플레이", "차례입니다.");
             return window.field.chooseCard(function(card) {
               console.log("will play", card.face);
-              window.field.playCard(0, card, "기루다 컴!");
-              return runInterval(SPEED_BASE * 5, [
+              window.field.playCard(0, "jr", "기루다 컴!");
+              return runInterval(GAP, [
                 function() {
                   return window.field.playCard(1, "ct");
                 }, function() {

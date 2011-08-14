@@ -205,7 +205,7 @@ body {
 	background: url(../images/background.jpg) repeat;
 }
 
-body, textarea, input, select { font-family: Helvetica, NanumGothic,나눔고딕; }
+body, textarea, input, select, button { font-family: Helvetica, NanumGothic,나눔고딕; }
 
 .card { background-image: url(../images/cards_all.png); float: left; }
 .card.vertical { width: 71px; height: 96px; }
@@ -356,9 +356,9 @@ a:hover {
 
 #playing_field #global_message {
 	position: absolute;
-	width: 400px;
+	width: 500px;
 	top: 180px;
-	left: 200px;
+	left: 150px;
 	text-align: center;
 	font-weight: bold;
 	font-size: 20px;
@@ -378,28 +378,32 @@ a:hover {
 
 #playing_field #dialog > div {
 	margin: 0px auto;
-	background-color: rgba(0, 0, 0, 0.1);
+	background-color: rgba(196, 196, 196, 0.9);
 	border: 1px solid silver;
+	color: #444;
 
-	box-shadow: 0px 0px 8px #eee;
-	-moz-box-shadow: 0px 0px 8px #eee;
-	-webkit-box-shadow: 0px 0px 8px #eee;
+	border-radius: 8px;
+	-moz-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	box-shadow: 0px 0px 16px #444;
+	-moz-box-shadow: 0px 0px 16px #444;
+	-webkit-box-shadow: 0px 0px 16px #444;
 	padding: 8px;
 }
 
 #playing_field #dialog .title {
 	font-size: 16px;
-	color: #fff;
+	color: #444;
 	font-weight: bold;
 }
 
 #playing_field #dialog button {
-	background: none;
-	border: 1px solid white;
-	font-size: 12px;
+	background: #eee;
+	border: 1px solid #888;
+	font-size: 14px;
 	font-weight: bold;
-	color: white;
-	padding: 4px;
+	color: #222;
+	padding: 4px 8px;
 }
 
 #playing_field #dialog button:hover {
@@ -411,6 +415,70 @@ a:hover {
 #playing_field #dialog button[disabled="disabled"] {
 	color: #aaa;
 	border: 1px solid #aaa;
+}
+
+#playing_field #dialog .choose_promise {
+	width: 300px;
+}
+
+#playing_field #dialog .choose_promise ul {
+	list-style: none;
+	padding: 0;
+	width: 100%;
+	margin: 0 auto;
+}
+
+#playing_field #dialog .choose_promise ul.promise {
+	margin: 16px 0;
+}
+#playing_field #dialog .choose_promise ul.promise ul li {
+	float: left;
+	width: 150px;
+}
+#playing_field #dialog .choose_promise ul.promise > li {
+	height: 32px;
+}
+
+#playing_field #dialog .choose_promise ul.promise li.header ul li {
+	padding: 4px 0;
+	font-size: 16px;
+	font-weight: bold;
+}
+
+#playing_field #dialog .choose_promise li.select_suit * {
+	text-align: center;
+}
+
+#playing_field #dialog .choose_promise li.body button {
+	font-size: 24px;
+	line-height: 24px;
+	margin-right: 4px;
+	padding: 0;
+	width: 26px;
+	height: 26px;
+}
+
+#playing_field #dialog .choose_promise span.promise {
+	font-size: 24px;
+	color: #a00;
+	text-shadow: 0px 0px 4px #fff;
+	margin: 0 8px;
+}
+
+#playing_field #dialog .choose_promise .select_suit button:hover {
+	border-color: #fff;
+}
+#playing_field #dialog .choose_promise .select_suit button {
+	background: #aaa;
+}
+#playing_field #dialog .choose_promise .suit.selected {
+	background-color: #fff;
+}
+
+#playing_field #dialog .choose_promise .diamonds,
+#playing_field #dialog .choose_promise .hearts
+{
+	color: red;
 }
 
 #playing_field #dialog .choose_multiple {

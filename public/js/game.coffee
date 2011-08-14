@@ -480,9 +480,8 @@ $(document).ready(->
 		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
 	])
 	window.field.globalMessage("새 게임을 시작합니다")
-	GAP = 1000
 	SPEED_BASE = 50
-	#	GAP = SPEED_BASE = SPEED_BASE*5 = 10
+	GAP = SPEED_BASE * 20
 	window.field.deal TEST_CARDS, 1, ->
 		window.field.globalMessage("선거가 시작됩니다!")
 		setTimeout(
@@ -526,7 +525,7 @@ $(document).ready(->
 				###
 				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0,
 				->
-					window.field.globalMessage("버릴 3장의 카드를 골라주세요.")
+					window.field.globalMessage("JongMan Koo님이 당을 재정비하고 있습니다.")
 					window.field.chooseMultipleCards(3,
 						(chosen) ->
 							window.field.takeCards(0, chosen,
@@ -538,8 +537,8 @@ $(document).ready(->
 									window.field.playerMessage(0, "플레이", "차례입니다.")
 									window.field.chooseCard((card) ->
 										console.log("will play", card.face)
-										window.field.playCard(0, card, "기루다 컴!")
-										runInterval(SPEED_BASE * 5,
+										window.field.playCard(0, "jr", "기루다 컴!")
+										runInterval(GAP,
 											[
 												-> window.field.playCard(1, "ct")
 												-> window.field.playCard(2, "sj")
