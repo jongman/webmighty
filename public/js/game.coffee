@@ -304,6 +304,8 @@ class PlayingField
 		elem.find(".message_content").html(message)
 
 	setPlayers: (players) ->
+		if @players
+			player.profile_elem.remove() for player in @players
 		@players = players
 		for i in [0..@players.length-1]
 			{side: side, y: y, x: x} = @getProfilePosition(i)
@@ -316,6 +318,9 @@ class PlayingField
 			elem.css({left: x, top: y})
 			elem.show()
 			@players[i].profile_elem = elem
+
+	setPlayerType: (player, typeName) ->
+		@players[player].profile_elem.find(".type").html(typeName).addClass(typeName)
 
 	playCard: (player, card, render_as=null) ->
 		if typeof(card) == "string"
@@ -509,6 +514,7 @@ $(document).ready(->
 				window.field.playerMessage(3, "패스")
 				window.field.globalMessage("JongMan Koo 님이 당선되었습니다!")
 				window.field.playerMessage(0, "당선", "스페이드 16")
+				window.field.setPlayerType(0, "주공")
 			, GAP*7)
 		setTimeout(
 			->

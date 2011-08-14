@@ -441,6 +441,12 @@ a:hover {
 	font-weight: bold;
 }
 
+#playing_field .profile .type {
+	color: rgb(255, 235, 235);
+	font-weight: bold;
+	text-shadow: 0px 0px 2px #fff;
+}
+
 #playing_field dl {
 	margin: 0;
 }

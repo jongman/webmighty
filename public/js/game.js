@@ -416,11 +416,18 @@ PlayingField = (function() {
     return elem.find(".message_content").html(message);
   };
   PlayingField.prototype.setPlayers = function(players) {
-    var elem, i, side, x, y, _ref, _ref2, _results;
+    var elem, i, player, side, x, y, _i, _len, _ref, _ref2, _ref3, _results;
+    if (this.players) {
+      _ref = this.players;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        player = _ref[_i];
+        player.profile_elem.remove();
+      }
+    }
     this.players = players;
     _results = [];
-    for (i = 0, _ref = this.players.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
-      _ref2 = this.getProfilePosition(i), side = _ref2.side, y = _ref2.y, x = _ref2.x;
+    for (i = 0, _ref2 = this.players.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
+      _ref3 = this.getProfilePosition(i), side = _ref3.side, y = _ref3.y, x = _ref3.x;
       elem = $("#profile_template").clone().addClass(side).appendTo(this.elem);
       elem.find(".picture").attr({
         src: this.players[i].picture
@@ -434,6 +441,9 @@ PlayingField = (function() {
       _results.push(this.players[i].profile_elem = elem);
     }
     return _results;
+  };
+  PlayingField.prototype.setPlayerType = function(player, typeName) {
+    return this.players[player].profile_elem.find(".type").html(typeName).addClass(typeName);
   };
   PlayingField.prototype.playCard = function(player, card, render_as) {
     var angle, c, center, face, x, y, _i, _len, _ref;
@@ -686,7 +696,8 @@ $(document).ready(function() {
     setTimeout(function() {
       window.field.playerMessage(3, "패스");
       window.field.globalMessage("JongMan Koo 님이 당선되었습니다!");
-      return window.field.playerMessage(0, "당선", "스페이드 16");
+      window.field.playerMessage(0, "당선", "스페이드 16");
+      return window.field.setPlayerType(0, "주공");
     }, GAP * 7);
     return setTimeout(function() {
       /*
