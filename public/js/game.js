@@ -1,10 +1,10 @@
-var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, lexicographic_compare, renderFaceName, runInterval;
-var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __indexOf = Array.prototype.indexOf || function(item) {
+var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
+var __indexOf = Array.prototype.indexOf || function(item) {
   for (var i = 0, l = this.length; i < l; i++) {
     if (this[i] === item) return i;
   }
   return -1;
-};
+}, __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 PROFILE_WIDTH = 250;
 PROFILE_CARD_GAP = 15;
 CARD_WIDTH = 71;
@@ -44,6 +44,7 @@ DISAPPEAR_DIRECTION = {
   top: [0, -CARD_HEIGHT],
   bottom: [0, CARD_HEIGHT]
 };
+SCORE_CARD_VALUES = "tjqk1";
 VALUE_ORDER = "23456789tjqk1";
 SUIT_NAMES = {
   s: "스페이드",
@@ -74,12 +75,6 @@ assert = function(conditional, message) {
 Array.prototype.remove = function(elem) {
   return this.splice(this.indexOf(elem), 1)[0];
 };
-renderFaceName = function(face) {
-  var suit, value;
-  suit = SUIT_NAMES[face[0]];
-  value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])];
-  return "" + suit + " " + value;
-};
 runInterval = function(interval, funcs) {
   var runner;
   runner = function() {
@@ -90,6 +85,16 @@ runInterval = function(interval, funcs) {
     }
   };
   return setTimeout(runner, interval);
+};
+renderFaceName = function(face) {
+  var suit, value;
+  suit = SUIT_NAMES[face[0]];
+  value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])];
+  return "" + suit + " " + value;
+};
+isScoreCard = function(face) {
+  var _ref;
+  return _ref = face[1], __indexOf.call(SCORE_CARD_VALUES, _ref) >= 0;
 };
 Card = (function() {
   function Card(playing_field, face, direction, x, y) {
@@ -145,6 +150,7 @@ PlayingField = (function() {
     this.cards = [];
     this.players = [];
     this.playedCards = [];
+    this.collected = [];
   }
   PlayingField.prototype.getLocationInfo = function(player) {
     return PLAYER_LOCATION[this.players.length][player];
@@ -158,7 +164,10 @@ PlayingField = (function() {
       return "horizontal";
     }
   };
-  PlayingField.prototype.getCardPosition = function(player, cards, index) {
+  PlayingField.prototype.getCollectedPosition = function(player, index) {
+    return this.getHandPosition(player, 14, index + 15);
+  };
+  PlayingField.prototype.getHandPosition = function(player, cards, index) {
     var cx, cy, dx, dy, fx, fy, location, side, totalWidth, _ref;
     _ref = this.getLocationInfo(player), side = _ref.side, location = _ref.location;
     PLAYER_LOCATION[this.players.length][player];
@@ -267,6 +276,14 @@ PlayingField = (function() {
       }
       return _results;
     }).call(this);
+    this.collected = (function() {
+      var _ref, _results;
+      _results = [];
+      for (i = 0, _ref = this.players.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+        _results.push([]);
+      }
+      return _results;
+    }).call(this);
     center = this.convertRelativePosition(0.5, 0.5);
     this.cardStack = [];
     for (i = 0; i <= 52; i++) {
@@ -309,7 +326,7 @@ PlayingField = (function() {
               var pos;
               card.setFace(face);
               card.setDirection(this.getCardDirection(player));
-              pos = this.getCardPosition(player, cards[0].length, index);
+              pos = this.getHandPosition(player, cards[0].length, index);
               card.moveTo(pos.x, pos.y, SPEED_BASE);
               return null;
             }, this), dealt * SPEED_BASE);
@@ -347,7 +364,7 @@ PlayingField = (function() {
     var i, pos, _ref, _results;
     _results = [];
     for (i = 0, _ref = this.hands[player].length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
-      pos = this.getCardPosition(player, this.hands[player].length, i);
+      pos = this.getHandPosition(player, this.hands[player].length, i);
       _results.push(this.hands[player][i].moveTo(pos.x, pos.y, SPEED_BASE * 5));
     }
     return _results;
@@ -434,37 +451,69 @@ PlayingField = (function() {
           break;
         }
       }
-      if (card === null) {
-        card = this.hands[player].pop();
-        card.setFace(face);
-      }
     }
+    if (card === null) {
+      card = this.hands[player].pop();
+      card.setFace(face);
+    }
+    this.hands[player].remove(card);
+    this.playedCards.push(card);
+    this.playerMessage(player, "플레이", render_as || renderFaceName(card.face));
+    this.repositionCards(player);
+    card.elem.css("z-index", this.playedCards.length);
     card.setDirection("vertical");
     angle = this.getLocationInfo(player).angle;
     center = this.convertRelativePosition(0.5, 0.5);
-    console.log(angle);
-    console.log(center.x, center.y, Math.cos(angle), Math.sin(angle));
     x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS;
     y = center.y - Math.sin(angle) * PLAYED_CARD_RADIUS;
-    card.moveTo(x, y, SPEED_BASE * 5);
-    this.playedCards.push(card);
-    card.elem.css("z-index", this.playedCards.length);
-    return this.playerMessage(player, "플레이", render_as || renderFaceName(card.face));
+    return card.moveTo(x, y, SPEED_BASE * 5);
+  };
+  PlayingField.prototype.endTurn = function(winner, collectCards) {
+    var card, collect, take, _i, _len, _ref;
+    if (collectCards == null) {
+      collectCards = false;
+    }
+    take = [];
+    collect = [];
+    _ref = this.playedCards;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      card = _ref[_i];
+      if (isScoreCard(card.face) && collectCards) {
+        collect.push(card);
+      } else {
+        take.push(card);
+      }
+    }
+    this.playerMessage(winner, "턴 승리", "이 턴을 승리하였습니다!");
+    this.takeCards(winner, take);
+    this.collectCards(winner, collect);
+    return this.playedCards = [];
+  };
+  PlayingField.prototype.collectCards = function(player, cards) {
+    var card, pos, _i, _len, _results;
+    _results = [];
+    for (_i = 0, _len = cards.length; _i < _len; _i++) {
+      card = cards[_i];
+      this.collected[player].push(card);
+      pos = this.getCollectedPosition(player, this.collected[player].length - 1);
+      _results.push(card.moveTo(pos.x, pos.y, SPEED_BASE * 5));
+    }
+    return _results;
   };
   PlayingField.prototype.takeCards = function(player, cards, done) {
     var cx, cy, dx, dy, home, i, _ref, _ref2;
     if (done == null) {
       done = function() {};
     }
-    home = this.getCardPosition(player, 1, 0);
+    home = this.getHandPosition(player, 1, 0);
     _ref = DISAPPEAR_DIRECTION[this.getLocationInfo(player).side], dx = _ref[0], dy = _ref[1];
     cx = home.x + dx;
     cy = home.y + dy;
     for (i = 0, _ref2 = cards.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
-      cards[i].elem.delay(i * SPEED_BASE).animate({
+      cards[i].elem.animate({
         top: cy,
         left: cx
-      }, SPEED_BASE).fadeOut(0);
+      }, SPEED_BASE * 5).fadeOut(0);
     }
     return setTimeout(__bind(function() {
       var card, _i, _len;
@@ -473,7 +522,7 @@ PlayingField = (function() {
         card.remove();
       }
       return done();
-    }, this), cards.length * SPEED_BASE);
+    }, this), SPEED_BASE * 5);
   };
   PlayingField.prototype.chooseCard = function(done) {
     var card, finish, player, _i, _len, _ref, _results;
@@ -612,8 +661,8 @@ $(document).ready(function() {
     }
   ]);
   window.field.globalMessage("새 게임을 시작합니다");
-  GAP = 100;
-  SPEED_BASE = 10;
+  GAP = 1000;
+  SPEED_BASE = 50;
   return window.field.deal(TEST_CARDS, 1, function() {
     window.field.globalMessage("선거가 시작됩니다!");
     setTimeout(function() {
@@ -662,13 +711,15 @@ $(document).ready(function() {
               window.field.playCard(0, card, "기루다 컴!");
               return runInterval(SPEED_BASE * 5, [
                 function() {
-                  return window.field.playCard(1, "s2");
+                  return window.field.playCard(1, "ct");
                 }, function() {
                   return window.field.playCard(2, "sj");
                 }, function() {
                   return window.field.playCard(3, "c2");
                 }, function() {
-                  return window.field.playCard(4, "s5");
+                  return window.field.playCard(4, "st");
+                }, function() {
+                  return window.field.endTurn(0, false);
                 }
               ]);
             });

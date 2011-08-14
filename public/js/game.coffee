@@ -22,6 +22,7 @@ DISAPPEAR_DIRECTION =
 	top: [0, -CARD_HEIGHT]
 	bottom: [0, CARD_HEIGHT]
 
+SCORE_CARD_VALUES = "tjqk1"
 VALUE_ORDER = "23456789tjqk1"
 SUIT_NAMES =
 	s: "스페이드"
@@ -47,11 +48,6 @@ assert = (conditional, message = "") ->
 Array::remove = (elem) ->
 	@splice(@indexOf(elem), 1)[0]
 
-renderFaceName = (face) ->
-	suit = SUIT_NAMES[face[0]]
-	value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])]
-	return "#{suit} #{value}"
-
 runInterval = (interval, funcs) ->
 	runner = ->
 		funcs[0]()
@@ -59,6 +55,16 @@ runInterval = (interval, funcs) ->
 		if funcs.length > 0
 			setTimeout(runner, interval)
 	setTimeout(runner, interval)
+
+# 게임 관련 유틸리티
+
+renderFaceName = (face) ->
+	suit = SUIT_NAMES[face[0]]
+	value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])]
+	return "#{suit} #{value}"
+
+isScoreCard = (face) ->
+	face[1] in SCORE_CARD_VALUES
 
 # MODELS
 class Card
@@ -105,6 +111,7 @@ class PlayingField
 		@cards = []
 		@players = []
 		@playedCards = []
+		@collected = []
 
 	getLocationInfo: (player) ->
 		 PLAYER_LOCATION[@players.length][player]
@@ -113,8 +120,12 @@ class PlayingField
 		side = @getLocationInfo(player).side
 		if side in ["top", "bottom"] then "vertical" else "horizontal"
 
+	# 플레이어 x가 y장째 수집한 카드의 위치는?
+	getCollectedPosition: (player, index) ->
+		return @getHandPosition(player, 14, index + 15)
+
 	# 플레이어 x가 y장 카드를 가지고 있을 때, z번 카드의 가운데 위치는?
-	getCardPosition: (player, cards, index) ->
+	getHandPosition: (player, cards, index) ->
 		{side: side, location: location} = @getLocationInfo(player)
 		PLAYER_LOCATION[@players.length][player]
 		# 깔끔하게 구현하고 싶지만.. -_-
@@ -192,6 +203,7 @@ class PlayingField
 		@clearCards()
 		assert(cards.length == @players.length)
 		@hands = ([] for i in [0..@players.length-1])
+		@collected = ([] for i in [0..@players.length-1])
 		center = @convertRelativePosition(0.5, 0.5)
 		@cardStack = []
 		for i in [0..52]
@@ -227,7 +239,7 @@ class PlayingField
 								=>
 									card.setFace face
 									card.setDirection @getCardDirection player
-									pos = @getCardPosition(player, cards[0].length, index)
+									pos = @getHandPosition(player, cards[0].length, index)
 									card.moveTo(pos.x, pos.y, SPEED_BASE)
 									null
 								, dealt * SPEED_BASE)
@@ -251,7 +263,7 @@ class PlayingField
 
 	repositionCards: (player) ->
 		for i in [0..@hands[player].length-1]
-			pos = @getCardPosition(player, @hands[player].length, i)
+			pos = @getHandPosition(player, @hands[player].length, i)
 			@hands[player][i].moveTo(pos.x, pos.y, SPEED_BASE * 5)
 
 	# cardStack 에 남은 카드들을 player 에게 준다.
@@ -313,38 +325,57 @@ class PlayingField
 				if c.face == face
 					card = c
 					break
-			if card == null
-				card = @hands[player].pop()
-				card.setFace(face)
+		if card == null
+			card = @hands[player].pop()
+			card.setFace(face)
+		@hands[player].remove(card)
+		@playedCards.push(card)
+		@playerMessage(player, "플레이", render_as or renderFaceName(card.face))
+		@repositionCards(player)
+
+		card.elem.css("z-index", @playedCards.length)
 		card.setDirection("vertical")
+
 		angle = @getLocationInfo(player).angle
 		center = @convertRelativePosition(0.5, 0.5)
-		console.log(angle)
-		console.log(center.x, center.y, Math.cos(angle), Math.sin(angle))
 		x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS
 		y = center.y - Math.sin(angle) * PLAYED_CARD_RADIUS
 		card.moveTo(x, y, SPEED_BASE * 5)
-		@playedCards.push(card)
-		card.elem.css("z-index", @playedCards.length)
-		@playerMessage(player, "플레이", render_as or renderFaceName(card.face))
 
+	endTurn: (winner, collectCards=false) ->
+		take = []
+		collect = []
+		for card in @playedCards
+			if isScoreCard(card.face) and collectCards
+				collect.push(card)
+			else
+				take.push(card)
+		@playerMessage(winner, "턴 승리", "이 턴을 승리하였습니다!")
+		@takeCards(winner, take)
+		@collectCards(winner, collect)
+		@playedCards = []
+
+	collectCards: (player, cards) ->
+		for card in cards
+			@collected[player].push(card)
+			pos = @getCollectedPosition(player, @collected[player].length-1)
+			card.moveTo(pos.x, pos.y, SPEED_BASE * 5)
 
 	takeCards: (player, cards, done = ->) ->
-		home = @getCardPosition(player, 1, 0)
+		home = @getHandPosition(player, 1, 0)
 		[dx, dy] = DISAPPEAR_DIRECTION[@getLocationInfo(player).side]
 		cx = home.x + dx
 		cy = home.y + dy
 
 		for i in [0..cards.length-1]
 			cards[i].elem
-				.delay(i * SPEED_BASE)
-				.animate({top: cy, left: cx}, SPEED_BASE)
+				.animate({top: cy, left: cx}, SPEED_BASE * 5)
 				.fadeOut(0)
 		setTimeout(
 			=>
 				card.remove() for card in cards
 				done()
-			, cards.length * SPEED_BASE)
+			, SPEED_BASE * 5)
 
 	chooseCard: (done=->) ->
 		player = 0
@@ -444,8 +475,8 @@ $(document).ready(->
 		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
 	])
 	window.field.globalMessage("새 게임을 시작합니다")
-	GAP = 100
-	SPEED_BASE = 10
+	GAP = 1000
+	SPEED_BASE = 50
 	#	GAP = SPEED_BASE = SPEED_BASE*5 = 10
 	window.field.deal TEST_CARDS, 1, ->
 		window.field.globalMessage("선거가 시작됩니다!")
@@ -504,10 +535,11 @@ $(document).ready(->
 										window.field.playCard(0, card, "기루다 컴!")
 										runInterval(SPEED_BASE * 5,
 											[
-												-> window.field.playCard(1, "s2")
+												-> window.field.playCard(1, "ct")
 												-> window.field.playCard(2, "sj")
 												-> window.field.playCard(3, "c2")
-												-> window.field.playCard(4, "s5")
+												-> window.field.playCard(4, "st")
+												-> window.field.endTurn(0, false)
 											])
 									)
 							)
