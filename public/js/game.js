@@ -412,11 +412,47 @@ PlayingField = (function() {
       return done();
     }, this), cards.length * SPEED_BASE);
   };
-  PlayingField.prototype.chooseMultipleCards = function(player, choose, done) {
-    var card, finished, getHandlers, handlers, multiple, _i, _len, _ref;
+  PlayingField.prototype.chooseCard = function(done) {
+    var card, finish, player, _i, _len, _ref, _results;
     if (done == null) {
       done = function() {};
     }
+    player = 0;
+    finish = __bind(function(card) {
+      var c, _i, _len, _ref;
+      _ref = this.hands[player];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        c = _ref[_i];
+        c.elem.removeClass("canChoose").unbind();
+      }
+      return done(card);
+    }, this);
+    _ref = this.hands[player];
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      card = _ref[_i];
+      _results.push(__bind(function(card) {
+        return card.elem.addClass("canChoose").mouseover(function() {
+          return $(this).animate({
+            top: "-=10"
+          }, SPEED_BASE);
+        }).mouseout(function() {
+          return $(this).animate({
+            top: "+=10"
+          }, SPEED_BASE);
+        }).mousedown(function() {
+          return finish(card);
+        });
+      }, this)(card));
+    }
+    return _results;
+  };
+  PlayingField.prototype.chooseMultipleCards = function(choose, done) {
+    var card, finished, getHandlers, handlers, multiple, player, _i, _len, _ref;
+    if (done == null) {
+      done = function() {};
+    }
+    player = 0;
     this.chosen = [];
     multiple = this.elem.find(".choose_multiple");
     multiple.find(".choose_count").html(choose);
@@ -427,7 +463,7 @@ PlayingField = (function() {
       _ref = this.hands[player];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         card = _ref[_i];
-        card.elem.removeClass("canChoose").unbind("mouseover").unbind("mousedown").unbind("mouseout");
+        card.elem.removeClass("canChoose").unbind();
       }
       return done(this.chosen);
     }, this);
@@ -439,7 +475,7 @@ PlayingField = (function() {
           raised = true;
           return card.elem.animate({
             top: "-=10"
-          }, 40);
+          }, SPEED_BASE);
         }
       };
       deraise = function() {
@@ -447,7 +483,7 @@ PlayingField = (function() {
           raised = false;
           return card.elem.animate({
             top: "+=10"
-          }, 40);
+          }, SPEED_BASE);
         }
       };
       return {
@@ -548,14 +584,18 @@ $(document).ready(function() {
       				)
       				*/      return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
         window.field.globalMessage("버릴 3장의 카드를 골라주세요.");
-        return window.field.chooseMultipleCards(0, 3, function(chosen) {
+        return window.field.chooseMultipleCards(3, function(chosen) {
           return window.field.takeCards(0, chosen, function() {
             var card, _i, _len;
             for (_i = 0, _len = chosen.length; _i < _len; _i++) {
               card = chosen[_i];
               window.field.hands[0].remove(card);
             }
-            return window.field.repositionCards(0);
+            window.field.repositionCards(0);
+            window.field.playerMessage(0, "플레이");
+            return window.field.chooseCard(function(card) {
+              return console.log("will play", card.face);
+            });
           });
         });
       });

@@ -297,7 +297,24 @@ class PlayingField
 				done()
 			, cards.length * SPEED_BASE)
 
-	chooseMultipleCards: (player, choose, done=->) ->
+	chooseCard: (done=->) ->
+		player = 0
+		finish = (card) =>
+			for c in @hands[player]
+				c.elem
+					.removeClass("canChoose")
+					.unbind()
+			done(card)
+		for card in @hands[player]
+			do (card) =>
+				card.elem
+					.addClass("canChoose")
+					.mouseover(-> $(this).animate({top: "-=10"}, SPEED_BASE))
+					.mouseout(-> $(this).animate({top: "+=10"}, SPEED_BASE))
+					.mousedown(-> finish(card))
+
+	chooseMultipleCards: (choose, done=->) ->
+		player = 0
 		@chosen = []
 		multiple = @elem.find(".choose_multiple")
 		multiple.find(".choose_count").html(choose)
@@ -308,9 +325,7 @@ class PlayingField
 			for card in @hands[player]
 				card.elem
 					.removeClass("canChoose")
-					.unbind("mouseover")
-					.unbind("mousedown")
-					.unbind("mouseout")
+					.unbind()
 			done(@chosen)
 
 		getHandlers = (card) =>
@@ -319,11 +334,11 @@ class PlayingField
 			raise = ->
 				if not raised
 					raised = true
-					card.elem.animate({top: "-=10"}, 40)
+					card.elem.animate({top: "-=10"}, SPEED_BASE)
 			deraise = ->
 				if raised
 					raised = false
-					card.elem.animate({top: "+=10"}, 40)
+					card.elem.animate({top: "+=10"}, SPEED_BASE)
 
 			{
 				onMouseOver: =>
@@ -426,12 +441,17 @@ $(document).ready(->
 				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0,
 				->
 					window.field.globalMessage("버릴 3장의 카드를 골라주세요.")
-					window.field.chooseMultipleCards(0, 3,
+					window.field.chooseMultipleCards(3,
 						(chosen) ->
 							window.field.takeCards(0, chosen,
 								->
 									window.field.hands[0].remove(card) for card in chosen
 									window.field.repositionCards(0)
+
+									window.field.playerMessage(0, "플레이")
+									window.field.chooseCard((card) ->
+										console.log("will play", card.face)
+									)
 							)
 					)
 				)
