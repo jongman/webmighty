@@ -625,7 +625,7 @@ PlayingField = (function() {
             deraise();
           }
           if (this.chosen.length === choose) {
-            return multiple.find("button").removeAttr("disabled").click(finished);
+            return multiple.find("button").removeAttr("disabled").unbind().click(finished);
           } else {
             return multiple.find("button").attr("disabled", "");
           }

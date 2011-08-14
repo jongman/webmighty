@@ -441,6 +441,7 @@ class PlayingField
 					if @chosen.length == choose
 						multiple.find("button")
 							.removeAttr("disabled")
+							.unbind()
 							.click(finished)
 					else
 						multiple.find("button").attr("disabled", "")
