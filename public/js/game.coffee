@@ -7,13 +7,14 @@ CARD_HEIGHT = 96
 CARD_OVERLAP = 20
 SPEED_BASE = 50
 PI = Math.PI
+PLAYED_CARD_RADIUS = 60
 PLAYER_LOCATION =
 	5: [
-		{ side: "bottom", location: 0.5, angle: PI * (3 / 4)}
-		{ side: "left", location: 0.6, angle: PI * (3 / 4 - 1 / 5) }
-		{ side: "top", location: 0.25, angle: PI * (3 / 4 - 2 / 5) }
-		{ side: "top", location: 0.75, angle: PI * (3 / 4 - 3 / 5) }
-		{ side: "right", location: 0.6, angle: PI * (3 / 4 - 4 / 5) }
+		{ side: "bottom", location: 0.5, angle: PI * (3 / 2)}
+		{ side: "left", location: 0.6, angle: PI * (3 / 2 - 2 / 5) }
+		{ side: "top", location: 0.25, angle: PI * (3 / 2 - 4 / 5) }
+		{ side: "top", location: 0.75, angle: PI * (3 / 2 - 6 / 5) }
+		{ side: "right", location: 0.6, angle: PI * (3 / 2 - 8 / 5) }
 	]
 DISAPPEAR_DIRECTION =
 	left: [-CARD_HEIGHT, 0]
@@ -22,6 +23,12 @@ DISAPPEAR_DIRECTION =
 	bottom: [0, CARD_HEIGHT]
 
 VALUE_ORDER = "23456789tjqk1"
+SUIT_NAMES =
+	s: "스페이드"
+	h: "하트"
+	c: "클로버"
+	d: "다이아몬드"
+VALUE_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "잭", "퀸", "킹", "에이스"]
 
 # UTILITIES
 floor = Math.floor
@@ -39,6 +46,19 @@ assert = (conditional, message = "") ->
 
 Array::remove = (elem) ->
 	@splice(@indexOf(elem), 1)[0]
+
+renderFaceName = (face) ->
+	suit = SUIT_NAMES[face[0]]
+	value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])]
+	return "#{suit} #{value}"
+
+runInterval = (interval, funcs) ->
+	runner = ->
+		funcs[0]()
+		funcs.splice(0, 1)
+		if funcs.length > 0
+			setTimeout(runner, interval)
+	setTimeout(runner, interval)
 
 # MODELS
 class Card
@@ -285,13 +305,28 @@ class PlayingField
 			elem.show()
 			@players[i].profile_elem = elem
 
-	playCard: (player, card) ->
+	playCard: (player, card, render_as=null) ->
 		if typeof(card) == "string"
 			face = card
-			for card in @hands[player]
-				if card.face == face
+			card = null
+			for c in @hands[player]
+				if c.face == face
+					card = c
 					break
-		
+			if card == null
+				card = @hands[player].pop()
+				card.setFace(face)
+		card.setDirection("vertical")
+		angle = @getLocationInfo(player).angle
+		center = @convertRelativePosition(0.5, 0.5)
+		console.log(angle)
+		console.log(center.x, center.y, Math.cos(angle), Math.sin(angle))
+		x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS
+		y = center.y - Math.sin(angle) * PLAYED_CARD_RADIUS
+		card.moveTo(x, y, SPEED_BASE * 5)
+		@playedCards.push(card)
+		card.elem.css("z-index", @playedCards.length)
+		@playerMessage(player, "플레이", render_as or renderFaceName(card.face))
 
 
 	takeCards: (player, cards, done = ->) ->
@@ -461,10 +496,19 @@ $(document).ready(->
 								->
 									window.field.hands[0].remove(card) for card in chosen
 									window.field.repositionCards(0)
+									window.field.globalMessage("1턴이 시작되었습니다 !")
 
 									window.field.playerMessage(0, "플레이")
 									window.field.chooseCard((card) ->
 										console.log("will play", card.face)
+										window.field.playCard(0, card, "기루다 컴!")
+										runInterval(SPEED_BASE * 5,
+											[
+												-> window.field.playCard(1, "s2")
+												-> window.field.playCard(2, "sj")
+												-> window.field.playCard(3, "c2")
+												-> window.field.playCard(4, "s5")
+											])
 									)
 							)
 					)

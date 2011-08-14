@@ -1,4 +1,4 @@
-var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PI, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SPEED_BASE, TEST_CARDS, VALUE_ORDER, assert, field, floor, lexicographic_compare;
+var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, lexicographic_compare, renderFaceName, runInterval;
 var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __indexOf = Array.prototype.indexOf || function(item) {
   for (var i = 0, l = this.length; i < l; i++) {
     if (this[i] === item) return i;
@@ -12,28 +12,29 @@ CARD_HEIGHT = 96;
 CARD_OVERLAP = 20;
 SPEED_BASE = 50;
 PI = Math.PI;
+PLAYED_CARD_RADIUS = 60;
 PLAYER_LOCATION = {
   5: [
     {
       side: "bottom",
       location: 0.5,
-      angle: PI * (3 / 4)
+      angle: PI * (3 / 2)
     }, {
       side: "left",
       location: 0.6,
-      angle: PI * (3 / 4 - 1 / 5)
+      angle: PI * (3 / 2 - 2 / 5)
     }, {
       side: "top",
       location: 0.25,
-      angle: PI * (3 / 4 - 2 / 5)
+      angle: PI * (3 / 2 - 4 / 5)
     }, {
       side: "top",
       location: 0.75,
-      angle: PI * (3 / 4 - 3 / 5)
+      angle: PI * (3 / 2 - 6 / 5)
     }, {
       side: "right",
       location: 0.6,
-      angle: PI * (3 / 4 - 4 / 5)
+      angle: PI * (3 / 2 - 8 / 5)
     }
   ]
 };
@@ -44,6 +45,13 @@ DISAPPEAR_DIRECTION = {
   bottom: [0, CARD_HEIGHT]
 };
 VALUE_ORDER = "23456789tjqk1";
+SUIT_NAMES = {
+  s: "스페이드",
+  h: "하트",
+  c: "클로버",
+  d: "다이아몬드"
+};
+VALUE_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "잭", "퀸", "킹", "에이스"];
 floor = Math.floor;
 lexicographic_compare = function(a, b) {
   if (a === b) {
@@ -65,6 +73,23 @@ assert = function(conditional, message) {
 };
 Array.prototype.remove = function(elem) {
   return this.splice(this.indexOf(elem), 1)[0];
+};
+renderFaceName = function(face) {
+  var suit, value;
+  suit = SUIT_NAMES[face[0]];
+  value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])];
+  return "" + suit + " " + value;
+};
+runInterval = function(interval, funcs) {
+  var runner;
+  runner = function() {
+    funcs[0]();
+    funcs.splice(0, 1);
+    if (funcs.length > 0) {
+      return setTimeout(runner, interval);
+    }
+  };
+  return setTimeout(runner, interval);
 };
 Card = (function() {
   function Card(playing_field, face, direction, x, y) {
@@ -393,20 +418,38 @@ PlayingField = (function() {
     }
     return _results;
   };
-  PlayingField.prototype.playCard = function(player, card) {
-    var face, _i, _len, _ref, _results;
+  PlayingField.prototype.playCard = function(player, card, render_as) {
+    var angle, c, center, face, x, y, _i, _len, _ref;
+    if (render_as == null) {
+      render_as = null;
+    }
     if (typeof card === "string") {
       face = card;
+      card = null;
       _ref = this.hands[player];
-      _results = [];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        card = _ref[_i];
-        if (card.face === face) {
+        c = _ref[_i];
+        if (c.face === face) {
+          card = c;
           break;
         }
       }
-      return _results;
+      if (card === null) {
+        card = this.hands[player].pop();
+        card.setFace(face);
+      }
     }
+    card.setDirection("vertical");
+    angle = this.getLocationInfo(player).angle;
+    center = this.convertRelativePosition(0.5, 0.5);
+    console.log(angle);
+    console.log(center.x, center.y, Math.cos(angle), Math.sin(angle));
+    x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS;
+    y = center.y - Math.sin(angle) * PLAYED_CARD_RADIUS;
+    card.moveTo(x, y, SPEED_BASE * 5);
+    this.playedCards.push(card);
+    card.elem.css("z-index", this.playedCards.length);
+    return this.playerMessage(player, "플레이", render_as || renderFaceName(card.face));
   };
   PlayingField.prototype.takeCards = function(player, cards, done) {
     var cx, cy, dx, dy, home, i, _ref, _ref2;
@@ -612,9 +655,22 @@ $(document).ready(function() {
               window.field.hands[0].remove(card);
             }
             window.field.repositionCards(0);
+            window.field.globalMessage("1턴이 시작되었습니다 !");
             window.field.playerMessage(0, "플레이");
             return window.field.chooseCard(function(card) {
-              return console.log("will play", card.face);
+              console.log("will play", card.face);
+              window.field.playCard(0, card, "기루다 컴!");
+              return runInterval(SPEED_BASE * 5, [
+                function() {
+                  return window.field.playCard(1, "s2");
+                }, function() {
+                  return window.field.playCard(2, "sj");
+                }, function() {
+                  return window.field.playCard(3, "c2");
+                }, function() {
+                  return window.field.playCard(4, "s5");
+                }
+              ]);
             });
           });
         });
