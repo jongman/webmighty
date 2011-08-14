@@ -535,7 +535,7 @@ $(document).ready(->
 									window.field.repositionCards(0)
 									window.field.globalMessage("1턴이 시작되었습니다 !")
 
-									window.field.playerMessage(0, "플레이")
+									window.field.playerMessage(0, "플레이", "차례입니다.")
 									window.field.chooseCard((card) ->
 										console.log("will play", card.face)
 										window.field.playCard(0, card, "기루다 컴!")
