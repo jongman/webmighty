@@ -184,10 +184,10 @@ resetVote = ->
 # Miscellaneous
 ################################################################################
 
-indexFromClientId = clientId ->
+indexFromClientId = (clientId) ->
 	return players.indexOf clientId
 
-getHandFromClientId = clientId ->
+getHandFromClientId = (clientId) ->
 	idx = indexFromClientId clientId
 	return cards[idx*10...(idx+1)*10]
 
