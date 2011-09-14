@@ -32,11 +32,21 @@ everyone.now.REARRANGE_HAND = 4
 everyone.now.CHOOSE_FRIEND = 5
 everyone.now.TAKE_TURN = 6
 everyone.now.END_GAME = 7
+
+everyone.now.ChooseCardOption = 
+	None: 0
+	JokerCall: 1
+	SCome: 2
+	DCome: 3
+	HCome: 4
+	CCome: 5
 	
 everyone.now.state = everyone.now.WAITING_PLAYER
 everyone.now.readyCount = 0
 players = []
 cards = []
+currentTurn = 0
+currentTrick = []
 
 everyone.now.chat = (msg) ->
 	everyone.now.receiveChat @now.clientId, @now.name, msg
@@ -49,6 +59,23 @@ enterState = (state) ->
 		nextPlayer = chooseNextPlayerForVote()
 		nowjs.getClient nextPlayer, ->
 			@now.requestCommitment()
+
+	else if state == everyone.now.REARRANGE_HAND
+		nowjs.getClient players[jugongIdx], ->
+			@now.requestRearrangeHand cards[50...53] 
+
+	else if state == everyone.now.CHOOSE_FRIEND
+		nowjs.getClient players[jugongIdx], ->
+			@now.requestChooseFriend()
+
+	else if state == everyone.now.TAKE_TURN
+		currentTurn = 0
+		lastTurnWinner = jugongIdx
+		currentTrick = []
+		nowjs.getClient players[lastTurnWinner], ->
+			@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+	else if state == everyone.now.END_GAME
+		# 결과 보여주고 일정 시간 후 waiting 상태로 
 
 changeState = (state) ->
 	everyone.now.state = state
@@ -76,7 +103,7 @@ dealCard = ->
 		idx += 10
 
 ################################################################################
-# WAITING FOR PLAYERS : be ready 5 heroes
+# WAITING_PLAYER : be ready 5 heroes
 ################################################################################
 
 everyone.now.readyGame = ->
@@ -179,6 +206,28 @@ resetVote = ->
 	lastVote = ['n',12]
 	currentVoteIndex = null
 	
+
+################################################################################
+# REARRANGE_HAND
+################################################################################
+
+################################################################################
+# CHOOSE_FRIEND
+################################################################################
+
+everyone.now.chooseFriendByCard = (card) ->
+	everyone.now.notifyFriendByCard card
+
+everyone.now.chooseFriendNone = ->
+	everyone.now.notifyFriendNone
+
+################################################################################
+# TAKE_TURN
+################################################################################
+
+################################################################################
+# END_GAME
+################################################################################
 
 ################################################################################
 # Miscellaneous

@@ -7,6 +7,95 @@
 
 <script>
 $(document).ready(function(){
+	// 추가로 받은 3장 카드 저장
+	var additionals;
+	// 딜링 된 내 카드 10장
+	var hand;
+
+	// 주공에게 핸드 정리하고 3장 버리라는 요청
+	now.requestRearrangeHand = function(additionalCards){
+		// 임시 구현으로 간지나게 바로 버리는 용자
+		additionals = additionalCards
+		now.rearrangeHand(additionalCards);
+	}
+
+	getMightyCard = function(){
+		if (giruda == 's')
+			return 'd1';
+		return 's1';
+	}
+
+	// 카드 프렌 부르는 경우
+	now.notifyFriendByCard = function(card){
+		systemMsg("Friend is " + card);
+	}
+
+	// 프렌 없음
+	now.notifyFriendNone = function(){
+		systemMsg("No friend.");
+	}
+
+	// 주공에게 프렌 고르라는 요청
+	now.requestChooseFriend = function(){
+		// 닥치고 마이티 아니면 조커 아니면 기루 없는거중 젤 높은거 프랜
+		// TODO 실제론 UI 보여줘야함다
+		if (hand.indexOf(getMightyCard()) == -1)
+		{
+			now.chooseFriendByCard(getMightyCard());
+		}
+		else if (hand.indexOf('jr') == -1)
+		{
+			now.chooseFriendByCard('jr');
+		}
+		else
+		{
+			for(var i = VALUE_ORDER.length-1; i >= 0; i --)
+			{
+				var friendCard = giruda + VALUE_ORDER[i];
+				if (hand.indexOf(friendCard) == -1)
+				{
+					now.chooseFriendByCard(friendCard);
+					return;
+				}
+			}
+		}
+	}
+
+	function isValidCardToPut(card, firstCard, option){
+		if (card == getMightyCard())
+			return true;
+		//if (option == now.ChooseCardOption.)
+		return true;
+	}
+
+	// 현재 바닥에 깔린게 cardsOnBoard일때 내가 낼 카드를 선택
+	now.requestChooseCard = function(cardsOnBoard, option){
+		var idx;
+		if (cardsOnBoard.length == 0)
+		{
+			// 내가 선
+			// 일단 랜덤하게 내봅시다
+			idx = Math.floor(Math.random() * hand.length);
+		}
+		else
+		{
+			// 처음 내는 거만 맞춰서 내기
+			selection = [];
+			for(var i = 0; i < hand.length; i ++)
+				if (isValidCardToPut(hand[i], cardsOnBoard[0], option))
+					selection.push(i);
+			if (selection.length > 0)
+			{
+				idx = selection[Math.floor(Math.random() * selection.length)];
+			}
+			else
+			{
+				idx = Math.floor(Math.random() * hand.length);
+			}
+		}
+		now.chooseCard(hand[idx]);
+		hand = hand.split(0,idx-1).concat(hand.split(idx+1));
+	}
 
   now.receiveMessage = function(name, message){
 	if (name == "<system>")
@@ -14,27 +103,35 @@ $(document).ready(function(){
 	else
 		$("#messages").append("<br>" + name + ": " + message);
   }
+
+  var systemMsg = function(msg){
+	now.receiveMessage("<system>", msg);
+  }
+
   now.showName = function(){
-	now.receiveMessage("<system>", "I am " + now.name);
+	systemMsg("I am " + now.name);
   }
   now.setReady = function(clientId, name){
-	now.receiveMessage("<system>", name + " ready");
+	systemMsg(name + " ready");
   }
+
   now.receiveChat = function(clientId, name, message){
     $("#messages").append("<br>" + name + ": " + message);
   }
-  FACE_ORDER = function(giru){
-	  // TODO consider giru
-	  if (giru == 's')
+
+  FACE_ORDER = function(giruda){
+	  // TODO consider giruda
+	  if (giruda == 's')
 		  return "jsdch";
-	  if (giru == 'd')
+	  if (giruda == 'd')
 		  return "jdsch";
-	  if (giru == 'c')
+	  if (giruda == 'c')
 		  return "jcsdh";
-	  if (giru == 'h')
+	  if (giruda == 'h')
 		  return "jhsdc";
 	  return "jsdch";
   }
+
   VALUE_ORDER = "23456789tjqk1";
   now.receiveDealtCards = function(cards){
 	cards.sort(function(l, r){
@@ -42,7 +139,8 @@ $(document).ready(function(){
 				return FACE_ORDER().indexOf(l[0]) - FACE_ORDER().indexOf(r[0]);
 			return VALUE_ORDER.indexOf(l[1]) - VALUE_ORDER.indexOf(r[1]);
 		});
-	now.receiveMessage("<system>", "hand = " + cards);
+	hand = cards;
+	systemMsg("hand = " + cards);
   }
 
   now.requestCommitment = function()
