@@ -23,8 +23,16 @@ $(document).ready(function(){
   now.receiveChat = function(clientId, name, message){
     $("#messages").append("<br>" + name + ": " + message);
   }
-  FACE_ORDER = function(){
+  FACE_ORDER = function(giru){
 	  // TODO consider giru
+	  if (giru == 's')
+		  return "jsdch";
+	  if (giru == 'd')
+		  return "jdsch";
+	  if (giru == 'c')
+		  return "jcsdh";
+	  if (giru == 'h')
+		  return "jhsdc";
 	  return "jsdch";
   }
   VALUE_ORDER = "23456789tjqk1";
@@ -39,6 +47,7 @@ $(document).ready(function(){
 
   now.requestCommitment = function()
   {
+	  // 뭐가 젤 야매 구현이 빠를까 -_-?
 	// 무늬 고름 - 노기 4가지 
 	// 숫자 고름 - 13 ~ 런
 	//now.commitmentAnnounce('s', 15)
