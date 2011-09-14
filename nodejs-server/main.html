@@ -7,6 +7,7 @@
 
 <script>
 $(document).ready(function(){
+  var giru = 'n';
 
   now.receiveMessage = function(name, message){
 	if (name == "<system>")
@@ -47,7 +48,6 @@ $(document).ready(function(){
 
   now.requestCommitment = function()
   {
-	  // 뭐가 젤 야매 구현이 빠를까 -_-?
 	// 무늬 고름 - 노기 4가지 
 	// 숫자 고름 - 13 ~ 런
 	//now.commitmentAnnounce('s', 15)
@@ -55,6 +55,13 @@ $(document).ready(function(){
 	//now.commitmentPass()
 	// 아니면 딜미스 
 	//now.commitmentDealMiss()
+	var x = prompt('공약 써주세요 (예: n14 s15 pass dealmiss)');
+    if (x == 'pass')
+	  now.commitmentPass();
+    else if (x == 'dealmiss')
+	  now.commitmentDealMiss();
+	else 
+	  now.commitmentAnnounce(x[0], parseInt(x.substr(1)));
   }
 
   $("#send-button").click(function(){

@@ -1,11 +1,19 @@
 fs = require 'fs'
 html = fs.readFileSync(__dirname + '/main.html')
 jqueryjs = fs.readFileSync(__dirname + '/jquery-1.6.2.min.js')
+clientjs = fs.readFileSync(__dirname + '/clientlib.js')
 http = require('http')
 server = http.createServer (req, res) ->
-  if (req.url == '/jquery-1.6.2.min.js')
+  if req.url == '/clientlib.js'
+	  res.writeHead 200, {'Content-Type': 'text/javascript'}
+	  res.end clientjs
+  else if req.url == '/jquery-1.6.2.min.js'
 	  res.writeHead 200, {'Content-Type': 'text/javascript'}
 	  res.end jqueryjs
+  else if req.url == '/public'
+	  res.end fs.readFileSync(__dirname + '..' + req.url + '/index.html')
+  else if req.url.substr(0,7) == '/public'
+	  res.end fs.readFileSync(__dirname + '..' + req.url)
   else
 	  res.end html
 
@@ -49,6 +57,13 @@ enterState = (state) ->
 		nextPlayer = chooseNextPlayerForVote()
 		nowjs.getClient nextPlayer, ->
 			@now.requestCommitment()
+	else if state == everyone.now.VOTE_KILL
+		if players.length == 6
+			# if 6 player mode do something and re deal card
+			# request jugong to kill card
+		else
+			changeState everyone.now.REARRANGE_HAND
+
 
 changeState = (state) ->
 	everyone.now.state = state
@@ -69,11 +84,15 @@ dealCard = ->
 
 	console.log players
 	idx = 0
+	if players.length == 6
+		step = 8
+	else
+		step = 10
 	for player in players
-		console.log (player + " gets " + cards[idx...idx+10])
+		console.log (player + " gets " + cards[idx...idx+step])
 		nowjs.getClient player, ->
-			@now.receiveDealtCards cards[idx...idx+10]
-		idx += 10
+			@now.receiveDealtCards cards[idx...idx+step]
+		idx += step
 
 ################################################################################
 # WAITING FOR PLAYERS : be ready 5 heroes
@@ -108,12 +127,11 @@ votes = null
 lastVote = null
 currentVoteIndex = null
 
-getLastFriendIndex =  ->
-	return Math.floor(Math.random()*votes.length)
+lastFriendIndex = 0
 
 chooseNextPlayerForVote = () ->
 	if currentVoteIndex?
-		currentVoteIndex = getLastFriendIndex()
+		currentVoteIndex = lastFriendIndex
 		return currentVoteIndex
 	else
 		currentVoteIndex = (currentVoteIndex + 1) % votes.length while votes[currentVoteIndex][0] == 'p'
@@ -123,29 +141,45 @@ allPass = ->
 	passes = (vote for vote in votes when vote[0] == 'p')
 	return passes.length == votes.length
 
+jugongIdx = null
+getJugongIdx = ->
+	return jugongIdx
+
+allPassExceptOne = ->
+	jugongCount = 0
+	for i in [0...votes.length]
+		if votes[i][0] != 'p' and votes[i][1] > 10
+			jugongIdx = i
+			jugongCount += 1
+		else if votes[i][1] == 20 # run
+			jugongIdx = i
+			jugongCount = 1
+			break
+	return jugongCount == 1
+
+checkVoteEnd = ->
+	if allPassExceptOne()
+		changeState everyone.now.VOTE_KILL
+	else if allPass()
+		redeal()
+	else
+		nextPlayer = chooseNextPlayerForVote()
+		nowjs.getClient nextPlayer, ->
+			@now.requestCommitment()
+
 everyone.now.commitmentAnnounce = (face, target) ->
 	idx = indexFromClientId @user.clientId
 	if (face == 'n' and target >= 13 or target >= 14) and lastVote[1] < target
 		votes[idx] = [face, target]
 		lastVote = [face, target, idx]
 
-	if allPass()
-		redeal()
-	else
-		nextPlayer = chooseNextPlayerForVote()
-		nowjs.getClient nextPlayer, ->
-			@now.requestCommitment()
+	checkVoteEnd()
 
 everyone.now.commitmentPass = ->
 	idx = indexFromClientId @user.clientId
 	votes[idx] = ['p', 0]
 
-	if allPass()
-		redeal()
-	else
-		nextPlayer = chooseNextPlayerForVote()
-		nowjs.getClient nextPlayer, ->
-			@now.requestCommitment()
+	checkVoteEnd()
 
 checkDealMiss = (cards) ->
 	# TODO implement deal miss options
@@ -164,7 +198,7 @@ checkDealMiss = (cards) ->
 			score += 0.5
 		if card[0] == 'j'
 			score -= 1
-	return score < 1
+	return score < 6 - player.length
 
 redeal = ->
 	enterState everyone.now.VOTE
@@ -189,7 +223,8 @@ indexFromClientId = clientId ->
 
 getHandFromClientId = clientId ->
 	idx = indexFromClientId clientId
-	return cards[idx*10...(idx+1)*10]
+	step = 10 if player.length == 5 else 8
+	return cards[idx*step...(idx+1)*step]
 
 everyone.now.debugReset = ->
 	everyone.now.state = everyone.now.WAITING_PLAYER
