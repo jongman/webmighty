@@ -424,31 +424,35 @@ a:hover {
 #playing_field #dialog .choose_promise ul {
 	list-style: none;
 	padding: 0;
+}
+#playing_field #dialog .choose_promise ul.promise {
 	width: 100%;
-	margin: 0 auto;
+	height: 80px;
+	margin: 0px 16px 0px 16px;
+}
+#playing_field #dialog .choose_promise ul.promise li.selected {
+	margin-bottom: 16px;
 }
 
-#playing_field #dialog .choose_promise ul.promise {
-	margin: 16px 0;
+#playing_field #dialog .choose_promise ul.promise button {
+	font-size: 20px;
+	padding: 0;
+	width: 24px;
+	height: 24px;
 }
 #playing_field #dialog .choose_promise ul.promise ul li {
 	float: left;
 	width: 150px;
-}
-#playing_field #dialog .choose_promise ul.promise > li {
-	height: 32px;
-}
-
-#playing_field #dialog .choose_promise ul.promise li.header ul li {
-	padding: 4px 0;
-	font-size: 16px;
-	font-weight: bold;
-}
-
-#playing_field #dialog .choose_promise li.select_suit * {
 	text-align: center;
 }
 
+#playing_field #dialog .choose_promise li.selected li {
+	font-size: 30px;
+	color: #a00;
+	text-shadow: 0px 0px 4px #fff;
+}
+
+/*
 #playing_field #dialog .choose_promise li.body button {
 	font-size: 24px;
 	line-height: 24px;
@@ -474,6 +478,7 @@ a:hover {
 #playing_field #dialog .choose_promise .suit.selected {
 	background-color: #fff;
 }
+	*/
 
 #playing_field #dialog .choose_promise .diamonds,
 #playing_field #dialog .choose_promise .hearts
