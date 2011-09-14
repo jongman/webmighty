@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>nowjs test</title>
+<script type="text/javascript" src="jquery-1.6.2.min.js"></script>
+<script src="/nowjs/now.js"></script>
+
+<script>
+$(document).ready(function(){
+
+  now.receiveMessage = function(name, message){
+	if (name == "<system>")
+		$("#messages").append("<br><b>" + message + "</b>");
+	else
+		$("#messages").append("<br>" + name + ": " + message);
+  }
+  now.showName = function(){
+	now.receiveMessage("<system>", "I am " + now.name);
+  }
+  now.setReady = function(clientId, name){
+	now.receiveMessage("<system>", name + " ready");
+  }
+  now.receiveChat = function(clientId, name, message){
+    $("#messages").append("<br>" + name + ": " + message);
+  }
+  FACE_ORDER = function(giru){
+	  // TODO consider giru
+	  if (giru == 's')
+		  return "jsdch";
+	  if (giru == 'd')
+		  return "jdsch";
+	  if (giru == 'c')
+		  return "jcsdh";
+	  if (giru == 'h')
+		  return "jhsdc";
+	  return "jsdch";
+  }
+  VALUE_ORDER = "23456789tjqk1";
+  now.receiveDealtCards = function(cards){
+	cards.sort(function(l, r){
+			if (l[0] != r[0])
+				return FACE_ORDER().indexOf(l[0]) - FACE_ORDER().indexOf(r[0]);
+			return VALUE_ORDER.indexOf(l[1]) - VALUE_ORDER.indexOf(r[1]);
+		});
+	now.receiveMessage("<system>", "hand = " + cards);
+  }
+
+  now.requestCommitment = function()
+  {
+	  // 뭐가 젤 야매 구현이 빠를까 -_-?
+	// 무늬 고름 - 노기 4가지 
+	// 숫자 고름 - 13 ~ 런
+	//now.commitmentAnnounce('s', 15)
+	// 아니면 패스
+	//now.commitmentPass()
+	// 아니면 딜미스 
+	//now.commitmentDealMiss()
+  }
+
+  $("#send-button").click(function(){
+    now.distributeMessage($("#text-input").val());
+    $("#text-input").val("");
+  });
+
+  $("#ready-button").click(function(){
+    now.readyGame()
+  });
+  $("#reset-button").click(function(){
+    now.debugReset()
+  });
+
+  //now.name = prompt("What's your name?", "");
+
+});
+</script>
+</head>
+
+<body>
+  <div id="messages"></div>
+  <input type="text" id="text-input">
+  <input type="button" value="Send" id="send-button">
+  <input type="button" value="ready" id="ready-button">
+  <input type="button" value="reset" id="reset-button">
+</body>
+</html>
