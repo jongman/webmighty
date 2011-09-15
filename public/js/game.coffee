@@ -473,7 +473,7 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
-	if LIBGAME?
+	if window.LIBGAME?
 		return
 	window.field.setPlayers([
 		{name: "JongMan Koo", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"}

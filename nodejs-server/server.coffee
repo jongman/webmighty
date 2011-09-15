@@ -1,19 +1,26 @@
 fs = require 'fs'
 html = fs.readFileSync(__dirname + '/main.html')
+testhtml = fs.readFileSync(__dirname + '/test.html')
 jqueryjs = fs.readFileSync(__dirname + '/jquery-1.6.2.min.js')
 clientjs = fs.readFileSync(__dirname + '/clientlib.js')
 http = require('http')
 server = http.createServer (req, res) ->
-  if req.url == '/clientlib.js'
+  if req.url == '/js/clientlib.js'
 	  res.writeHead 200, {'Content-Type': 'text/javascript'}
+	  clientjs = fs.readFileSync(__dirname + '/clientlib.js')
 	  res.end clientjs
-  else if req.url == '/jquery-1.6.2.min.js'
+  else if req.url == '/test'
+	  res.end testhtml
+  else if req.url == '/js/jquery-1.6.2.min.js'
 	  res.writeHead 200, {'Content-Type': 'text/javascript'}
 	  res.end jqueryjs
   else if req.url == '/public'
-	  res.end fs.readFileSync(__dirname + '..' + req.url + '/index.html')
-  else if req.url.substr(0,7) == '/public'
-	  res.end fs.readFileSync(__dirname + '..' + req.url)
+	  res.writeHead 200, {'Content-Type': 'text/html'}
+	  res.end fs.readFileSync(__dirname + '/..' + req.url + '/index.html')
+  else if req.url.substr(0,3) == '/js' or req.url.substr(0,4) == '/css' or req.url.substr(0,7) == '/images'
+	  res.end fs.readFileSync(__dirname + '/../public' + req.url)
+  #else if req.url.substr(0,7) == '/public'
+	  #res.end fs.readFileSync(__dirname + '/..' + req.url)
   else
 	  res.end html
 
@@ -27,8 +34,8 @@ console.log 'Server running at http://127.0.0.1:1337/'
 everyone.now.loginCount = 0
 nowjs.on 'connect', ->
 	everyone.now.loginCount += 1
-	this.now.name = 'player' + everyone.now.loginCount
-	this.now.showName()
+	@now.name ?= 'player' + everyone.now.loginCount
+	@now.showName()
 
 everyone.now.distributeMessage = (message) ->
 	  everyone.now.receiveMessage @now.name, message
@@ -52,6 +59,7 @@ everyone.now.ChooseCardOption =
 everyone.now.state = everyone.now.WAITING_PLAYER
 everyone.now.readyCount = 0
 players = []
+playerNames = []
 cards = []
 currentTurn = 0
 currentTrick = []
@@ -61,12 +69,15 @@ everyone.now.chat = (msg) ->
 
 enterState = (state) ->
 	# TODO refactor to state pattern
-	if state == everyone.now.VOTE
+	if state == everyone.now.WAITING_PLAYER
+		resetGame()
+	else if state == everyone.now.VOTE
 		resetVote()
 		dealCard()
 		nextPlayer = chooseNextPlayerForVote()
 		nowjs.getClient nextPlayer, ->
 			@now.requestCommitment()
+
 	else if state == everyone.now.VOTE_KILL
 		if players.length == 6
 			# if 6 player mode do something and re deal card
@@ -89,11 +100,17 @@ enterState = (state) ->
 		currentTrick = []
 		nowjs.getClient players[lastTurnWinner], ->
 			@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+
 	else if state == everyone.now.END_GAME
 		# 결과 보여주고 일정 시간 후 waiting 상태로 
+		setTimeout (->
+			changeState everyone.now.WAITING_PLAYER
+			, 5000)
 
 changeState = (state) ->
+	console.log 'new state ' + state
 	everyone.now.state = state
+	everyone.now.notifyChangeState(state)
 	enterState state
 
 dealCard = ->
@@ -133,6 +150,7 @@ everyone.now.readyGame = ->
 	console.log "READY " + everyone.now.readyCount
 	if everyone.now.readyCount == 5
 		console.log "DEALING"
+		everyone.now.notifyPlayers players, playerNames
 		changeState everyone.now.VOTE 
 	# don't implement 6 player for now
 	#else if everyone.now.readyCount == 6
@@ -142,8 +160,9 @@ everyone.now.readyGame = ->
 setReady = (clientId, name) ->
 	console.log(clientId)
 	players.push(clientId)
+	playerNames.push(name)
 	nowjs.getGroup('players').addUser(clientId)
-	everyone.now.setReady clientId, name
+	everyone.now.notifyReady clientId, name, players.length - 1
 
 
 ################################################################################
@@ -154,15 +173,15 @@ votes = null
 lastVote = null
 currentVoteIndex = null
 
-lastFriendIndex = 0
+everyone.now.lastFriendIndex = 0
 
 chooseNextPlayerForVote = () ->
-	if currentVoteIndex?
-		currentVoteIndex = lastFriendIndex
-		return currentVoteIndex
+	if not currentVoteIndex?
+		currentVoteIndex = everyone.now.lastFriendIndex
+		return players[currentVoteIndex]
 	else
 		currentVoteIndex = (currentVoteIndex + 1) % votes.length while votes[currentVoteIndex][0] == 'p'
-		return currentVoteIndex
+		return players[currentVoteIndex]
 
 allPass = ->
 	passes = (vote for vote in votes when vote[0] == 'p')
@@ -272,11 +291,14 @@ indexFromClientId = (clientId) ->
 
 getHandFromClientId = (clientId) ->
 	idx = indexFromClientId clientId
-	step = 10 if player.length == 5 else 8
+	step = if player.length == 5 then 10 else 8
 	return cards[idx*step...(idx+1)*step]
 
 everyone.now.debugReset = ->
+	resetGame()
+resetGame = ->
 	everyone.now.state = everyone.now.WAITING_PLAYER
 	everyone.now.readyCount = 0
 	players = []
+	playerNames = []
 	cards = []

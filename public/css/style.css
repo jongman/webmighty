@@ -569,6 +569,9 @@ a:hover {
 	color: #666;
 }
 
+#log {
+	position: absolute;
+}
 
 /* ==================
    Initializr Theme
