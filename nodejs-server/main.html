@@ -17,8 +17,10 @@ $(document).ready(function(){
 	// 주공에게 핸드 정리하고 3장 버리라는 요청
 	now.requestRearrangeHand = function(additionalCards){
 		// 임시 구현으로 간지나게 바로 버리는 용자
-		additionals = additionalCards
-		now.rearrangeHand(additionalCards);
+		additionals = additionalCards;
+		newFace = face;
+		newTarget = target;
+		now.rearrangeHand(additionalCards, newFace, newTarget);
 	}
 
 	getMightyCard = function(){

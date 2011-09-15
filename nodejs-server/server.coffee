@@ -14,22 +14,18 @@ server = http.createServer (req, res) ->
   else if req.url == '/js/jquery-1.6.2.min.js'
 	  res.writeHead 200, {'Content-Type': 'text/javascript'}
 	  res.end jqueryjs
-  else if req.url == '/public'
-	  res.writeHead 200, {'Content-Type': 'text/html'}
-	  res.end fs.readFileSync(__dirname + '/..' + req.url + '/index.html')
   else if req.url.substr(0,3) == '/js' or req.url.substr(0,4) == '/css' or req.url.substr(0,7) == '/images'
 	  res.end fs.readFileSync(__dirname + '/../public' + req.url)
-  #else if req.url.substr(0,7) == '/public'
-	  #res.end fs.readFileSync(__dirname + '/..' + req.url)
   else
 	  res.end html
 
-server.listen 50337, "0.0.0.0"
+port = 40037
+server.listen port, "0.0.0.0"
 
 nowjs = require 'now'
 everyone = nowjs.initialize server
 
-console.log 'Server running at http://0.0.0.0:50337/'
+console.log "Server running at http://0.0.0.0:#{port}/"
 
 everyone.now.loginCount = 0
 nowjs.on 'connect', ->
@@ -63,6 +59,7 @@ playerNames = []
 cards = []
 currentTurn = 0
 currentTrick = []
+lastTurnWinner = -1
 
 everyone.now.chat = (msg) ->
 	everyone.now.receiveChat @now.clientId, @now.name, msg
@@ -75,6 +72,7 @@ enterState = (state) ->
 		resetVote()
 		dealCard()
 		nextPlayer = chooseNextPlayerForVote()
+		console.log "VOTE request " + nextPlayer
 		nowjs.getClient nextPlayer, ->
 			@now.requestCommitment()
 
@@ -85,18 +83,19 @@ enterState = (state) ->
 		else
 			changeState everyone.now.REARRANGE_HAND
 
-
 	else if state == everyone.now.REARRANGE_HAND
-		nowjs.getClient players[jugongIdx], ->
+		nowjs.getClient players[jugongIndex], ->
 			@now.requestRearrangeHand cards[50...53] 
+		everyone.now.notifyRearrangeHand()
 
 	else if state == everyone.now.CHOOSE_FRIEND
-		nowjs.getClient players[jugongIdx], ->
+		nowjs.getClient players[jugongIndex], ->
 			@now.requestChooseFriend()
+		everyone.now.notifyChooseFriend()
 
 	else if state == everyone.now.TAKE_TURN
 		currentTurn = 0
-		lastTurnWinner = jugongIdx
+		lastTurnWinner = jugongIndex
 		currentTrick = []
 		nowjs.getClient players[lastTurnWinner], ->
 			@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
@@ -121,10 +120,10 @@ dealCard = ->
 
 	console.log 'shuffling'
 	for idx in [0...52]
-		changeIdx = Math.floor(Math.random() * (52 - idx)) + idx + 1
+		changeIndex = Math.floor(Math.random() * (52 - idx)) + idx + 1
 		t = cards[idx]
-		cards[idx] = cards[changeIdx]
-		cards[changeIdx] = t
+		cards[idx] = cards[changeIndex]
+		cards[changeIndex] = t
 
 	console.log players
 	idx = 0
@@ -180,6 +179,7 @@ chooseNextPlayerForVote = () ->
 		currentVoteIndex = everyone.now.lastFriendIndex
 		return players[currentVoteIndex]
 	else
+		currentVoteIndex = (currentVoteIndex + 1) % votes.length
 		currentVoteIndex = (currentVoteIndex + 1) % votes.length while votes[currentVoteIndex][0] == 'p'
 		return players[currentVoteIndex]
 
@@ -187,26 +187,34 @@ allPass = ->
 	passes = (vote for vote in votes when vote[0] == 'p')
 	return passes.length == votes.length
 
-jugongIdx = null
-getJugongIdx = ->
-	return jugongIdx
+jugongIndex = null
+getJugongIndex = ->
+	return jugongIndex
 
 allPassExceptOne = ->
 	jugongCount = 0
 	for i in [0...votes.length]
-		if votes[i][0] != 'p' and votes[i][1] > 10
-			jugongIdx = i
-			jugongCount += 1
-		else if votes[i][1] == 20 # run
-			jugongIdx = i
+		if votes[i][1] == 20 # run
+			jugongIndex = i
 			jugongCount = 1
 			break
+		else if votes[i][0] != 'p' and votes[i][1] == 0 # someone not announce
+			return false
+		else if votes[i][0] != 'p' and votes[i][1] > 10
+			jugongIndex = i
+			jugongCount += 1
 	return jugongCount == 1
 
 checkVoteEnd = ->
 	if allPassExceptOne()
+		console.log 'vote success jugong: ' + players[jugongIndex]
+		everyone.now.notifyJugong jugongIndex, lastVote[0], lastVote[1]
 		changeState everyone.now.VOTE_KILL
+
 	else if allPass()
+		console.log 'all pass, redeal'
+		# TODO 바닦 까고 기본 비드 +1 ?
+		everyone.now.notifyMsg "모두 패스하여 다시 카드를 섞습니다."
 		redeal()
 	else
 		nextPlayer = chooseNextPlayerForVote()
@@ -216,15 +224,23 @@ checkVoteEnd = ->
 
 everyone.now.commitmentAnnounce = (face, target) ->
 	idx = indexFromClientId @user.clientId
+	console.log face + target + lastVote
+	console.log face=='n' and target >= 13
+	console.log target >= 14
+	console.log lastVote[1] < target
 	if (face == 'n' and target >= 13 or target >= 14) and lastVote[1] < target
 		votes[idx] = [face, target]
 		lastVote = [face, target, idx]
+		everyone.now.notifyVote idx, face, target
+	else
+		@now.requestCommitment()
 
 	checkVoteEnd()
 
 everyone.now.commitmentPass = ->
 	idx = indexFromClientId @user.clientId
 	votes[idx] = ['p', 0]
+	everyone.now.notifyPass idx
 
 	checkVoteEnd()
 
@@ -245,7 +261,7 @@ checkDealMiss = (cards) ->
 			score += 0.5
 		if card[0] == 'j'
 			score -= 1
-	return score < 6 - player.length
+	return score < 6 - players.length
 
 redeal = ->
 	enterState everyone.now.VOTE
@@ -253,10 +269,13 @@ redeal = ->
 everyone.now.commitmentDealMiss = ->
 	hand = getHandFromClientId @user.clientId
 	if checkDealMiss hand
+		everyone.now.notifyDealMiss (indexFromClientId @user.clientId)
 		redeal()
+	else
+		@now.requestCommitment()
 
 resetVote = ->
-	votes = [null for player in players]
+	votes = (['n',0] for player in players)
 	lastVote = ['n',12]
 	currentVoteIndex = null
 	
@@ -264,20 +283,94 @@ resetVote = ->
 ################################################################################
 # REARRANGE_HAND
 ################################################################################
+everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
+	replaceIndex = 50
+	for idx in [jugongIndex * 10 ... (jugongIndex+1) * 10]
+		if cards[idx] in cardsToRemove
+			cards[idx] = cards[replaceIndex]
+			replaceIndex += 1
+	for idx in [50...53]
+		cards[idx] = cardsToRemove[idx-50]
+		
+	everyone.now.notifyRearrangeHandDone()
+
+	if newFace != lastVote[0] and newTarget >= lastVote[1]+2 and newTarget <= 20
+		lastVote = [newFace, newTarget, jugongIndex]
+		everyone.now.notifyJugong jugongIndex, lastVote[0], lastVote[1]
+	changeState everyone.now.CHOOSE_FRIEND
 
 ################################################################################
 # CHOOSE_FRIEND
 ################################################################################
 
 everyone.now.chooseFriendByCard = (card) ->
+	hand = getHandFromClientId @user.clientId
+	if card in hand
+		@now.requestChooseFriend()
+		return
 	everyone.now.notifyFriendByCard card
+	afterFriendChoose()
+
+everyone.now.chooseFriendFirstTrick = ->
+	everyone.now.notifyFriendFirstTrick
+	afterFriendChoose()
 
 everyone.now.chooseFriendNone = ->
 	everyone.now.notifyFriendNone
+	afterFriendChoose()
+
+afterFriendChoose = ->
+	changeState everyone.now.TAKE_TURN
 
 ################################################################################
 # TAKE_TURN
 ################################################################################
+
+isValidChoice = (clientId, card, option) ->
+	# TODO implement
+	hand = getHandFromClientId clientId
+	if hand.indexOf(card) == -1
+		return false
+	true
+
+determineTurnWinner = ->
+	# TODO implement
+	return Math.floor(Math.random() * 5)
+
+removeCard = (card) ->
+	for i in [0..53]
+		if cards[i] == card
+			cards[i] = ''
+
+everyone.now.chooseCard = (card, option) ->
+	if isValidChoice(@user.clientId, card, option)
+		currentTrick.push(card)
+		removeCard card
+		everyone.now.notifyPlayCard (indexFromClientId @user.clientId), card, option
+		if currentTrick.length == 5
+			# end of one trick
+			lastTurnWinner = determineTurnWinner()
+			everyone.now.takeTrick lastTurnWinner
+
+			currentTurn += 1
+			if currentTurn == 10
+				# end of all trick
+				now.notifyMsg "우리 모두의 승리!"
+			else
+				currentTrick = []
+				nowjs.getClient players[lastTurnWinner], ->
+					@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+		else
+			# 다음 사람에게로
+			console.log lastTurnWinner
+			console.log currentTrick
+			console.log currentTrick.length
+			console.log (lastTurnWinner + currentTrick.length) % 5
+			nowjs.getClient players[(lastTurnWinner + currentTrick.length) % 5], ->
+				@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+	else
+		# 잘못된 선택 했으니 반복
+		@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
 
 ################################################################################
 # END_GAME
@@ -292,11 +385,12 @@ indexFromClientId = (clientId) ->
 
 getHandFromClientId = (clientId) ->
 	idx = indexFromClientId clientId
-	step = if player.length == 5 then 10 else 8
+	step = if players.length == 5 then 10 else 8
 	return cards[idx*step...(idx+1)*step]
 
 everyone.now.debugReset = ->
 	resetGame()
+
 resetGame = ->
 	everyone.now.state = everyone.now.WAITING_PLAYER
 	everyone.now.readyCount = 0

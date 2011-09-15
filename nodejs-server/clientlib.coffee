@@ -1,7 +1,7 @@
 window.LIBGAME = 1
 #now.name = prompt("What's your name?", "")
 systemMsg = (msg) ->
-	$('#log').html( 
+	$('#log').html(
 		(index, oldHtml) ->
 			oldHtml + '<BR>' + msg
 		)
@@ -9,18 +9,32 @@ systemMsg = (msg) ->
 ################################################################################
 # Global variable
 ################################################################################
-giruda = 'n'
+VALUE_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "잭", "퀸", "킹", "에이스"]
+SUIT_NAMES =
+	s: "스페이드"
+	h: "하트"
+	c: "클로버"
+	d: "다이아몬드"
+	n: "노기루다"
 name2index = {}
 client2index = {}
 myIndex = 0
 users = {}
+jugongIndex = -1
+currentPromise = ['n', 0]
 
 ################################################################################
 # Helper functions
 ################################################################################
 
+getMightyCard = ->
+	if currentPromise[0] == 's'
+		return 'd1'
+	return 's1'
+
 FACE_ORDER = (giruda_ = null) ->
-	giruda_ or= giruda
+	giruda_ or= currentPromise[0]
+	giruda_ or= 'n'
 	if giruda_ == 's'
 		return "jsdch"
 	if giruda_ == 'd'
@@ -38,8 +52,23 @@ getRelativeIndexFromClientId = (clientId) ->
 
 getRelativeIndexFromIndex = (idx) ->
 	return (idx - myIndex + 5) % 5
+
 getIndexFromRelativeIndex = (ridx) ->
 	return (myIndex + ridx) % 5
+
+isJugong = (index=null) ->
+	index ?= myIndex
+	return myIndex == jugongIndex
+
+isFriend = (index=null) ->
+	# TODO implement
+	index ?= myIndex
+	return false
+
+isFriendKnown = (index=null) ->
+	# TODO implement
+	index ?= myIndex
+	return false
 
 ################################################################################
 # Event handling
@@ -47,24 +76,36 @@ getIndexFromRelativeIndex = (ridx) ->
 
 doCommitment = ->
 	systemMsg "공약 내세우기"
-	x = prompt('공약 써주세요 (예: n14 s15 pass dealmiss)');
-	if x == 'pass'
-		now.commitmentPass()
-	else if x == 'dealmiss'
-		now.commitmentDealMiss()
-	else 
-		now.commitmentAnnounce x[0], parseInt(x.substr(1))
+	while 1
+		x = prompt('공약 써주세요 (예: n14 s15 pass dealmiss)');
+		if x == 'pass'
+			now.commitmentPass()
+		else if x == 'dealmiss'
+			now.commitmentDealMiss()
+		else if x[0] in ['h','c','n','s','d'] and x.length <= 3 and x[1] in ['1','2']
+			count = parseInt(x.substr(1))
+			if count >= 12 and count <= 20
+				now.commitmentAnnounce x[0], count
+			else
+				continue
+		else
+			continue
+		break
 
 commitmentIndex = 0
 checkForCommitment = ->
 	commitmentIndex += 1
-	if commitmentIndex == 2
-		setTimeout (-> doCommitment(), 2000)
+	if commitmentIndex >= 2
+		setTimeout(
+			->
+				doCommitment()
+			, 300)
 
 now.requestCommitment = ->
 	checkForCommitment()
 
 now.receiveDealtCards = (cards) ->
+	commitmentIndex = 0
 	startIndex = getRelativeIndexFromIndex now.lastFriendIndex
 	CARDS = [
 		cards
@@ -72,17 +113,153 @@ now.receiveDealtCards = (cards) ->
  		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"],
  		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"],
 		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]]
-	window.field.deal CARDS, 1, -> checkForCommitment()
+	window.field.globalMessage("선거가 시작됩니다!")
+	window.field.deal CARDS, 1, -> 
+		checkForCommitment()
+		systemMsg window.field.cardStack
+
+# 주공 당선 후 손 정리
+
+now.requestRearrangeHand = (additionalCards) ->
+	systemMsg additionalCards
+	systemMsg window.field.cardStack
+	systemMsg window.field.cardStack.length
+	window.field.dealAdditionalCards(additionalCards, 0, ->
+			# TODO 여기서 공약 변경도 동시에 이루어짐
+			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
+			window.field.chooseMultipleCards(3,
+				(chosen) ->
+					# 현재는 이전 공약 그대로
+					now.rearrangeHand (card.face for card in chosen), currentPromise[0], currentPromise[1]
+					window.field.takeCards(0, chosen, 
+						->
+							window.field.hands[0].remove(card) for card in chosen
+							window.field.repositionCards(0)
+						)
+			)
+	)
+
+now.notifyRearrangeHandDone = ->
+	if isJugong()
+		return
+	jugongRIndex = getRelativeIndexFromIndex jugongIndex
+	chosen = window.field.hand[jugongIndex]
+	chosen.remove(chosen[Math.floor(Math.random() * chosen.length)]) while chosen.length > 3
+
+	window.field.takeCards(0, chosen,
+		->
+			window.field.hands[jugongRIndex].remove(card) for card in chosen
+			window.field.repositionCards(jugongRIndex)
+		)
+
+now.notifyRearrangeHand = ->
+	if isJugong()
+		return
+	systemMsg window.field.cardStack
+	systemMsg window.field.cardStack.length
+	window.field.dealAdditionalCards(['back','back','back'], getRelativeIndexFromIndex jugongIndex,
+		->
+			window.field.globalMessage("#{users[jugongIndex].name} 님이 당을 재정비하고 있습니다.")
+	)
+
+# 프렌드 선택
+now.requestChooseFriend = ->
+	systemMsg "프렌 선택"
+	while 1
+		x = prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)')
+		if x == 'nofriend'
+			now.chooseFriendNone()
+		else if x == 'joker'
+			now.chooseFriendByCard('jr')
+		else if x == 'mighty'
+			now.chooseFriendByCard(getMightyCard())
+		else if x == 'firsttrick'
+			now.chooseFriendFirstTrick()
+		else if x[0] in 'hcsd' and x.length == 2 and x[1] in '123456789tjkqa'
+			if x[1] == 'a'
+				x = x[0] + '1'
+			now.chooseFriendByCard(x)
+		else if x[0] in 'hcsd' and x.length == 3 and x[1] == '1' and x[2] == '0'
+			now.chooseFriendByCard(x[0]+'t')
+		else
+			continue
+		break
+	
+now.notifyChooseFriend = ->
+	if isJugong()
+		window.field.globalMessage("#{users[jugongIndex].name} 님이 함께할 프렌드를 선택하고 있습니다.")
+
+renderFaceName = (face) ->
+	if face == getMightyCard()
+		return "마이티"
+	if face == 'jr'
+		return "조커"
+	suit = SUIT_NAMES[face[0]]
+	value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])]
+	return "#{suit} #{value}"
+
+now.notifyFriendByCard = (card) ->
+	card = renderFaceName card
+	document.title = buildCommitmentString(currentPromise...) + ', ' + card + '프렌드'
+
+now.notifyFriendNone = ->
+	document.title = buildCommitmentString(currentPromise...) + ', ' + '프렌드 없음'
+
+now.notifyFriendFirstTrick = ->
+	document.title = buildCommitmentString(face, target) + ', ' + '초구 프렌드'
+
+# 카드 내기
+
+now.requestChooseCard = (currentTrick, option) ->
+	# TODO 카드 고르는거 필터링
+	window.field.chooseCard((card) ->
+		# TODO 조커, 조커콜 등 구현
+		now.chooseCard card.face, option
+	)
+
+now.notifyPlayCard = (index, card, option) ->
+	window.field.playCard (getRelativeIndexFromIndex index), card, option
+
+now.takeTrick = (winnerIndex) ->
+	window.field.endTurn((getRelativeIndexFromIndex winnerIndex), not (isJugong(winnerIndex) or isFriend(winnerIndex) and isFriendKnown(winnerIndex)))
+
 ################################################################################
-# Miscellaneous
+# Notify
 ################################################################################
 
 class NetworkUser
 	constructor: (@clientId, @name, @index) ->
-		client2index[@clientId] = index
+		client2index[@clientId] = @index
+		name2index[@name] = @index
+
+buildCommitmentString = (face, target) ->
+	suit = SUIT_NAMES[face]
+	return "#{suit} #{target}"
+
+now.notifyJugong = (finalJugongIndex, face, target) ->
+	jugongIndex = finalJugongIndex
+	systemMsg "jugong is #{users[jugongIndex].name}"
+	currentPromise = [face, target]
+	
+	document.title = buildCommitmentString(face, target)
+
+	if now.state == now.VOTE
+		window.field.setPlayerType (getRelativeIndexFromIndex jugongIndex), "주공"
+		window.field.playerMessage (getRelativeIndexFromIndex jugongIndex), "당선", buildCommitmentString(face, target)
+
+		if isJugong()
+			window.field.globalMessage "당선 축하드립니다!"
+		else
+			name = users[jugongIndex].name
+			window.field.globalMessage "#{name} 님이 당선되었습니다!"
+
+	else if now.state == now.REARRANGE_HAND
+		# 주공이 포기하고 무늬 바꾼거
+		newPromise = buildCommitmentString face, target
+		window.field.globalMessage "공약이 변경되었습니다: #{newPromise}"
 
 now.notifyChangeState = (newState) ->
-	systemMsg '여기 왜 안불림요' + newState + now.VOTE
+	systemMsg 'changeState to ' + newState
 	if newState == now.VOTE
 		commitmentIndex = 0
 		window.field.setPlayers(
@@ -100,8 +277,20 @@ now.notifyPlayers = (clientIds, names) ->
 		name = names[i]
 		index = i
 		users[index] = new NetworkUser(clientId, name, index)
-		name2index[name] = index
-		client2index[clientId] = index
+
+now.notifyMsg = (msg) ->
+	window.field.globalMessage msg
+
+now.notifyVote = (index, face, target) ->
+	currentPromise = [face, target]
+	systemMsg buildCommitmentString(face, target)
+	window.field.playerMessage((getRelativeIndexFromIndex index), "공약", buildCommitmentString(face, target))
+
+now.notifyDealMiss = (index) ->
+	window.field.playerMessage((getRelativeIndexFromIndex index), "딜미스")
+
+now.notifyPass = (index) ->
+	window.field.playerMessage((getRelativeIndexFromIndex index), "패스")
 
 now.notifyReady = (clientId, name, index) ->
 	systemMsg name + " ready"
@@ -111,9 +300,30 @@ now.notifyReady = (clientId, name, index) ->
 	if clientId == now.core.clientId
 		myIndex = index
 
+################################################################################
+# Miscellaneous
+################################################################################
+
 now.showName = ->
-	systemMsg 'i am ' + @now.name
+	systemMsg "i am #{@now.name}"
 
 # (TEST only) set ready when page load
 now.ready ->
 	now.readyGame()
+
+loctable = {
+	en: {
+		패스: 'Pass'
+	}
+}
+
+lang = 'ko'
+
+getLocalizedString = (lang, word) ->
+	if lang == 'ko'
+		return word
+	if lang in loctable and word in loctable[lang]
+		return loctable[lang][word]
+	else
+		console.log "not localizable word #{word} for language #{lang}"
+		return word
