@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, VALUE_ORDER, client2index, getIndexFromRelativeIndex, getRelativeIndexFromClientId, getRelativeIndexFromIndex, giruda, myIndex, name2index, systemMsg, users;
+  var FACE_ORDER, NetworkUser, VALUE_ORDER, checkForCommitment, client2index, commitmentIndex, doCommitment, getIndexFromRelativeIndex, getRelativeIndexFromClientId, getRelativeIndexFromIndex, giruda, myIndex, name2index, systemMsg, users;
   window.LIBGAME = 1;
   systemMsg = function(msg) {
     return $('#log').html(function(index, oldHtml) {
@@ -42,14 +42,35 @@
   getIndexFromRelativeIndex = function(ridx) {
     return (myIndex + ridx) % 5;
   };
+  doCommitment = function() {
+    var x;
+    systemMsg("공약 내세우기");
+    x = prompt('공약 써주세요 (예: n14 s15 pass dealmiss)');
+    if (x === 'pass') {
+      return now.commitmentPass();
+    } else if (x === 'dealmiss') {
+      return now.commitmentDealMiss();
+    } else {
+      return now.commitmentAnnounce(x[0], parseInt(x.substr(1)));
+    }
+  };
+  commitmentIndex = 0;
+  checkForCommitment = function() {
+    commitmentIndex += 1;
+    if (commitmentIndex === 2) {
+      return doCommitment();
+    }
+  };
   now.requestCommitment = function() {
-    return systemMsg("공약 내세우기");
+    return checkForCommitment();
   };
   now.receiveDealtCards = function(cards) {
     var CARDS, startIndex;
     startIndex = getRelativeIndexFromIndex(now.lastFriendIndex);
     CARDS = [cards, ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]];
-    return window.field.deal(CARDS, 1, function() {});
+    return window.field.deal(CARDS, 1, function() {
+      return checkForCommitment();
+    });
   };
   NetworkUser = (function() {
     function NetworkUser(clientId, name, index) {
@@ -64,7 +85,8 @@
     var ridx;
     systemMsg('여기 왜 안불림요' + newState + now.VOTE);
     if (newState === now.VOTE) {
-      window.field.setPlayers((function() {
+      commitmentIndex = 0;
+      return window.field.setPlayers((function() {
         var _results;
         _results = [];
         for (ridx = 0; ridx < 5; ridx++) {
@@ -75,8 +97,7 @@
         }
         return _results;
       })());
-    }
-    if (newState === now.END_GAME) {
+    } else if (newState === now.END_GAME) {
       name2index = {};
       client2index = {};
       return users = {};

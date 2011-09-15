@@ -45,8 +45,24 @@ getIndexFromRelativeIndex = (ridx) ->
 # Event handling
 ################################################################################
 
-now.requestCommitment = ->
+doCommitment = ->
 	systemMsg "공약 내세우기"
+	x = prompt('공약 써주세요 (예: n14 s15 pass dealmiss)');
+	if x == 'pass'
+		now.commitmentPass()
+	else if x == 'dealmiss'
+		now.commitmentDealMiss()
+	else 
+		now.commitmentAnnounce x[0], parseInt(x.substr(1))
+
+commitmentIndex = 0
+checkForCommitment = ->
+	commitmentIndex += 1
+	if commitmentIndex == 2
+		setTimeout (-> doCommitment(), 2000)
+
+now.requestCommitment = ->
+	checkForCommitment()
 
 now.receiveDealtCards = (cards) ->
 	startIndex = getRelativeIndexFromIndex now.lastFriendIndex
@@ -56,7 +72,7 @@ now.receiveDealtCards = (cards) ->
  		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"],
  		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"],
 		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]]
-	window.field.deal CARDS, 1, ->
+	window.field.deal CARDS, 1, -> checkForCommitment()
 ################################################################################
 # Miscellaneous
 ################################################################################
@@ -68,11 +84,12 @@ class NetworkUser
 now.notifyChangeState = (newState) ->
 	systemMsg '여기 왜 안불림요' + newState + now.VOTE
 	if newState == now.VOTE
+		commitmentIndex = 0
 		window.field.setPlayers(
 			{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
 			)
 
-	if newState == now.END_GAME
+	else if newState == now.END_GAME
 		name2index = {}
 		client2index = {}
 		users = {}

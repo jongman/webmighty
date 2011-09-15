@@ -24,12 +24,12 @@ server = http.createServer (req, res) ->
   else
 	  res.end html
 
-server.listen 1337, "127.0.0.1"
+server.listen 50337, "0.0.0.0"
 
 nowjs = require 'now'
 everyone = nowjs.initialize server
 
-console.log 'Server running at http://127.0.0.1:1337/'
+console.log 'Server running at http://0.0.0.0:50337/'
 
 everyone.now.loginCount = 0
 nowjs.on 'connect', ->
@@ -210,6 +210,7 @@ checkVoteEnd = ->
 		redeal()
 	else
 		nextPlayer = chooseNextPlayerForVote()
+		console.log "VOTE request " + nextPlayer
 		nowjs.getClient nextPlayer, ->
 			@now.requestCommitment()
 
