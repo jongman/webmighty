@@ -399,6 +399,23 @@ class PlayingField
 					.mouseout(-> $(this).animate({top: "+=10"}, SPEED_BASE))
 					.mousedown(-> finish(card))
 
+	chooseFilteredCard: (filter, done=->) ->
+		player = 0
+		finish = (card) =>
+			for c in @hands[player]
+				c.elem
+					.removeClass("canChoose")
+					.unbind()
+			done(card)
+		for card in @hands[player]
+			do (card) =>
+				if filter(card)
+					card.elem
+						.addClass("canChoose")
+						.mouseover(-> $(this).animate({top: "-=10"}, SPEED_BASE))
+						.mouseout(-> $(this).animate({top: "+=10"}, SPEED_BASE))
+						.mousedown(-> finish(card))
+
 	chooseMultipleCards: (choose, done=->) ->
 		player = 0
 		@chosen = []

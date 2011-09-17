@@ -1,13 +1,101 @@
+rule = require './rule'
+
+testFailFlag = false
+
+assertFalse = (o, msg= '') ->
+	if o
+		console.log "AssertFalse fail: #{msg}"
+		testFailFlag = true
+
+assertTrue = (o, msg= '') ->
+	if not o
+		console.log "AssertTrue fail: #{msg}"
+		testFailFlag = true
+
+assertEqual = (l, r, msg = '') ->
+	if l != r
+		console.log "AssertEqual fail: #{msg}"
+		console.log "expected: #{l}"
+		console.log "actual: #{r}"
+		testFailFlag = true
+
+test = ->
+	assertTrue rule.hasFace(['c3', 'jr'], 'c')
+	assertTrue rule.checkDealMiss(['hq','h2','h3','h4','h5','h6','h7','h8','h9','jr'])
+	assertTrue rule.checkDealMiss(['hq','h2','h3','h4','h5','h6','h7','h8','s1','jr'])
+	assertFalse rule.checkDealMiss(['hq','h2','h3','h4','h5','h6','h7','c1','d1','jr'])
+
+	setCards = (cards) ->
+		rule.resetTrick()
+		rule.addTrick(card) for card in cards
+
+	setCards ['c3','c8','c1','dj','ck']
+	rule.setPromise(['c', 14])
+	assertEqual 2, rule.determineTurnWinner 0, 1
+	rule.setPromise(['d', 14]) # giruda win
+	assertEqual 3, rule.determineTurnWinner 0, 1
+
+	setCards ['c3','c8','c1','jr','ck']
+	rule.setPromise(['c', 14])
+	assertEqual 3, rule.determineTurnWinner 0, 1
+	rule.setPromise(['d', 14])
+	assertEqual 3, rule.determineTurnWinner 0, 1
+	assertEqual 2, rule.determineTurnWinner rule.ChooseCardOption.JokerCall, 1
+	assertEqual 2, rule.determineTurnWinner 0, 9
+
+	setCards ['c3','c8','jr','st','d1']
+	rule.setPromise(['c', 14])
+	assertEqual 2, rule.determineTurnWinner 0, 1
+	assertEqual 1, rule.determineTurnWinner rule.ChooseCardOption.JokerCall, 1
+	assertEqual 1, rule.determineTurnWinner 0, 9
+	rule.setPromise(['d', 14])
+	assertEqual 2, rule.determineTurnWinner 0, 1
+	rule.setPromise(['s', 14])
+	assertEqual 4, rule.determineTurnWinner 0, 1
+
+	testValidChoice = (cards, hand, card, option, currentTurn) ->
+		rule.resetTrick()
+		rule.addTrick(c) for c in cards
+		hand or= [card]
+		rule.isValidChoice(hand, card, option, currentTurn)
+
+	# 카드 내기 테스트
+	# 조커
+	assertFalse testValidChoice([], null, 'jr', rule.ChooseCardOption.HCome, 0), "첫턴 조커"
+	assertTrue testValidChoice([], null, 'jr', rule.ChooseCardOption.HCome, 1), "조커"
+	assertFalse testValidChoice([], null, 'jr', rule.ChooseCardOption.None, 1), "조커"
+
+	# 조커콜
+	assertFalse testValidChoice([], null, 'c3', rule.ChooseCardOption.JokerCall, 0), "첫턴 조커콜 안됨"
+	assertTrue testValidChoice([], null, 'c3', rule.ChooseCardOption.None, 0), "첫턴 조커콜 안됨"
+	assertTrue testValidChoice(['c3'], ['jr', 'c2'], 'c2', rule.ChooseCardOption.None, 1), "조콜안했으면 딴거내도됨"
+	assertFalse testValidChoice(['c3'], ['jr', 'c2', 's5'], 's5', rule.ChooseCardOption.None, 1), "조콜안했으면 딴거내도됨"
+	assertTrue testValidChoice(['c3'], ['jr', 'c2'], 'jr', rule.ChooseCardOption.None, 1), "조콜안했으면 딴거내도됨"
+	assertFalse testValidChoice(['c3'], ['jr', 'c2'], 'c2', rule.ChooseCardOption.JokerCall, 1), "조콜했으면 조커가 나와야지!"
+	assertTrue testValidChoice(['c3'], ['jr', 'c2'], 'jr', rule.ChooseCardOption.JokerCall, 1), "조콜했으면 조커가 나와야지!"
+
+	# 마이티
+
+	if testFailFlag
+		process.exit(1)
+	else
+		console.log 'All test OK'
+
+test()
+
 fs = require 'fs'
 html = fs.readFileSync(__dirname + '/main.html')
 testhtml = fs.readFileSync(__dirname + '/test.html')
 jqueryjs = fs.readFileSync(__dirname + '/jquery-1.6.2.min.js')
-clientjs = fs.readFileSync(__dirname + '/clientlib.js')
 http = require('http')
 server = http.createServer (req, res) ->
   if req.url == '/js/clientlib.js'
 	  res.writeHead 200, {'Content-Type': 'text/javascript'}
 	  clientjs = fs.readFileSync(__dirname + '/clientlib.js')
+	  res.end clientjs
+  else if req.url == '/js/rule.js'
+	  res.writeHead 200, {'Content-Type': 'text/javascript'}
+	  clientjs = fs.readFileSync(__dirname + '/rule.js')
 	  res.end clientjs
   else if req.url == '/test'
 	  res.end testhtml
@@ -33,6 +121,13 @@ nowjs.on 'connect', ->
 	@now.name ?= 'player' + everyone.now.loginCount
 	@now.showName()
 
+	# TODO room
+	#nowjs.getGroup('room-1').addUser(@user.clientId)
+
+	# TODO observer connect inside game
+	#if everyone.now.state != everyone.now.WAITING_PLAYER
+		#nowjs.getGroup('observer-1').addUser(@user.clientId)
+
 everyone.now.distributeMessage = (message) ->
 	  everyone.now.receiveMessage @now.name, message
 
@@ -44,21 +139,13 @@ everyone.now.CHOOSE_FRIEND = 5
 everyone.now.TAKE_TURN = 6
 everyone.now.END_GAME = 7
 
-everyone.now.ChooseCardOption = 
-	None: 0
-	JokerCall: 1
-	SCome: 2
-	DCome: 3
-	HCome: 4
-	CCome: 5
-	
 everyone.now.state = everyone.now.WAITING_PLAYER
 everyone.now.readyCount = 0
 players = []
 playerNames = []
 cards = []
 currentTurn = 0
-currentTrick = []
+currentTrickOption = null
 lastTurnWinner = -1
 
 everyone.now.chat = (msg) ->
@@ -96,9 +183,9 @@ enterState = (state) ->
 	else if state == everyone.now.TAKE_TURN
 		currentTurn = 0
 		lastTurnWinner = jugongIndex
-		currentTrick = []
+		rule.resetTrick()
 		nowjs.getClient players[lastTurnWinner], ->
-			@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+			@now.requestChooseCard rule.currentTrick, rule.ChooseCardOption.None
 
 	else if state == everyone.now.END_GAME
 		# 결과 보여주고 일정 시간 후 waiting 상태로 
@@ -157,10 +244,9 @@ everyone.now.readyGame = ->
 
 
 setReady = (clientId, name) ->
-	console.log(clientId)
 	players.push(clientId)
 	playerNames.push(name)
-	nowjs.getGroup('players').addUser(clientId)
+	#nowjs.getGroup('players').addUser(clientId)
 	everyone.now.notifyReady clientId, name, players.length - 1
 
 
@@ -169,7 +255,7 @@ setReady = (clientId, name) ->
 ################################################################################
 
 votes = null
-lastVote = null
+currentPromise = null
 currentVoteIndex = null
 
 everyone.now.lastFriendIndex = 0
@@ -208,7 +294,7 @@ allPassExceptOne = ->
 checkVoteEnd = ->
 	if allPassExceptOne()
 		console.log 'vote success jugong: ' + players[jugongIndex]
-		everyone.now.notifyJugong jugongIndex, lastVote[0], lastVote[1]
+		everyone.now.notifyJugong jugongIndex, currentPromise[0], currentPromise[1]
 		changeState everyone.now.VOTE_KILL
 
 	else if allPass()
@@ -224,13 +310,10 @@ checkVoteEnd = ->
 
 everyone.now.commitmentAnnounce = (face, target) ->
 	idx = indexFromClientId @user.clientId
-	console.log face + target + lastVote
-	console.log face=='n' and target >= 13
-	console.log target >= 14
-	console.log lastVote[1] < target
-	if (face == 'n' and target >= 13 or target >= 14) and lastVote[1] < target
+	if (face == 'n' and target >= 13 or target >= 14) and currentPromise[1] < target
 		votes[idx] = [face, target]
-		lastVote = [face, target, idx]
+		currentPromise = [face, target, idx]
+		rule.setPromise currentPromise
 		everyone.now.notifyVote idx, face, target
 	else
 		@now.requestCommitment()
@@ -244,31 +327,12 @@ everyone.now.commitmentPass = ->
 
 	checkVoteEnd()
 
-checkDealMiss = (cards) ->
-	# TODO implement deal miss options
-	score = 0
-	for card in cards
-		if card[1] in ['1','j','k','q']
-			if lastVote[0] == 's' and card[0] == 'd'
-				# mighty with spade giruda
-				score += 0
-			else if lastVote[0] != 's' and card[0] == 's'
-				# mighty with non-spade giruda
-				score += 0
-			else
-				score += 1
-		if card[1] == 't'
-			score += 0.5
-		if card[0] == 'j'
-			score -= 1
-	return score < 6 - players.length
-
 redeal = ->
 	enterState everyone.now.VOTE
 
 everyone.now.commitmentDealMiss = ->
 	hand = getHandFromClientId @user.clientId
-	if checkDealMiss hand
+	if rule.checkDealMiss hand
 		everyone.now.notifyDealMiss (indexFromClientId @user.clientId)
 		redeal()
 	else
@@ -276,7 +340,8 @@ everyone.now.commitmentDealMiss = ->
 
 resetVote = ->
 	votes = (['n',0] for player in players)
-	lastVote = ['n',12]
+	currentPromise = ['n',12]
+	rule.setPromise currentPromise
 	currentVoteIndex = null
 	
 
@@ -294,9 +359,10 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 		
 	everyone.now.notifyRearrangeHandDone()
 
-	if newFace != lastVote[0] and newTarget >= lastVote[1]+2 and newTarget <= 20
-		lastVote = [newFace, newTarget, jugongIndex]
-		everyone.now.notifyJugong jugongIndex, lastVote[0], lastVote[1]
+	if newFace != currentPromise[0] and newTarget >= currentPromise[1]+2 and newTarget <= 20
+		currentPromise = [newFace, newTarget, jugongIndex]
+		rule.setPromise currentPromise
+		everyone.now.notifyJugong jugongIndex, currentPromise[0], currentPromise[1]
 	changeState everyone.now.CHOOSE_FRIEND
 
 ################################################################################
@@ -326,30 +392,22 @@ afterFriendChoose = ->
 # TAKE_TURN
 ################################################################################
 
-isValidChoice = (clientId, card, option) ->
-	# TODO implement
-	hand = getHandFromClientId clientId
-	if hand.indexOf(card) == -1
-		return false
-	true
-
-determineTurnWinner = ->
-	# TODO implement
-	return Math.floor(Math.random() * 5)
 
 removeCard = (card) ->
-	for i in [0..53]
-		if cards[i] == card
-			cards[i] = ''
+	cards[cards.indexOf(card)] = ''
 
 everyone.now.chooseCard = (card, option) ->
-	if isValidChoice(@user.clientId, card, option)
-		currentTrick.push(card)
+	if rule.currentTrick.length > 0
+		option = currentTrickOption
+	if rule.isValidChoice((getHandFromClientId @user.clientId), card, option, currentTurn)
+		if rule.currentTrick.length == 0
+			currentTrickOption = option
+		rule.addTrick(card)
 		removeCard card
 		everyone.now.notifyPlayCard (indexFromClientId @user.clientId), card, option
-		if currentTrick.length == 5
+		if rule.currentTrick.length == 5
 			# end of one trick
-			lastTurnWinner = determineTurnWinner()
+			lastTurnWinner = (lastTurnWinner + rule.determineTurnWinner(currentTrickOption, currentTurn))%5
 			everyone.now.takeTrick lastTurnWinner
 
 			currentTurn += 1
@@ -357,20 +415,17 @@ everyone.now.chooseCard = (card, option) ->
 				# end of all trick
 				now.notifyMsg "우리 모두의 승리!"
 			else
-				currentTrick = []
+				rule.resetTrick()
 				nowjs.getClient players[lastTurnWinner], ->
-					@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+					@now.requestChooseCard currentTurn, rule.currentTrick, rule.ChooseCardOption.None
 		else
 			# 다음 사람에게로
-			console.log lastTurnWinner
-			console.log currentTrick
-			console.log currentTrick.length
-			console.log (lastTurnWinner + currentTrick.length) % 5
-			nowjs.getClient players[(lastTurnWinner + currentTrick.length) % 5], ->
-				@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+			console.log rule.currentTrick
+			nowjs.getClient players[(lastTurnWinner + rule.currentTrick.length) % 5], ->
+				@now.requestChooseCard rule.currentTrick, currentTrickOption
 	else
 		# 잘못된 선택 했으니 반복
-		@now.requestChooseCard currentTrick, everyone.now.ChooseCardOption.None
+		@now.requestChooseCard rule.currentTrick, rule.ChooseCardOption.None
 
 ################################################################################
 # END_GAME
