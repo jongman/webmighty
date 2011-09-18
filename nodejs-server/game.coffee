@@ -490,7 +490,8 @@ class PlayingField
 				.mouseout(handlers.onMouseOut)
 		null
 
-
+	choosePromise: (minNoGiru, minGiru, choose=->) ->
+		$("#dialog .choose_promise").fadeIn(100)
 
 
 field = null
@@ -503,6 +504,8 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
+
+	$("button.choose_promise").click(-> window.field.choosePromise(13, 14))
 	if window.LIBGAME?
 		return
 	window.field.setPlayers([

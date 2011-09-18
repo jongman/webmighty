@@ -430,9 +430,6 @@ a:hover {
 	height: 80px;
 	margin: 0px 16px 0px 16px;
 }
-#playing_field #dialog .choose_promise ul.promise li.selected {
-	margin-bottom: 16px;
-}
 
 #playing_field #dialog .choose_promise ul.promise button {
 	font-size: 20px;
@@ -440,6 +437,12 @@ a:hover {
 	width: 24px;
 	height: 24px;
 }
+
+#playing_field #dialog .choose_promise ul.promise button.selected {
+	background-color: #f88;
+	margin-bottom: 16px;
+}
+
 #playing_field #dialog .choose_promise ul.promise ul li {
 	float: left;
 	width: 150px;

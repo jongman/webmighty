@@ -36,10 +36,11 @@
 					<li class="buttons">
 						<ul>
 							<li class="select_suit">
-								<button class="suit spades selected">&spades;</button>
-								<button class="suit diamonds">&diams;</button>
-								<button class="suit hearts">&hearts;</button>
-								<button class="suit clubs">&clubs;</button>
+								<button id="spades" class="suit selected">&spades;</button>
+								<button id="diamonds" class="suit">&diams;</button>
+								<button id="hearts" class="suit">&hearts;</button>
+								<button id="clubs" class="suit">&clubs;</button>
+								<button class="suit none">&clubs;</button>
 							</li>
 							<li class="select_promise">
 								<button class="minus_promise">-</button>
@@ -74,6 +75,9 @@
 				</dd>
 			</dl>
 		</div>
+	</div>
+	<div id="dev">
+		<button class="choose_promise">공약 정하기</button>
 	</div>
 	<div id="logwin">
 		<button>참가</button>
