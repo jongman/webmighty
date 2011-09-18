@@ -2,6 +2,15 @@ if not exports?
 	exports = this['rule'] = {}
 
 exports.VALUE_ORDER = "23456789tjqk1"
+
+# 승패는 주공 기준
+exports.Victory =
+	WinByNoticedRun: 1
+	WinByRun: 2
+	Win: 3
+	Lose: 4
+	LoseByBackRun: 5
+
 exports.ChooseCardOption =
 	None: 0
 	JokerCall: 1
@@ -21,7 +30,7 @@ exports.FriendOption =
 
 exports.friendOption = exports.FriendOption.None
 exports.friendKnown = false
-exports.friendIndex = -1
+exports.friendIndex = null
 exports.friendHandler = ->
 
 exports.setFriendHandler = (handler) ->
@@ -30,7 +39,7 @@ exports.setFriendHandler = (handler) ->
 exports.resetFriendOption = ->
 	exports.friendOption = exports.FriendOption.None
 	exports.friendKnown = false
-	exports.friendIndex = -1
+	exports.friendIndex = null
 
 exports.setFriend = (option, arg = null) ->
 	exports.friendOption = option
@@ -77,7 +86,7 @@ exports.resetTrick = (winnerIndex = null) ->
 	exports.currentTrick = []
 	if winnerIndex?
 		exports.checkFriendEndTurn winnerIndex
-	exports.currentTurn += 1
+		exports.currentTurn += 1
 
 exports.getCurrentTrickFace = (currentTrickOption) ->
 	if exports.currentTrick.length == 0

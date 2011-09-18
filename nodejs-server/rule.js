@@ -9,6 +9,13 @@ if (!(typeof exports !== "undefined" && exports !== null)) {
   exports = this['rule'] = {};
 }
 exports.VALUE_ORDER = "23456789tjqk1";
+exports.Victory = {
+  WinByNoticedRun: 1,
+  WinByRun: 2,
+  Win: 3,
+  Lose: 4,
+  LoseByBackRun: 5
+};
 exports.ChooseCardOption = {
   None: 0,
   JokerCall: 1,
@@ -25,7 +32,7 @@ exports.FriendOption = {
 };
 exports.friendOption = exports.FriendOption.None;
 exports.friendKnown = false;
-exports.friendIndex = -1;
+exports.friendIndex = null;
 exports.friendHandler = function() {};
 exports.setFriendHandler = function(handler) {
   return exports.friendHandler = handler;
@@ -33,7 +40,7 @@ exports.setFriendHandler = function(handler) {
 exports.resetFriendOption = function() {
   exports.friendOption = exports.FriendOption.None;
   exports.friendKnown = false;
-  return exports.friendIndex = -1;
+  return exports.friendIndex = null;
 };
 exports.setFriend = function(option, arg) {
   if (arg == null) {
@@ -90,8 +97,8 @@ exports.resetTrick = function(winnerIndex) {
   exports.currentTrick = [];
   if (winnerIndex != null) {
     exports.checkFriendEndTurn(winnerIndex);
+    return exports.currentTurn += 1;
   }
-  return exports.currentTurn += 1;
 };
 exports.getCurrentTrickFace = function(currentTrickOption) {
   if (exports.currentTrick.length === 0) {

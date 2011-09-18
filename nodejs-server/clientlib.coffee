@@ -154,10 +154,10 @@ now.notifyRearrangeHandDone = ->
 		return
 	console.log 'notifyRearrangeHandDone'
 	jugongRIndex = getRelativeIndexFromIndex jugongIndex
-	chosen = window.field.hands[jugongIndex]
+	chosen = window.field.hands[jugongRIndex]
 	chosen = [chosen[0], chosen[1], chosen[2]]
 
-	window.field.takeCards(0, chosen,
+	window.field.takeCards(jugongRIndex, chosen,
 		->
 			window.field.hands[jugongRIndex].remove(card) for card in chosen
 			window.field.repositionCards(jugongRIndex)
@@ -213,7 +213,7 @@ renderFaceName = (face) ->
 
 friendHandler = (index) ->
 	window.field.setPlayerType getRelativeIndexFromIndex(index), "프렌드"
-	window.field.removeCollectedCards index
+	window.field.removeCollectedCards getRelativeIndexFromIndex(index)
 	systemMsg "friend is " + index
 
 rule.setFriendHandler friendHandler
@@ -242,7 +242,7 @@ now.requestChooseCard = (currentTurn, option) ->
 	player = 0
 	handFace = (c.face for c in window.field.hands[player])
 	filter = (card) ->
-		if card == 'jr'
+		if card.face == 'jr'
 			# 실제로 조커는 option을 붙여서 내야하므로 isValidChoice가 fail함
 			# 카드 고르는 시점에선 조커는 낼 수 있음
 			return true
@@ -321,7 +321,7 @@ now.notifyPlayCard = (index, card, option) ->
 
 now.takeTrick = (currentTurn, winnerIndex) ->
 	window.field.endTurn((getRelativeIndexFromIndex winnerIndex), not (isJugong(winnerIndex) or rule.isFriend(winnerIndex) and rule.isFriendKnown()))
-	rule.resetTrick()
+	rule.resetTrick(winnerIndex)
 
 ################################################################################
 # Notify
@@ -395,6 +395,8 @@ now.notifyDealMiss = (index) ->
 now.notifyPass = (index) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "패스")
 
+now.notifyVictory = (victoryFlag) ->
+	
 now.notifyReady = (clientId, name, index) ->
 	systemMsg name + " ready"
 	name2index[name] = index

@@ -182,9 +182,9 @@
     }
     console.log('notifyRearrangeHandDone');
     jugongRIndex = getRelativeIndexFromIndex(jugongIndex);
-    chosen = window.field.hands[jugongIndex];
+    chosen = window.field.hands[jugongRIndex];
     chosen = [chosen[0], chosen[1], chosen[2]];
-    return window.field.takeCards(0, chosen, function() {
+    return window.field.takeCards(jugongRIndex, chosen, function() {
       var card, _i, _len;
       for (_i = 0, _len = chosen.length; _i < _len; _i++) {
         card = chosen[_i];
@@ -253,7 +253,7 @@
   };
   friendHandler = function(index) {
     window.field.setPlayerType(getRelativeIndexFromIndex(index), "프렌드");
-    window.field.removeCollectedCards(index);
+    window.field.removeCollectedCards(getRelativeIndexFromIndex(index));
     return systemMsg("friend is " + index);
   };
   rule.setFriendHandler(friendHandler);
@@ -291,7 +291,7 @@
       return _results;
     })();
     filter = function(card) {
-      if (card === 'jr') {
+      if (card.face === 'jr') {
         return true;
       }
       return rule.isValidChoice(handFace, card.face, option, currentTurn);
@@ -373,7 +373,7 @@
   };
   now.takeTrick = function(currentTurn, winnerIndex) {
     window.field.endTurn(getRelativeIndexFromIndex(winnerIndex), !(isJugong(winnerIndex) || rule.isFriend(winnerIndex) && rule.isFriendKnown()));
-    return rule.resetTrick();
+    return rule.resetTrick(winnerIndex);
   };
   NetworkUser = (function() {
     function NetworkUser(clientId, name, index) {
@@ -460,6 +460,7 @@
   now.notifyPass = function(index) {
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "패스");
   };
+  now.notifyVictory = function(victoryFlag) {};
   now.notifyReady = function(clientId, name, index) {
     systemMsg(name + " ready");
     name2index[name] = index;
