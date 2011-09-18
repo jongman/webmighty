@@ -258,10 +258,20 @@
       n = this.hands[player].length;
       for (i = 0; 0 <= n ? i < n : i > n; 0 <= n ? i++ : i--) {
         this.hands[player][i].elem.css({
-          "z-index": n - i
+          "z-index": n - i + 20
         });
       }
       return this.repositionCards(player);
+    };
+    PlayingField.prototype.createCardsFromFace = function(faces) {
+      var card, center, face, _i, _len, _results;
+      center = this.convertRelativePosition(0.5, 0.5);
+      _results = [];
+      for (_i = 0, _len = faces.length; _i < _len; _i++) {
+        face = faces[_i];
+        _results.push(card = new Card(this, "back", "vertical", center.x, center.y));
+      }
+      return _results;
     };
     PlayingField.prototype.deal = function(cards, startFrom, done) {
       var card, center, i;

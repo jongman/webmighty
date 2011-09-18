@@ -195,9 +195,14 @@ class PlayingField
 		)
 		n = @hands[player].length
 		for i in [0...n]
-			@hands[player][i].elem.css({"z-index": n-i})
+			@hands[player][i].elem.css({"z-index": n-i+20})
 		@repositionCards(player)
 
+	createCardsFromFace: (faces) ->
+		center = @convertRelativePosition(0.5, 0.5)
+		for face in faces
+			card = new Card(this, "back", "vertical", center.x, center.y)
+			
 
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
 	deal: (cards, startFrom, done=->) ->

@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, assertEqual, assertTrue, buildCommitmentString, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isFriend, isFriendKnown, isJugong, jugongIndex, lang, loctable, myIndex, name2index, readyCount, renderFaceName, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, assertEqual, assertTrue, buildCommitmentString, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, loctable, myIndex, name2index, onAllReady, readyCount, renderFaceName, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -83,22 +83,11 @@
     if (index == null) {
       index = null;
     }
+    if (now.observer && !(index != null)) {
+      return false;
+    }
     index || (index = myIndex);
     return index === jugongIndex;
-  };
-  isFriend = function(index) {
-    if (index == null) {
-      index = null;
-    }
-    index || (index = myIndex);
-    return false;
-  };
-  isFriendKnown = function(index) {
-    if (index == null) {
-      index = null;
-    }
-    index || (index = myIndex);
-    return false;
   };
   doCommitment = function() {
     var count, x, _ref, _ref2, _results;
@@ -136,14 +125,19 @@
   now.requestCommitment = function() {
     return checkForCommitment();
   };
+  now.notifyCards = function(allCards) {
+    var cards;
+    cards = [allCards.slice(0, 10), allCards.slice(10, 20), allCards.slice(20, 30), allCards.slice(30, 40), allCards.slice(40, 50)];
+    window.field.globalMessage("선거가 시작됩니다!");
+    return window.field.deal(cards, 1, function() {});
+  };
   now.receiveDealtCards = function(cards) {
     var CARDS;
     commitmentIndex = 0;
     CARDS = [cards, ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]];
     window.field.globalMessage("선거가 시작됩니다!");
     return window.field.deal(CARDS, 1, function() {
-      checkForCommitment();
-      return systemMsg(window.field.cardStack);
+      return checkForCommitment();
     });
   };
   now.requestRearrangeHand = function(additionalCards) {
@@ -175,37 +169,65 @@
       });
     });
   };
-  now.notifyRearrangeHandDone = function() {
-    var chosen, jugongRIndex;
+  now.notifyRearrangeHandDone = function(cards) {
+    var c, chosen, jugongRIndex, _i, _len, _ref, _ref2;
+    if (cards == null) {
+      cards = null;
+    }
     if (isJugong()) {
       return;
     }
-    console.log('notifyRearrangeHandDone');
+    systemMsg(cards);
     jugongRIndex = getRelativeIndexFromIndex(jugongIndex);
     chosen = window.field.hands[jugongRIndex];
     chosen = [chosen[0], chosen[1], chosen[2]];
+    if (cards != null) {
+      chosen = [];
+      _ref = window.field.hands[jugongRIndex];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        c = _ref[_i];
+        if (_ref2 = c.face, __indexOf.call(cards, _ref2) >= 0) {
+          chosen.push(c);
+        }
+      }
+      systemMsg(chosen);
+      systemMsg((function() {
+        var _j, _len2, _ref3, _ref4, _results;
+        _ref3 = window.field.hands[jugongRIndex];
+        _results = [];
+        for (_j = 0, _len2 = _ref3.length; _j < _len2; _j++) {
+          c = _ref3[_j];
+          if (_ref4 = c.face, __indexOf.call(cards, _ref4) >= 0) {
+            _results.push(c);
+          }
+        }
+        return _results;
+      })());
+    }
     return window.field.takeCards(jugongRIndex, chosen, function() {
-      var card, _i, _len;
-      for (_i = 0, _len = chosen.length; _i < _len; _i++) {
-        card = chosen[_i];
+      var card, _j, _len2;
+      for (_j = 0, _len2 = chosen.length; _j < _len2; _j++) {
+        card = chosen[_j];
         window.field.hands[jugongRIndex].remove(card);
       }
       return window.field.repositionCards(jugongRIndex);
     });
   };
-  now.notifyRearrangeHand = function() {
+  now.notifyRearrangeHand = function(cards) {
+    if (cards == null) {
+      cards = ['back', 'back', 'back'];
+    }
     if (isJugong()) {
       return;
     }
     systemMsg(window.field.cardStack);
     systemMsg(window.field.cardStack.length);
-    return window.field.dealAdditionalCards(['back', 'back', 'back'], getRelativeIndexFromIndex(jugongIndex, function() {
+    return window.field.dealAdditionalCards(cards, getRelativeIndexFromIndex(jugongIndex, function() {
       return window.field.globalMessage("" + users[jugongIndex].name + " 님이 당을 재정비하고 있습니다.");
     }));
   };
   now.requestChooseFriend = function() {
     var x, _ref, _ref2, _ref3, _results;
-    systemMsg("프렌 선택");
     _results = [];
     while (1) {
       x = prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)');
@@ -232,7 +254,7 @@
     return _results;
   };
   now.notifyChooseFriend = function() {
-    if (isJugong()) {
+    if (!isJugong()) {
       return window.field.globalMessage("" + users[jugongIndex].name + " 님이 함께할 프렌드를 선택하고 있습니다.");
     }
   };
@@ -263,8 +285,8 @@
     document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + cardName + '프렌드';
     rule.setFriend(rule.FriendOption.ByCard, card);
     systemMsg("friend is " + card + ' ' + cardName);
-    if (rule.isFriendByHand(window.field.hands[0] && !isJugong())) {
-      return window.field.setPlayerType(0, "프렌드");
+    if ((rule.isFriendByHand(window.field.hands[0])) && !isJugong()) {
+      return window.field.setPlayerType(0, "(프렌드)");
     }
   };
   now.notifyFriendNone = function() {
@@ -441,7 +463,9 @@
     return _results;
   };
   now.notifyMsg = function(msg) {
-    window.field.globalMessage(msg);
+    if (window.field != null) {
+      window.field.globalMessage(msg);
+    }
     return document.title = msg;
   };
   now.notifyVote = function(index, face, target) {
@@ -456,29 +480,62 @@
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "패스");
   };
   now.notifyVictory = function(victoryFlag) {};
-  now.notifyReady = function(clientId, name, index) {
-    systemMsg(name + " ready");
-    name2index[name] = index;
-    client2index[clientId] = index;
-    users[index] = new NetworkUser(clientId, name, index);
+  now.notifyReady = function(clientId, index, players) {
     if (clientId === now.core.clientId) {
-      return myIndex = index;
+      myIndex = index;
     }
+    return systemMsg("players: " + players);
+  };
+  now.notifyObserver = function(encodedRule, cards, collectedCards) {
+    var c, hand, i, _results;
+    now.resetField();
+    rule.decodeState(encodedRule);
+    window.field.playedCards = window.field.createCardsFromFace(rule.currentTruick);
+    _results = [];
+    for (i = 0; i < 5; i++) {
+      hand = (function() {
+        var _i, _len, _ref, _results2;
+        _ref = cards.slice(i * 10, (i + 1) * 10);
+        _results2 = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          c = _ref[_i];
+          if (c !== '') {
+            _results2.push(c);
+          }
+        }
+        return _results2;
+      })();
+      window.field.hands[i] = window.field.createCardsFromFace(hand);
+      window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i]));
+      _results.push(window.field.repositionCards(i));
+    }
+    return _results;
+  };
+  now.resetField = function() {
+    return window.field.clearCards();
   };
   now.showName = function() {
     return systemMsg("i am " + this.now.name);
   };
   readyCount = 0;
+  onAllReady = function() {
+    return $("#logwin").find("button").click(function() {
+      now.readyGame();
+      return $("#logwin").find("button").unbind().attr("disabled", "");
+    });
+  };
   $(document).ready(function() {
     readyCount += 1;
+    systemMsg("abc");
     if (readyCount === 2) {
-      return now.readyGame();
+      return onAllReady();
     }
   });
   now.ready(function() {
     readyCount += 1;
+    systemMsg("def");
     if (readyCount === 2) {
-      return now.readyGame();
+      return onAllReady();
     }
   });
   loctable = {

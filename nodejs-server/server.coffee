@@ -5,29 +5,27 @@ rule = require './rule'
 ################################################################################
 
 fs = require 'fs'
-html = fs.readFileSync(__dirname + '/main.html')
-testhtml = fs.readFileSync(__dirname + '/test.html')
+#html = fs.readFileSync(__dirname + '/main.html')
 jqueryjs = fs.readFileSync(__dirname + '/jquery-1.6.2.min.js')
 http = require('http')
 server = http.createServer (req, res) ->
 	# hand implemented serving. 젤 더러운 하드코딩
-  if req.url == '/js/clientlib.js'
-	  res.writeHead 200, {'Content-Type': 'text/javascript'}
-	  clientjs = fs.readFileSync(__dirname + '/clientlib.js')
-	  res.end clientjs
-  else if req.url == '/js/rule.js'
-	  res.writeHead 200, {'Content-Type': 'text/javascript'}
-	  clientjs = fs.readFileSync(__dirname + '/rule.js')
-	  res.end clientjs
-  else if req.url == '/test'
-	  res.end testhtml
-  else if req.url == '/js/jquery-1.6.2.min.js'
-	  res.writeHead 200, {'Content-Type': 'text/javascript'}
-	  res.end jqueryjs
-  else if req.url.substr(0,3) == '/js' or req.url.substr(0,4) == '/css' or req.url.substr(0,7) == '/images'
-	  res.end fs.readFileSync(__dirname + '/../public' + req.url)
-  else
-	  res.end html
+	if req.url == '/js/clientlib.js'
+		res.writeHead 200, {'Content-Type': 'text/javascript'}
+		clientjs = fs.readFileSync(__dirname + '/clientlib.js')
+		res.end clientjs
+	else if req.url == '/js/rule.js'
+		res.writeHead 200, {'Content-Type': 'text/javascript'}
+		clientjs = fs.readFileSync(__dirname + '/rule.js')
+		res.end clientjs
+	else if req.url == '/js/jquery-1.6.2.min.js'
+		res.writeHead 200, {'Content-Type': 'text/javascript'}
+		res.end jqueryjs
+	else if req.url.substr(0,3) == '/js' or req.url.substr(0,4) == '/css' or req.url.substr(0,7) == '/images'
+		res.end fs.readFileSync(__dirname + '/../public' + req.url)
+	else
+		testhtml = fs.readFileSync(__dirname + '/test.html')
+		res.end testhtml
 
 nowjs = require 'now'
 everyone = nowjs.initialize server
@@ -36,18 +34,19 @@ everyone = nowjs.initialize server
 # Logic
 ################################################################################
 
-everyone.now.loginCount = 0
-nowjs.on 'connect', ->
-	everyone.now.loginCount += 1
-	@now.name ?= 'player' + everyone.now.loginCount
-	@now.showName()
+loginCount = 0
 
-	# TODO room
-	#nowjs.getGroup('room-1').addUser(@user.clientId)
+pgroup = (index) -> nowjs.getGroup('play-' + index)
+ogroup = (index) -> nowjs.getGroup('observer-' + index)
 
-	# TODO observer connect inside game
-	#if everyone.now.state != everyone.now.WAITING_PLAYER
-		#nowjs.getGroup('observer-1').addUser(@user.clientId)
+pu = (user) -> rgroup user.now.room
+ou = (user) -> ogroup user.now.room
+
+pg = nowjs.getGroup "play-1"
+og = nowjs.getGroup "observer-1"
+
+# TODO yame: room is only 1
+everyone.now.room = 1
 
 everyone.now.distributeMessage = (message) ->
 	  everyone.now.receiveMessage @now.name, message
@@ -61,16 +60,47 @@ everyone.now.TAKE_TURN = 6
 everyone.now.END_GAME = 7
 
 everyone.now.state = everyone.now.WAITING_PLAYER
-everyone.now.readyCount = 0
 players = []
 playerNames = []
 cards = []
+collectedCards = [[],[],[],[],[]]
 currentTurn = 0
 currentTrickOption = null
 lastTurnWinner = -1
 scores = null
-everyone.now.lastFriendIndex = 0
+lastFriendIndex = 0
 jugongIndex = null
+
+nowjs.on 'disconnect', ->
+	if @now.playerIndex?
+		players[@now.playerIndex] = ''
+		playerNames[@now.playerIndex] = ''
+		changeState everyone.now.WAITING_PLAYER
+	pg.count (readyCount) ->
+		if readyCount == 0
+			# no one playing
+			changeState everyone.now.WAITING_PLAYER
+
+nowjs.on 'connect', ->
+	loginCount += 1
+	@now.name ?= 'player' + loginCount
+	@now.showName()
+
+	# TODO room
+	@now.room = 1 # room index
+	#nowjs.getGroup('room-1').addUser(@user.clientId)
+
+	# TODO observer connect inside game
+	@now.observer = true
+	og.addUser @user.clientId
+	og.getUsers((user) ->
+		console.log user
+	)
+	if everyone.now.state == everyone.now.WAITING_PLAYER
+		@now.notifyMsg "플레이어를 기다리는 중입니다. 플레이 하시려면 참가 버튼을 누르세요"
+	else
+		@now.notifyPlayers players, playerNames
+		#@now.notifyObserver rule.encodeState(), cards, collectedCards
 
 everyone.now.chat = (msg) ->
 	everyone.now.receiveChat @now.clientId, @now.name, msg
@@ -79,6 +109,7 @@ enterState = (state) ->
 	# TODO refactor to state pattern
 	if state == everyone.now.WAITING_PLAYER
 		resetGame()
+
 	else if state == everyone.now.VOTE
 		scores = [0,0,0,0,0]
 		lastFriendIndex = rule.friendIndex
@@ -88,16 +119,17 @@ enterState = (state) ->
 		redeal()
 
 	else if state == everyone.now.VOTE_KILL
-		if players.length == 6
+		#if players.length == 6
 			# if 6 player mode do something and re deal card
 			# request jugong to kill card
-		else
-			changeState everyone.now.REARRANGE_HAND
+		#else
+		changeState everyone.now.REARRANGE_HAND
 
 	else if state == everyone.now.REARRANGE_HAND
 		nowjs.getClient players[jugongIndex], ->
 			@now.requestRearrangeHand cards[50...53] 
-		everyone.now.notifyRearrangeHand()
+		pg.now.notifyRearrangeHand()
+		og.now.notifyRearrangeHand(cards[50...53])
 
 	else if state == everyone.now.CHOOSE_FRIEND
 		nowjs.getClient players[jugongIndex], ->
@@ -122,6 +154,7 @@ changeState = (state) ->
 	enterState state
 
 dealCard = ->
+	collectedCards = [[],[],[],[],[]]
 	cards = ['jr']
 	for face in ['c', 's', 'h', 'd']
 		for num in [1..9].concat ['t', 'j', 'k', 'q']
@@ -140,36 +173,67 @@ dealCard = ->
 		step = 8
 	else
 		step = 10
-	for player in players
-		console.log (player + " gets " + cards[idx...idx+step])
-		nowjs.getClient player, ->
-			@now.receiveDealtCards cards[idx...idx+step]
-		idx += step
+
+	pg.getUsers((user) ->
+		console.log user
+	)
+	og.getUsers((user) ->
+		console.log user
+	)
+	# 각 플레이어는 자신의 hand만
+	pg.getUsers((players) ->
+		for player in players
+			console.log (player + " gets " + cards[idx...idx+step])
+			nowjs.getClient player, ->
+				@now.receiveDealtCards cards[idx...idx+step]
+			idx += step
+	)
+
+	# 옵저버는 전체다
+	og.now.notifyCards cards
 
 ################################################################################
 # WAITING_PLAYER : be ready 5 heroes
 ################################################################################
 
 everyone.now.readyGame = ->
-	if everyone.now.state != everyone.now.WAITING_PLAYER
+	#pg = pu this
+	#og = ou this
+	if pg.now.state != pg.now.WAITING_PLAYER
 		return
-	everyone.now.readyCount = everyone.now.readyCount + 1
-	setReady @user.clientId, @now.name
-	console.log "READY " + everyone.now.readyCount
-	if everyone.now.readyCount == 5
-		console.log "DEALING"
-		everyone.now.notifyPlayers players, playerNames
-		changeState everyone.now.VOTE 
+
+	# READY: observer -> ready
+	pg.addUser @user.clientId
+	og.removeUser @user.clientId
+	@now.observer = false
+
+	@now.playerIndex = setReady @user.clientId, @now.name
+
+	pg.count (readyCount) ->
+		console.log "READY " + readyCount
+		if readyCount == 5
+			console.log "DEALING"
+			everyone.now.notifyPlayers players, playerNames
+			changeState everyone.now.VOTE
 	# don't implement 6 player for now
 	#else if everyone.now.readyCount == 6
 		#changeState(everyone.now.VOTE)
 
 
 setReady = (clientId, name) ->
-	players.push(clientId)
-	playerNames.push(name)
-	#nowjs.getGroup('players').addUser(clientId)
-	everyone.now.notifyReady clientId, name, players.length - 1
+	index = players.length
+	if players.length < 5
+		players.push(clientId)
+		playerNames.push(name)
+	else
+		for i in [0...5]
+			if playerNames[i] == ''
+				players[i] = clientId
+				playerNames[i] = name
+				index = i
+				break
+	everyone.now.notifyReady clientId, index, playerNames
+	return index
 
 
 ################################################################################
@@ -181,7 +245,7 @@ currentVoteIndex = null
 
 chooseNextPlayerForVote = () ->
 	if not currentVoteIndex?
-		currentVoteIndex = everyone.now.lastFriendIndex
+		currentVoteIndex = lastFriendIndex
 		return players[currentVoteIndex]
 	else
 		currentVoteIndex = (currentVoteIndex + 1) % votes.length
@@ -263,6 +327,9 @@ everyone.now.commitmentDealMiss = ->
 # REARRANGE_HAND
 ################################################################################
 everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
+	if (indexFromClientId @user.clientId) != jugongIndex
+		return
+
 	replaceIndex = 50
 	console.log getHandFromClientId @user.clientId
 	console.log cardsToRemove
@@ -278,9 +345,9 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 			if replaceIndex == 53
 				break
 	console.log getHandFromClientId @user.clientId
-	console.log cards[50...53]
 		
-	everyone.now.notifyRearrangeHandDone()
+	pg.now.notifyRearrangeHandDone()
+	og.now.notifyRearrangeHandDone cardsToRemove
 
 	#TODO RULESET
 	if newFace != rule.currentPromise[0] and newTarget <= 20 and (newTarget >= rule.currentPromise[1]+2 or newTarget == 20 or (newFace == 'n' or rule.currentPromise[0] == 'n') and newTarget >= rule.currentPromise[1] + 1)
@@ -293,7 +360,7 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 ################################################################################
 
 friendHandler = (index) ->
-	everyone.now.lastFriendIndex = index
+	lastFriendIndex = index
 	console.log "friend is " + playerNames[index]
 
 rule.setFriendHandler friendHandler
@@ -343,6 +410,7 @@ everyone.now.chooseCard = (card, option) ->
 			for card in rule.currentTrick
 				if card[1] in "tjqk1"
 					scores[lastTurnWinner] += 1 
+					collectedCards[lastTurnWinner].push(card)
 			everyone.now.takeTrick currentTurn, lastTurnWinner
 
 			currentTurn += 1
@@ -427,10 +495,11 @@ everyone.now.debugReset = ->
 
 resetGame = ->
 	everyone.now.state = everyone.now.WAITING_PLAYER
-	everyone.now.readyCount = 0
-	players = []
-	playerNames = []
+	everyone.now.resetField()
+	#players = []
+	#playerNames = []
 	cards = []
+	collectedCards = [[],[],[],[],[]]
 
 ################################################################################
 # Test

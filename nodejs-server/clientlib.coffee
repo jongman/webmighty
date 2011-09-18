@@ -67,18 +67,10 @@ getIndexFromRelativeIndex = (ridx) ->
 	return (myIndex + ridx) % 5
 
 isJugong = (index=null) ->
+	if now.observer and not index?
+		return false
 	index or= myIndex
 	return index == jugongIndex
-
-isFriend = (index=null) ->
-	# TODO implement
-	index or= myIndex
-	return false
-
-isFriendKnown = (index=null) ->
-	# TODO implement
-	index or= myIndex
-	return false
 
 ################################################################################
 # Event handling
@@ -114,6 +106,17 @@ checkForCommitment = ->
 now.requestCommitment = ->
 	checkForCommitment()
 
+now.notifyCards = (allCards) ->
+	# observer method
+	cards = [
+		allCards[ 0...10],
+		allCards[10...20],
+		allCards[20...30],
+		allCards[30...40],
+		allCards[40...50]]
+	window.field.globalMessage("선거가 시작됩니다!")
+	window.field.deal(cards, 1, ->)
+
 now.receiveDealtCards = (cards) ->
 	commitmentIndex = 0
 	CARDS = [
@@ -125,7 +128,6 @@ now.receiveDealtCards = (cards) ->
 	window.field.globalMessage("선거가 시작됩니다!")
 	window.field.deal CARDS, 1, -> 
 		checkForCommitment()
-		systemMsg window.field.cardStack
 
 # 주공 당선 후 손 정리
 
@@ -149,13 +151,22 @@ now.requestRearrangeHand = (additionalCards) ->
 			)
 	)
 
-now.notifyRearrangeHandDone = ->
+now.notifyRearrangeHandDone = (cards = null)->
 	if isJugong()
 		return
-	console.log 'notifyRearrangeHandDone'
+	systemMsg cards
 	jugongRIndex = getRelativeIndexFromIndex jugongIndex
 	chosen = window.field.hands[jugongRIndex]
 	chosen = [chosen[0], chosen[1], chosen[2]]
+
+	if cards?
+		# 옵저버인 경우 카드 정보가 담겨옴
+		chosen = []
+		for c in window.field.hands[jugongRIndex]
+			if c.face in cards
+				chosen.push(c)
+		systemMsg chosen
+		systemMsg (c for c in window.field.hands[jugongRIndex]  when c.face in cards)
 
 	window.field.takeCards(jugongRIndex, chosen,
 		->
@@ -163,19 +174,18 @@ now.notifyRearrangeHandDone = ->
 			window.field.repositionCards(jugongRIndex)
 		)
 
-now.notifyRearrangeHand = ->
+now.notifyRearrangeHand = (cards = ['back','back','back']) ->
 	if isJugong()
 		return
 	systemMsg window.field.cardStack
 	systemMsg window.field.cardStack.length
-	window.field.dealAdditionalCards(['back','back','back'], getRelativeIndexFromIndex jugongIndex,
+	window.field.dealAdditionalCards(cards, getRelativeIndexFromIndex jugongIndex,
 		->
 			window.field.globalMessage("#{users[jugongIndex].name} 님이 당을 재정비하고 있습니다.")
 	)
 
 # 프렌드 선택
 now.requestChooseFriend = ->
-	systemMsg "프렌 선택"
 	while 1
 		x = prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)')
 		if x == 'nofriend'
@@ -197,7 +207,7 @@ now.requestChooseFriend = ->
 		break
 	
 now.notifyChooseFriend = ->
-	if isJugong()
+	if not isJugong()
 		window.field.globalMessage("#{users[jugongIndex].name} 님이 함께할 프렌드를 선택하고 있습니다.")
 
 renderFaceName = (face) ->
@@ -223,8 +233,8 @@ now.notifyFriendByCard = (card) ->
 	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + cardName + '프렌드'
 	rule.setFriend rule.FriendOption.ByCard, card
 	systemMsg "friend is " + card + ' ' + cardName
-	if rule.isFriendByHand window.field.hands[0] and not isJugong()
-		window.field.setPlayerType 0, "프렌드"
+	if (rule.isFriendByHand window.field.hands[0]) and not isJugong()
+		window.field.setPlayerType 0, "(프렌드)"
 
 now.notifyFriendNone = ->
 	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '프렌드 없음'
@@ -380,7 +390,8 @@ now.notifyPlayers = (clientIds, names) ->
 		users[index] = new NetworkUser(clientId, name, index)
 
 now.notifyMsg = (msg) ->
-	window.field.globalMessage msg
+	if window.field?
+		window.field.globalMessage msg
 	document.title = msg
 
 now.notifyVote = (index, face, target) ->
@@ -396,14 +407,24 @@ now.notifyPass = (index) ->
 
 now.notifyVictory = (victoryFlag) ->
 	
-now.notifyReady = (clientId, name, index) ->
-	systemMsg name + " ready"
-	name2index[name] = index
-	client2index[clientId] = index
-	users[index] = new NetworkUser(clientId, name, index)
+now.notifyReady = (clientId, index, players) ->
 	if clientId == now.core.clientId
 		myIndex = index
+	systemMsg "players: " + players
 
+now.notifyObserver = (encodedRule, cards, collectedCards) ->
+	now.resetField()
+	rule.decodeState encodedRule
+	window.field.playedCards = window.field.createCardsFromFace rule.currentTruick
+	for i in [0...5]
+		hand = (c for c in cards[i*10...(i+1)*10] when c != '')
+
+		window.field.hands[i] = window.field.createCardsFromFace hand
+		window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i])
+		window.field.repositionCards(i)
+
+now.resetField = ->
+	window.field.clearCards()
 ################################################################################
 # Miscellaneous
 ################################################################################
@@ -413,14 +434,23 @@ now.showName = ->
 
 # (TEST only) set ready when page load
 readyCount = 0
+onAllReady = ->
+	$("#logwin").find("button").click(->
+		now.readyGame()
+		$("#logwin").find("button").unbind().attr("disabled", "")
+	)
+
 $(document).ready ->
 	readyCount += 1
+	systemMsg "abc"
 	if readyCount == 2
-		now.readyGame()
+		onAllReady()
+		
 now.ready ->
 	readyCount += 1
+	systemMsg "def"
 	if readyCount == 2
-		now.readyGame()
+		onAllReady()
 
 loctable = {
 	en: {

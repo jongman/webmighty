@@ -220,3 +220,21 @@ exports.checkDealMiss = (cards) ->
 exports.resetGame = ->
 	exports.resetFriendOption()
 	exports.resetPromise()
+
+################################################################################
+# Encode/Decode for restoring
+################################################################################
+exports.encodeState = ->
+	return [
+		exports.currentTrick,
+		exports.currentTurn,
+		exports.friendOption,
+		exports.friendKnown,
+		exports.friendIndex]
+
+exports.decodeState = (o) ->
+	[ exports.currentTrick,
+		exports.currentTurn,
+		exports.friendOption,
+		exports.friendKnown,
+		exports.friendIndex] = o
