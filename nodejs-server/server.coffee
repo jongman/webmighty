@@ -198,9 +198,9 @@ enterState = (state) ->
 			@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
 
 	else if state == everyone.now.END_GAME
-		# 결과 보여주고 일정 시간 후 waiting 상태로 
+		# 결과 보여주고 일정 시간 후 VOTE 상태로 
 		setTimeout (->
-			changeState everyone.now.WAITING_PLAYER
+			changeState everyone.now.VOTE
 			, 5000)
 
 changeState = (state) ->
@@ -379,6 +379,12 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 ################################################################################
 # CHOOSE_FRIEND
 ################################################################################
+
+friendHandler = (index) ->
+	everyone.now.lastFriendIndex = index
+	console.log "friend is " + playerNames[index]
+
+rule.setFriendHandler friendHandler
 
 everyone.now.chooseFriendByCard = (card) ->
 	hand = getHandFromClientId @user.clientId

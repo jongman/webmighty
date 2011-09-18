@@ -50,7 +50,7 @@ FACE_ORDER = (giruda_ = null) ->
 		return "jhsdc"
 	return "jsdch"
 
-VALUE_ORDER = -> "23456789tjqk1"
+VALUE_ORDER = "23456789tjqk1"
 
 getRelativeIndexFromClientId = (clientId) ->
 	return (client2index[clientId] - myIndex + 5) % 5
@@ -111,7 +111,6 @@ now.requestCommitment = ->
 
 now.receiveDealtCards = (cards) ->
 	commitmentIndex = 0
-	startIndex = getRelativeIndexFromIndex now.lastFriendIndex
 	CARDS = [
 		cards
 		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"],
@@ -148,8 +147,8 @@ now.notifyRearrangeHandDone = ->
 	if isJugong()
 		return
 	jugongRIndex = getRelativeIndexFromIndex jugongIndex
-	chosen = window.field.hand[jugongIndex]
-	chosen.remove(chosen[Math.floor(Math.random() * chosen.length)]) while chosen.length > 3
+	chosen = window.field.hands[jugongIndex]
+	chosen = [chosen[0], chosen[1], chosen[2]]
 
 	window.field.takeCards(0, chosen,
 		->
@@ -208,37 +207,41 @@ renderFaceName = (face) ->
 friendHandler = (index) ->
 	window.field.setPlayerType getRelativeIndexFromIndex(index), "프렌드"
 	window.field.removeCollectedCards index
+	systemMsg "friend is " + index
+
+rule.setFriendHandler friendHandler
 
 now.notifyFriendByCard = (card) ->
-	card = renderFaceName card
-	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + card + '프렌드'
+	cardName = renderFaceName card
+	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + cardName + '프렌드'
 	rule.setFriend rule.FriendOption.ByCard, card
+	systemMsg "friend is " + card + ' ' + cardName
 	if rule.isFriendByHand window.field.hands[0] and not isJugong()
 		window.field.setPlayerType 0, "프렌드"
 
 now.notifyFriendNone = ->
 	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '프렌드 없음'
 	rule.setFriend rule.FriendOption.NoFriend
+	systemMsg "no friend"
 
 now.notifyFriendFirstTrick = ->
 	document.title = buildCommitmentString(face, target) + ', ' + '초구 프렌드'
 	rule.setFriend rule.FriendOption.FirstTrick
+	systemMsg "first trick friend"
 
 # 카드 내기
 
 now.requestChooseCard = (currentTurn, option) ->
-	# TODO 카드 고르는거 필터링
 	player = 0
 	handFace = (c.face for c in window.field.hands[player])
 	filter = (card) ->
-		if rule.isValidChoice(handFace, card.face, option, currentTurn)
-			systemMsg "can pick " + card.face
+		#if rule.isValidChoice(handFace, card.face, option, currentTurn)
+			#systemMsg "can pick " + card.face
 		rule.isValidChoice(handFace, card.face, option, currentTurn)
 
 	systemMsg rule.currentTrick
 
 	window.field.chooseFilteredCard(filter, (card) ->
-		# TODO 조커, 조커콜 등 구현
 		dontDo = false
 		if rule.currentTrick.length == 0
 			if card.face == 'jr' 
@@ -264,7 +267,7 @@ now.requestChooseCard = (currentTurn, option) ->
 					else
 						dontDo = true
 						now.requestChooseCard(currentTurn, option)
-			else if card.face == rule.getJokerCallCard()
+			else if card.face == rule.getJokerCallCard() and currentTurn != 0
 				# 조커콜 할까요 말까요
 				doJokerCall = prompt("조커콜 하나요? (yes / no)")
 				if doJokerCall[0] == 'y'
@@ -291,10 +294,9 @@ now.notifyPlayCard = (index, card, option) ->
 			else if option == rule.ChooseCardOption.CCome and rule.currentPromise[0] != 'c'
 				optionStr = "클로버 컴!"
 
-	systemMsg "PlayCard"
-	systemMsg index
-	systemMsg card
-	systemMsg optionStr
+	if not optionStr?
+		optionStr = renderFaceName card
+	systemMsg "PlayCard #{index} #{card} #{optionStr}"
 
 	window.field.playCard (getRelativeIndexFromIndex index), card, optionStr
 	rule.addTrick(card, index)
@@ -391,8 +393,15 @@ now.showName = ->
 	systemMsg "i am #{@now.name}"
 
 # (TEST only) set ready when page load
+readyCount = 0
+$(document).ready ->
+	readyCount += 1
+	if readyCount == 2
+		now.readyGame()
 now.ready ->
-	now.readyGame()
+	readyCount += 1
+	if readyCount == 2
+		now.readyGame()
 
 loctable = {
 	en: {

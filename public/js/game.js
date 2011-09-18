@@ -467,8 +467,9 @@
       if (card === null) {
         card = this.hands[player].pop();
         card.setFace(face);
+      } else {
+        this.hands[player].remove(card);
       }
-      this.hands[player].remove(card);
       this.playedCards.push(card);
       this.playerMessage(player, "플레이", render_as || renderFaceName(card.face));
       this.repositionCards(player);

@@ -334,7 +334,8 @@ class PlayingField
 		if card == null
 			card = @hands[player].pop()
 			card.setFace(face)
-		@hands[player].remove(card)
+		else
+			@hands[player].remove(card)
 		@playedCards.push(card)
 		@playerMessage(player, "플레이", render_as or renderFaceName(card.face))
 		@repositionCards(player)
