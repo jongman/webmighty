@@ -114,9 +114,6 @@ enterState = (state) ->
 	else if state == everyone.now.END_GAME
 		# 결과 보여주고 일정 시간 후 VOTE 상태로 
 		endGame()
-		setTimeout (->
-			changeState everyone.now.VOTE
-			, 5000)
 
 changeState = (state) ->
 	console.log 'new state ' + state
@@ -228,7 +225,7 @@ checkVoteEnd = ->
 
 everyone.now.commitmentAnnounce = (face, target) ->
 	idx = indexFromClientId @user.clientId
-	if (face == 'n' and target >= 13 or target >= 14) and rule.currentPromise[1] < target
+	if (face == 'n' and target >= 13 or target >= 14) and (not rule.currentPromise? or rule.currentPromise[1] < target)
 		votes[idx] = [face, target]
 		rule.setPromise [face, target, idx]
 		everyone.now.notifyVote idx, face, target
@@ -245,7 +242,9 @@ everyone.now.commitmentPass = ->
 	checkVoteEnd()
 
 redeal = ->
-	resetVote()
+	votes = (['n',0] for player in players)
+	rule.resetGame()
+	currentVoteIndex = null
 	dealCard()
 	nextPlayer = chooseNextPlayerForVote()
 	console.log "VOTE request " + nextPlayer
@@ -259,13 +258,6 @@ everyone.now.commitmentDealMiss = ->
 		redeal()
 	else
 		@now.requestCommitment()
-
-resetVote = ->
-	votes = (['n',0] for player in players)
-	rule.resetGame()
-	rule.resetPromise()
-	currentVoteIndex = null
-	
 
 ################################################################################
 # REARRANGE_HAND
@@ -414,6 +406,9 @@ endGame = ->
 			console.log "야당 승리!"
 			everyone.now.notifyMsg "야당 승리!"
 			everyone.now.notifyVictory rule.Victory.Lose
+	setTimeout(->
+			changeState(everyone.now.VOTE)
+		, 5000)
 
 ################################################################################
 # Miscellaneous

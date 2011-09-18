@@ -314,7 +314,6 @@ now.notifyPlayCard = (index, card, option) ->
 
 	if not optionStr?
 		optionStr = renderFaceName card
-	systemMsg "PlayCard #{index} #{card} #{optionStr}"
 
 	window.field.playCard (getRelativeIndexFromIndex index), card, optionStr
 	rule.addTrick(card, index)
@@ -368,10 +367,10 @@ now.notifyChangeState = (newState) ->
 			{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
 			)
 
-	else if newState == now.END_GAME
-		name2index = {}
-		client2index = {}
-		users = {}
+	#else if newState == now.END_GAME
+		#name2index = {}
+		#client2index = {}
+		#users = {}
 
 now.notifyPlayers = (clientIds, names) ->
 	for i in [0...5]

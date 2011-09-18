@@ -367,7 +367,6 @@
     if (!(optionStr != null)) {
       optionStr = renderFaceName(card);
     }
-    systemMsg("PlayCard " + index + " " + card + " " + optionStr);
     window.field.playCard(getRelativeIndexFromIndex(index), card, optionStr);
     return rule.addTrick(card, index);
   };
@@ -428,10 +427,6 @@
         }
         return _results;
       })());
-    } else if (newState === now.END_GAME) {
-      name2index = {};
-      client2index = {};
-      return users = {};
     }
   };
   now.notifyPlayers = function(clientIds, names) {
