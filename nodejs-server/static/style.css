@@ -1,0 +1,649 @@
+/*
+ * HTML5 Boilerplate
+ *
+ * What follows is the result of much research on cross-browser styling.
+ * Credit left inline and big thanks to Nicolas Gallagher, Jonathan Neal,
+ * Kroc Camen, and the H5BP dev community and team.
+ */
+
+
+/* =============================================================================
+   HTML5 element display
+   ========================================================================== */
+
+article, aside, details, figcaption, figure, footer, header, hgroup, nav, section { display: block; }
+audio[controls], canvas, video { display: inline-block; *display: inline; *zoom: 1; }
+
+
+/* =============================================================================
+   Base
+   ========================================================================== */
+
+/*
+ * 1. Correct text resizing oddly in IE6/7 when body font-size is set using em units
+ *    http://clagnut.com/blog/348/#c790
+ * 2. Force vertical scrollbar in non-IE
+ * 3. Remove Android and iOS tap highlight color to prevent entire container being highlighted
+ *    www.yuiblog.com/blog/2010/10/01/quick-tip-customizing-the-mobile-safari-tap-highlight-color/
+ * 4. Prevent iOS text size adjust on device orientation change, without disabling user zoom
+ *    www.456bereastreet.com/archive/201012/controlling_text_size_in_safari_for_ios_without_disabling_user_zoom/
+ */
+
+html { font-size: 100%; overflow-y: scroll; -webkit-overflow-scrolling: touch; -webkit-tap-highlight-color: rgba(0,0,0,0); -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+
+body { margin: 0; font-size: 13px; line-height: 1.231; }
+
+body, button, input, select, textarea { font-family: sans-serif; color: #222; }
+
+/* 
+ * These selection declarations have to be separate
+ * No text-shadow: twitter.com/miketaylr/status/12228805301
+ * Also: hot pink!
+ */
+
+::-moz-selection { background: #fe57a1; color: #fff; text-shadow: none; }
+::selection { background: #fe57a1; color: #fff; text-shadow: none; }
+
+
+/* =============================================================================
+   Links
+   ========================================================================== */
+
+a { color: #00e; }
+a:visited { color: #551a8b; }
+a:focus { outline: thin dotted; }
+
+/* Improve readability when focused and hovered in all browsers: people.opera.com/patrickl/experiments/keyboard/test */
+a:hover, a:active { outline: 0; }
+
+
+/* =============================================================================
+   Typography
+   ========================================================================== */
+
+abbr[title] { border-bottom: 1px dotted; }
+
+b, strong { font-weight: bold; }
+
+blockquote { margin: 1em 40px; }
+
+dfn { font-style: italic; }
+
+hr { display: block; height: 1px; border: 0; border-top: 1px solid #ccc; margin: 1em 0; padding: 0; }
+
+ins { background: #ff9; color: #000; text-decoration: none; }
+
+mark { background: #ff0; color: #000; font-style: italic; font-weight: bold; }
+
+/* Redeclare monospace font family: en.wikipedia.org/wiki/User:Davidgothberg/Test59 */
+pre, code, kbd, samp { font-family: monospace, monospace; _font-family: 'courier new', monospace; font-size: 1em; }
+
+/* Improve readability of pre-formatted text in all browsers */
+pre { white-space: pre; white-space: pre-wrap; word-wrap: break-word; }
+
+q { quotes: none; }
+q:before, q:after { content: ""; content: none; }
+
+small { font-size: 85%; }
+
+/* Position subscript and superscript content without affecting line-height: gist.github.com/413930 */
+sub, sup { font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
+sup { top: -0.5em; }
+sub { bottom: -0.25em; }
+
+
+/* =============================================================================
+   Lists
+   ========================================================================== */
+
+ul, ol { margin: 1em 0; padding: 0 0 0 40px; }
+dd { margin: 0 0 0 40px; }
+nav ul, nav ol { list-style: none; margin: 0; padding: 0; }
+
+
+/* =============================================================================
+   Embedded content
+   ========================================================================== */
+
+/*
+ * Improve image quality when scaled in IE7
+ * code.flickr.com/blog/2008/11/12/on-ui-quality-the-little-things-client-side-image-resizing/
+ */
+
+img { border: 0; -ms-interpolation-mode: bicubic; }
+
+/*
+ * Correct overflow displayed oddly in IE9 
+ */
+
+svg:not(:root) {
+    overflow: hidden;
+}
+
+
+/* =============================================================================
+   Figures
+   ========================================================================== */
+
+figure { margin: 0; }
+
+
+/* =============================================================================
+   Forms
+   ========================================================================== */
+
+form { margin: 0; }
+fieldset { border: 0; margin: 0; padding: 0; }
+
+/* 
+ * 1. Correct color not inheriting in IE6/7/8/9 
+ * 2. Correct alignment displayed oddly in IE6/7 
+ */
+
+legend { border: 0; *margin-left: -7px; padding: 0; }
+
+/* Indicate that 'label' will shift focus to the associated form element */
+label { cursor: pointer; }
+
+/*
+ * 1. Correct font-size not inheriting in all browsers
+ * 2. Remove margins in FF3/4 S5 Chrome
+ * 3. Define consistent vertical alignment display in all browsers
+ */
+
+button, input, select, textarea { font-size: 100%; margin: 0; vertical-align: baseline; *vertical-align: middle; }
+
+/*
+ * 1. Define line-height as normal to match FF3/4 (set using !important in the UA stylesheet)
+ * 2. Correct inner spacing displayed oddly in IE6/7
+ */
+
+button, input { line-height: normal; *overflow: visible; }
+
+/*
+ * 1. Display hand cursor for clickable form elements
+ * 2. Allow styling of clickable form elements in iOS
+ */
+
+button, input[type="button"], input[type="reset"], input[type="submit"] { cursor: pointer; -webkit-appearance: button; }
+
+/*
+ * Consistent box sizing and appearance
+ */
+
+input[type="checkbox"], input[type="radio"] { box-sizing: border-box; }
+input[type="search"] { -moz-box-sizing: content-box; -webkit-box-sizing: content-box; box-sizing: content-box; }
+
+/* 
+ * Remove inner padding and border in FF3/4
+ * www.sitepen.com/blog/2008/05/14/the-devils-in-the-details-fixing-dojos-toolbar-buttons/ 
+ */
+
+button::-moz-focus-inner, input::-moz-focus-inner { border: 0; padding: 0; }
+
+/* Remove default vertical scrollbar in IE6/7/8/9 */
+textarea { overflow: auto; vertical-align: top; }
+
+/* Colors for form validity */
+input:valid, textarea:valid {  }
+input:invalid, textarea:invalid { background-color: #f0dddd; }
+
+
+/* =============================================================================
+   Tables
+   ========================================================================== */
+
+table { border-collapse: collapse; border-spacing: 0; }
+
+
+/* =============================================================================
+   Primary styles
+   Author: JongMan Koo
+   ========================================================================== */
+
+body {
+	background: url(background.jpg) repeat;
+}
+
+body, textarea, input, select, button { font-family: Helvetica, NanumGothic,나눔고딕; }
+
+.card { background-image: url(cards_all.png); float: left; }
+.card.vertical { width: 71px; height: 96px; }
+.card.horizontal { width: 96px; height: 71px; }
+
+.card.horizontal.back { background-position: -0px -13px; }
+.card.horizontal.c1 { background-position: -96px -13px; }
+.card.horizontal.c2 { background-position: -192px -13px; }
+.card.horizontal.c3 { background-position: -288px -13px; }
+.card.horizontal.c4 { background-position: -384px -13px; }
+.card.horizontal.c5 { background-position: -480px -13px; }
+.card.horizontal.c6 { background-position: -576px -13px; }
+.card.horizontal.c7 { background-position: -672px -13px; }
+.card.horizontal.c8 { background-position: -768px -13px; }
+.card.horizontal.c9 { background-position: -864px -13px; }
+.card.horizontal.cj { background-position: -960px -13px; }
+.card.horizontal.ck { background-position: -0px -109px; }
+.card.horizontal.cq { background-position: -96px -109px; }
+.card.horizontal.ct { background-position: -192px -109px; }
+.card.horizontal.d1 { background-position: -288px -109px; }
+.card.horizontal.d2 { background-position: -384px -109px; }
+.card.horizontal.d3 { background-position: -480px -109px; }
+.card.horizontal.d4 { background-position: -576px -109px; }
+.card.horizontal.d5 { background-position: -672px -109px; }
+.card.horizontal.d6 { background-position: -768px -109px; }
+.card.horizontal.d7 { background-position: -864px -109px; }
+.card.horizontal.d8 { background-position: -960px -109px; }
+.card.horizontal.d9 { background-position: -0px -205px; }
+.card.horizontal.dj { background-position: -96px -205px; }
+.card.horizontal.dk { background-position: -192px -205px; }
+.card.horizontal.dq { background-position: -288px -205px; }
+.card.horizontal.dt { background-position: -384px -205px; }
+.card.horizontal.ec { background-position: -480px -205px; }
+.card.horizontal.h1 { background-position: -576px -205px; }
+.card.horizontal.h2 { background-position: -672px -205px; }
+.card.horizontal.h3 { background-position: -768px -205px; }
+.card.horizontal.h4 { background-position: -864px -205px; }
+.card.horizontal.h5 { background-position: -960px -205px; }
+.card.horizontal.h6 { background-position: -0px -301px; }
+.card.horizontal.h7 { background-position: -96px -301px; }
+.card.horizontal.h8 { background-position: -192px -301px; }
+.card.horizontal.h9 { background-position: -288px -301px; }
+.card.horizontal.hj { background-position: -384px -301px; }
+.card.horizontal.hk { background-position: -480px -301px; }
+.card.horizontal.hq { background-position: -576px -301px; }
+.card.horizontal.ht { background-position: -672px -301px; }
+.card.horizontal.jb { background-position: -768px -301px; }
+.card.horizontal.jr { background-position: -864px -301px; }
+.card.horizontal.s1 { background-position: -960px -301px; }
+.card.horizontal.s2 { background-position: -0px -397px; }
+.card.horizontal.s3 { background-position: -96px -397px; }
+.card.horizontal.s4 { background-position: -192px -397px; }
+.card.horizontal.s5 { background-position: -288px -397px; }
+.card.horizontal.s6 { background-position: -384px -397px; }
+.card.horizontal.s7 { background-position: -480px -397px; }
+.card.horizontal.s8 { background-position: -576px -397px; }
+.card.horizontal.s9 { background-position: -672px -397px; }
+.card.horizontal.sj { background-position: -768px -397px; }
+.card.horizontal.sk { background-position: -864px -397px; }
+.card.horizontal.sq { background-position: -960px -397px; }
+.card.horizontal.st { background-position: -0px -493px; }
+.card.vertical.back { background-position: -109px -480px; }
+.card.vertical.c1 { background-position: -205px -480px; }
+.card.vertical.c2 { background-position: -301px -480px; }
+.card.vertical.c3 { background-position: -397px -480px; }
+.card.vertical.c4 { background-position: -493px -480px; }
+.card.vertical.c5 { background-position: -589px -480px; }
+.card.vertical.c6 { background-position: -685px -480px; }
+.card.vertical.c7 { background-position: -781px -480px; }
+.card.vertical.c8 { background-position: -877px -480px; }
+.card.vertical.c9 { background-position: -973px -480px; }
+.card.vertical.cj { background-position: -13px -576px; }
+.card.vertical.ck { background-position: -109px -576px; }
+.card.vertical.cq { background-position: -205px -576px; }
+.card.vertical.ct { background-position: -301px -576px; }
+.card.vertical.d1 { background-position: -397px -576px; }
+.card.vertical.d2 { background-position: -493px -576px; }
+.card.vertical.d3 { background-position: -589px -576px; }
+.card.vertical.d4 { background-position: -685px -576px; }
+.card.vertical.d5 { background-position: -781px -576px; }
+.card.vertical.d6 { background-position: -877px -576px; }
+.card.vertical.d7 { background-position: -973px -576px; }
+.card.vertical.d8 { background-position: -13px -672px; }
+.card.vertical.d9 { background-position: -109px -672px; }
+.card.vertical.dj { background-position: -205px -672px; }
+.card.vertical.dk { background-position: -301px -672px; }
+.card.vertical.dq { background-position: -397px -672px; }
+.card.vertical.dt { background-position: -493px -672px; }
+.card.vertical.ec { background-position: -589px -672px; }
+.card.vertical.h1 { background-position: -685px -672px; }
+.card.vertical.h2 { background-position: -781px -672px; }
+.card.vertical.h3 { background-position: -877px -672px; }
+.card.vertical.h4 { background-position: -973px -672px; }
+.card.vertical.h5 { background-position: -13px -768px; }
+.card.vertical.h6 { background-position: -109px -768px; }
+.card.vertical.h7 { background-position: -205px -768px; }
+.card.vertical.h8 { background-position: -301px -768px; }
+.card.vertical.h9 { background-position: -397px -768px; }
+.card.vertical.hj { background-position: -493px -768px; }
+.card.vertical.hk { background-position: -589px -768px; }
+.card.vertical.hq { background-position: -685px -768px; }
+.card.vertical.ht { background-position: -781px -768px; }
+.card.vertical.jb { background-position: -877px -768px; }
+.card.vertical.jr { background-position: -973px -768px; }
+.card.vertical.s1 { background-position: -13px -864px; }
+.card.vertical.s2 { background-position: -109px -864px; }
+.card.vertical.s3 { background-position: -205px -864px; }
+.card.vertical.s4 { background-position: -301px -864px; }
+.card.vertical.s5 { background-position: -397px -864px; }
+.card.vertical.s6 { background-position: -493px -864px; }
+.card.vertical.s7 { background-position: -589px -864px; }
+.card.vertical.s8 { background-position: -685px -864px; }
+.card.vertical.s9 { background-position: -781px -864px; }
+.card.vertical.sj { background-position: -877px -864px; }
+.card.vertical.sk { background-position: -973px -864px; }
+.card.vertical.sq { background-position: -13px -960px; }
+.card.vertical.st { background-position: -109px -960px; }
+.card.chosen {
+	opacity: 0.7;
+	-moz-opacity: 0.7;
+	-webkit-opacity: 0.7;
+}
+.card.canChoose {
+	cursor: hand;
+	cursor: pointer;
+}
+
+a, a:visited {
+	text-decoration: none;
+	color: #AE432E;
+}
+
+a:hover {
+	color: #2E43AE;
+}
+
+#playing_field {
+	position: relative;
+	width: 800px;
+	height: 600px;
+	margin: 20px;
+	overflow: hidden;
+	position: relative;
+	background-color: rgba(196, 196, 196, 0.6);
+	border: 1px solid #666;
+	box-shadow: 0 0 8px #333;
+}
+
+#playing_field #global_message {
+	position: absolute;
+	width: 500px;
+	top: 180px;
+	left: 150px;
+	text-align: center;
+	font-weight: bold;
+	font-size: 20px;
+	color: #fff;
+	text-shadow: 1px 1px 6px #fff;
+}
+
+#playing_field #dialog {
+	position: absolute;
+	height: 200px;
+	width: 400px;
+	text-align: center;
+	top: 220px;
+	left: 200px;
+	z-index: 99;
+}
+
+#playing_field #dialog > div {
+	margin: 0px auto;
+	background-color: rgba(196, 196, 196, 0.9);
+	border: 1px solid silver;
+	color: #444;
+
+	border-radius: 8px;
+	-moz-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	box-shadow: 0px 0px 16px #444;
+	-moz-box-shadow: 0px 0px 16px #444;
+	-webkit-box-shadow: 0px 0px 16px #444;
+	padding: 8px;
+}
+
+#playing_field #dialog .title {
+	font-size: 16px;
+	color: #444;
+	font-weight: bold;
+}
+
+#playing_field #dialog button {
+	background: #eee;
+	border: 1px solid #888;
+	font-size: 14px;
+	font-weight: bold;
+	color: #222;
+	padding: 4px 8px;
+}
+
+#playing_field #dialog button:hover {
+	color: black;
+	background-color: rgba(255, 255, 255, 0.5);
+}
+
+#playing_field #dialog button:disabled,
+#playing_field #dialog button[disabled="disabled"] {
+	color: #aaa;
+	border: 1px solid #aaa;
+}
+
+#playing_field #dialog .choose_promise {
+	width: 300px;
+}
+
+#playing_field #dialog .choose_promise ul {
+	list-style: none;
+	padding: 0;
+}
+#playing_field #dialog .choose_promise ul.promise {
+	width: 100%;
+	height: 80px;
+	margin: 0px 16px 0px 16px;
+}
+#playing_field #dialog .choose_promise ul.promise li.selected {
+	margin-bottom: 16px;
+}
+
+#playing_field #dialog .choose_promise ul.promise button {
+	font-size: 20px;
+	padding: 0;
+	width: 24px;
+	height: 24px;
+}
+#playing_field #dialog .choose_promise ul.promise ul li {
+	float: left;
+	width: 150px;
+	text-align: center;
+}
+
+#playing_field #dialog .choose_promise li.selected li {
+	font-size: 30px;
+	color: #a00;
+	text-shadow: 0px 0px 4px #fff;
+}
+
+/*
+#playing_field #dialog .choose_promise li.body button {
+	font-size: 24px;
+	line-height: 24px;
+	margin-right: 4px;
+	padding: 0;
+	width: 26px;
+	height: 26px;
+}
+
+#playing_field #dialog .choose_promise span.promise {
+	font-size: 24px;
+	color: #a00;
+	text-shadow: 0px 0px 4px #fff;
+	margin: 0 8px;
+}
+
+#playing_field #dialog .choose_promise .select_suit button:hover {
+	border-color: #fff;
+}
+#playing_field #dialog .choose_promise .select_suit button {
+	background: #aaa;
+}
+#playing_field #dialog .choose_promise .suit.selected {
+	background-color: #fff;
+}
+	*/
+
+#playing_field #dialog .choose_promise .diamonds,
+#playing_field #dialog .choose_promise .hearts
+{
+	color: red;
+}
+
+#playing_field #dialog .choose_multiple {
+	width: 200px;
+	line-height: 200%;
+}
+
+#playing_field .profile {
+	position: absolute;
+}
+
+#playing_field .profile.top,
+#playing_field .profile.bottom
+{
+	width: 258px;
+	top: 100px;
+	left: 100px;
+}
+#playing_field .profile.left,
+#playing_field .profile.right 
+{
+	width: 200px;
+	top: 280px;
+	left: 100px;
+}
+
+#playing_field .profile a {
+	font-weight: bold;
+}
+
+#playing_field .profile .type {
+	color: rgb(255, 235, 235);
+	font-weight: bold;
+	text-shadow: 0px 0px 2px #fff;
+}
+
+#playing_field dl {
+	margin: 0;
+}
+
+#playing_field .profile.top dl > *,
+#playing_field .profile.bottom dl > *{
+	float: left;
+}
+
+#playing_field .profile.right dl > * {
+	float: right;
+}
+
+#playing_field .profile.top dd,
+#playing_field .profile.bottom dd {
+	margin-left: 4px;
+}
+
+#playing_field .profile dt {
+	overflow: hidden;
+}
+
+#playing_field .profile dd {
+	margin: 0;
+	min-height: 42px;
+	width: 190px;
+	padding: 4px;
+	/* background-color: rgba(255, 255, 255, 0.1); */
+	background-color: rgba(0, 0, 0, 0.1);
+	line-height: 150%;
+	border: 1px solid #999;
+
+	box-shadow: 0px 0px 8px #eee;
+	-moz-box-shadow: 0px 0px 8px #eee;
+	-webkit-box-shadow: 0px 0px 8px #eee;
+
+	border-radius: 4px;
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+}
+
+#playing_field .profile .message_type {
+	font-weight: bold;
+}
+
+#playing_field .profile .message {
+	color: #666;
+}
+
+#log {
+	position: absolute;
+}
+
+/* ==================
+   Initializr Theme
+   ================== */
+
+
+
+
+
+/* =============================================================================
+   Non-semantic helper classes
+   Please define your styles before this section.
+   ========================================================================== */
+
+/* For image replacement */
+.ir { display: block; text-indent: -999em; overflow: hidden; background-repeat: no-repeat; text-align: left; direction: ltr; }
+.ir br { display: none; }
+
+/* Hide for both screenreaders and browsers:
+   css-discuss.incutio.com/wiki/Screenreader_Visibility */
+.hidden { display: none; visibility: hidden; }
+
+/* Hide only visually, but have it available for screenreaders: by Jon Neal.
+  www.webaim.org/techniques/css/invisiblecontent/  &  j.mp/visuallyhidden */
+.visuallyhidden { border: 0; clip: rect(0 0 0 0); height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; }
+
+/* Extends the .visuallyhidden class to allow the element to be focusable when navigated to via the keyboard: drupal.org/node/897638 */
+.visuallyhidden.focusable:active, .visuallyhidden.focusable:focus { clip: auto; height: auto; margin: 0; overflow: visible; position: static; width: auto; }
+
+/* Hide visually and from screenreaders, but maintain layout */
+.invisible { visibility: hidden; }
+
+/* Contain floats: nicolasgallagher.com/micro-clearfix-hack/ */ 
+.clearfix:before, .clearfix:after { content: ""; display: table; }
+.clearfix:after { clear: both; }
+.clearfix { zoom: 1; }
+
+
+
+/* =============================================================================
+   PLACEHOLDER Media Queries for Responsive Design.
+   These override the primary ('mobile first') styles
+   Modify as content requires.
+   ========================================================================== */
+
+@media only screen and (min-width: 480px) {
+  /* Style adjustments for viewports 480px and over go here */
+
+}
+
+@media only screen and (min-width: 768px) {
+  /* Style adjustments for viewports 768px and over go here */
+
+}
+
+
+/* =============================================================================
+   Print styles.
+   Inlined to avoid required HTTP connection: www.phpied.com/delay-loading-your-print-css/
+   ========================================================================== */
+ 
+@media print {
+  * { background: transparent !important; color: black !important; text-shadow: none !important; filter:none !important; -ms-filter: none !important; } /* Black prints faster: sanbeiji.com/archives/953 */
+  a, a:visited { color: #444 !important; text-decoration: underline; }
+  a[href]:after { content: " (" attr(href) ")"; }
+  abbr[title]:after { content: " (" attr(title) ")"; }
+  .ir a:after, a[href^="javascript:"]:after, a[href^="#"]:after { content: ""; }  /* Don't show links for images, or javascript/internal links */
+  pre, blockquote { border: 1px solid #999; page-break-inside: avoid; }
+  thead { display: table-header-group; } /* css-discuss.incutio.com/wiki/Printing_Tables */
+  tr, img { page-break-inside: avoid; }
+  img { max-width: 100% !important; }
+  @page { margin: 0.5cm; }
+  p, h2, h3 { orphans: 3; widows: 3; }
+  h2, h3{ page-break-after: avoid; }
+}
