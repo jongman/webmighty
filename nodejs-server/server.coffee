@@ -1,32 +1,35 @@
 rule = require './rule'
 
 ################################################################################
+# Utilities (딴데로 빼야 하나?)
+################################################################################
+
+String::endsWith = (str) ->
+	this.length >= str.length and this.substr(this.length - str.length) == str
+
+################################################################################
 # Server init
 ################################################################################
 
 fs = require 'fs'
-#html = fs.readFileSync(__dirname + '/main.html')
-jqueryjs = fs.readFileSync(__dirname + '/jquery-1.6.2.min.js')
-http = require('http')
-server = http.createServer (req, res) ->
-	# hand implemented serving. 젤 더러운 하드코딩
-	if req.url == '/js/clientlib.js'
-		res.writeHead 200, {'Content-Type': 'text/javascript'}
-		clientjs = fs.readFileSync(__dirname + '/clientlib.js')
-		res.end clientjs
-	else if req.url == '/js/rule.js'
-		res.writeHead 200, {'Content-Type': 'text/javascript'}
-		clientjs = fs.readFileSync(__dirname + '/rule.js')
-		res.end clientjs
-	else if req.url == '/js/jquery-1.6.2.min.js'
-		res.writeHead 200, {'Content-Type': 'text/javascript'}
-		res.end jqueryjs
-	else if req.url.substr(0,3) == '/js' or req.url.substr(0,4) == '/css' or req.url.substr(0,7) == '/images'
-		res.end fs.readFileSync(__dirname + '/../public' + req.url)
-	else
-		testhtml = fs.readFileSync(__dirname + '/test.html')
-		res.end testhtml
+http = require 'http'
+path = require 'path'
 
+server = http.createServer (req, res) ->
+	url = if req.url in ['/', ''] then '/test.html' else req.url
+	file_path = __dirname + url
+	path.exists(file_path, (exists) ->
+		if exists
+			# node-mime 같은걸 쓰던지, 제대로 된 웹서버를 쓰던지 해야 -_-;
+			if file_path.endsWith(".css")
+				res.setHeader('Content-Type', 'text/css')
+			else if file_path.endsWith(".js")
+				res.setHeader('Content-Type', 'text/javascript')
+			res.end fs.readFileSync(file_path)
+		else
+			res.writeHead(404, {'Content-Type': 'text/plain'})
+			res.end()
+	)
 nowjs = require 'now'
 everyone = nowjs.initialize server
 
