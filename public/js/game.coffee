@@ -361,6 +361,11 @@ class PlayingField
 		@collectCards(winner, collect)
 		@playedCards = []
 
+	removeCollectedCards: (player) ->
+		for card in @collectCards[player]
+			card.remove()
+		@collected[player] = []
+
 	collectCards: (player, cards) ->
 		for card in cards
 			@collected[player].push(card)

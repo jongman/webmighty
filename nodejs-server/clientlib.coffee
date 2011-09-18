@@ -62,17 +62,17 @@ getIndexFromRelativeIndex = (ridx) ->
 	return (myIndex + ridx) % 5
 
 isJugong = (index=null) ->
-	index ?= myIndex
-	return myIndex == jugongIndex
+	index or= myIndex
+	return index == jugongIndex
 
 isFriend = (index=null) ->
 	# TODO implement
-	index ?= myIndex
+	index or= myIndex
 	return false
 
 isFriendKnown = (index=null) ->
 	# TODO implement
-	index ?= myIndex
+	index or= myIndex
 	return false
 
 ################################################################################
@@ -177,7 +177,7 @@ now.requestChooseFriend = ->
 		else if x == 'joker'
 			now.chooseFriendByCard('jr')
 		else if x == 'mighty'
-			now.chooseFriendByCard(getMightyCard())
+			now.chooseFriendByCard(rule.getMightyCard())
 		else if x == 'firsttrick'
 			now.chooseFriendFirstTrick()
 		else if x[0] in 'hcsd' and x.length == 2 and x[1] in '123456789tjkqa'
@@ -195,32 +195,47 @@ now.notifyChooseFriend = ->
 		window.field.globalMessage("#{users[jugongIndex].name} 님이 함께할 프렌드를 선택하고 있습니다.")
 
 renderFaceName = (face) ->
-	if face == getMightyCard()
+	if face == rule.getMightyCard()
 		return "마이티"
 	if face == 'jr'
 		return "조커"
 	suit = SUIT_NAMES[face[0]]
+	if face[0] == rule.currentPromise[0]
+		suit = "기루다"
 	value = VALUE_NAMES[VALUE_ORDER.indexOf(face[1])]
 	return "#{suit} #{value}"
+
+friendHandler = (index) ->
+	window.field.setPlayerType getRelativeIndexFromIndex(index), "프렌드"
+	window.field.removeCollectedCards index
 
 now.notifyFriendByCard = (card) ->
 	card = renderFaceName card
 	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + card + '프렌드'
+	rule.setFriend rule.FriendOption.ByCard, card
+	if rule.isFriendByHand window.field.hands[0] and not isJugong()
+		window.field.setPlayerType 0, "프렌드"
 
 now.notifyFriendNone = ->
 	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '프렌드 없음'
+	rule.setFriend rule.FriendOption.NoFriend
 
 now.notifyFriendFirstTrick = ->
 	document.title = buildCommitmentString(face, target) + ', ' + '초구 프렌드'
+	rule.setFriend rule.FriendOption.FirstTrick
 
 # 카드 내기
 
-now.requestChooseCard = (currentTurn, currentTrick, option) ->
+now.requestChooseCard = (currentTurn, option) ->
 	# TODO 카드 고르는거 필터링
 	player = 0
 	handFace = (c.face for c in window.field.hands[player])
 	filter = (card) ->
+		if rule.isValidChoice(handFace, card.face, option, currentTurn)
+			systemMsg "can pick " + card.face
 		rule.isValidChoice(handFace, card.face, option, currentTurn)
+
+	systemMsg rule.currentTrick
 
 	window.field.chooseFilteredCard(filter, (card) ->
 		# TODO 조커, 조커콜 등 구현
@@ -248,7 +263,7 @@ now.requestChooseCard = (currentTurn, currentTrick, option) ->
 						# 그냥 냄 (따로 코드 필요없음)
 					else
 						dontDo = true
-						now.requestChooseCard(currentTurn, currentTrick, option)
+						now.requestChooseCard(currentTurn, option)
 			else if card.face == rule.getJokerCallCard()
 				# 조커콜 할까요 말까요
 				doJokerCall = prompt("조커콜 하나요? (yes / no)")
@@ -259,11 +274,33 @@ now.requestChooseCard = (currentTurn, currentTrick, option) ->
 	)
 
 now.notifyPlayCard = (index, card, option) ->
-	window.field.playCard (getRelativeIndexFromIndex index), card, option
-	rule.addTrick(card)
 
-now.takeTrick = (winnerIndex) ->
-	window.field.endTurn((getRelativeIndexFromIndex winnerIndex), not (isJugong(winnerIndex) or isFriend(winnerIndex) and isFriendKnown(winnerIndex)))
+	optionStr = null
+
+	if rule.currentTrick.length == 0
+		if option == rule.ChooseCardOption.JokerCall
+			optionStr = "조커 콜!"
+		else if option in [rule.ChooseCardOption.HCome, rule.ChooseCardOption.SCome, rule.ChooseCardOption.DCome, rule.ChooseCardOption.CCome]
+			optionStr = "기루다 컴!"
+			if option == rule.ChooseCardOption.HCome and rule.currentPromise[0] != 'h'
+				optionStr = "하트 컴!"
+			else if option == rule.ChooseCardOption.DCome and rule.currentPromise[0] != 'd'
+				optionStr = "다이아몬드 컴!"
+			else if option == rule.ChooseCardOption.SCome and rule.currentPromise[0] != 's'
+				optionStr = "스페이드 컴!"
+			else if option == rule.ChooseCardOption.CCome and rule.currentPromise[0] != 'c'
+				optionStr = "클로버 컴!"
+
+	systemMsg "PlayCard"
+	systemMsg index
+	systemMsg card
+	systemMsg optionStr
+
+	window.field.playCard (getRelativeIndexFromIndex index), card, optionStr
+	rule.addTrick(card, index)
+
+now.takeTrick = (currentTurn, winnerIndex) ->
+	window.field.endTurn((getRelativeIndexFromIndex winnerIndex), not (isJugong(winnerIndex) or rule.isFriend(winnerIndex) and rule.isFriendKnown()))
 	rule.resetTrick()
 
 ################################################################################
@@ -304,8 +341,9 @@ now.notifyJugong = (finalJugongIndex, face, target) ->
 now.notifyChangeState = (newState) ->
 	systemMsg 'changeState to ' + newState
 	if newState == now.VOTE
+		document.title = "새 게임을 시작합니다."
 		commitmentIndex = 0
-		rule.resetPromise()
+		rule.resetGame()
 		window.field.setPlayers(
 			{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
 			)
@@ -324,6 +362,7 @@ now.notifyPlayers = (clientIds, names) ->
 
 now.notifyMsg = (msg) ->
 	window.field.globalMessage msg
+	document.title = msg
 
 now.notifyVote = (index, face, target) ->
 	rule.setPromise([face, target])

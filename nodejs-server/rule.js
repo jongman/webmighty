@@ -1,4 +1,10 @@
 var exports;
+var __indexOf = Array.prototype.indexOf || function(item) {
+  for (var i = 0, l = this.length; i < l; i++) {
+    if (this[i] === item) return i;
+  }
+  return -1;
+};
 if (!(typeof exports !== "undefined" && exports !== null)) {
   exports = this['rule'] = {};
 }
@@ -11,12 +17,81 @@ exports.ChooseCardOption = {
   HCome: 4,
   CCome: 5
 };
-exports.currentTrick = [];
-exports.addTrick = function(card) {
-  return exports.currentTrick.push(card);
+exports.FriendOption = {
+  None: 0,
+  NoFriend: 1,
+  ByCard: 2,
+  FirstTrick: 3
 };
-exports.resetTrick = function() {
-  return exports.currentTrick = [];
+exports.friendOption = exports.FriendOption.None;
+exports.friendKnown = false;
+exports.friendIndex = -1;
+exports.friendHandler = function() {};
+exports.setFriendHandler = function(handler) {
+  return exports.friendHandler = handler;
+};
+exports.resetFriendOption = function() {
+  exports.friendOption = exports.FriendOption.None;
+  exports.friendKnown = false;
+  return exports.friendIndex = -1;
+};
+exports.setFriend = function(option, arg) {
+  if (arg == null) {
+    arg = null;
+  }
+  exports.friendOption = option;
+  exports.friendKnown = option === exports.FriendOption.NoFriend;
+  exports.friendIndex = -1;
+  if (option === exports.FriendOption.ByCard) {
+    return exports.friendCard = arg;
+  } else {
+    return exports.friendCard = null;
+  }
+};
+exports.checkFriendCard = function(index, card) {
+  if (exports.friendOption === exports.FriendOption.ByCard && card === exports.friendCard) {
+    exports.friendKnown = true;
+    exports.friendIndex = index;
+    return exports.friendHandler(index);
+  }
+};
+exports.checkFriendEndTurn = function(winnerIndex) {
+  if (exports.friendOption === exports.FriendOption.FirstTrick && exports.currentTurn !== 0) {
+    exports.friendKnown = true;
+    exports.friendIndex = winnerIndex;
+    return exports.friendHandler(winnerIndex);
+  }
+};
+exports.isFriendByHand = function(hand) {
+  var _ref;
+  return exports.friendOption === exports.FriendOption.ByCard && (_ref = exports.friendCard, __indexOf.call(hand, _ref) >= 0);
+};
+exports.isFriend = function(index) {
+  return exports.friendKnown && index === exports.friendIndex;
+};
+exports.isFriendKnown = function() {
+  return exports.friendKnown;
+};
+exports.currentTrick = [];
+exports.currentTurn = 0;
+exports.addTrick = function(card, index) {
+  if (index == null) {
+    index = null;
+  }
+  exports.currentTrick.push(card);
+  if (index != null) {
+    return exports.checkFriendCard(index, card);
+  }
+};
+exports.resetTrick = function(winnerIndex) {
+  if (winnerIndex == null) {
+    winnerIndex = null;
+  }
+  exports.currentTrick = [];
+  if (winnerIndex != null) {
+    exports.checkFriendEndTurn(winnerIndex);
+  }
+  return exports.currentTurn += 1;
 };
 exports.getCurrentTrickFace = function(currentTrickOption) {
   if (exports.currentTrick.length === 0) {
@@ -45,7 +120,8 @@ exports.getCurrentTrickFace = function(currentTrickOption) {
 };
 exports.currentPromise = null;
 exports.setPromise = function(promise) {
-  return exports.currentPromise = promise;
+  exports.currentPromise = promise;
+  return exports.currentTurn = 0;
 };
 exports.resetPromise = function() {
   return exports.currentPromise = null;
@@ -85,11 +161,11 @@ exports.isValidChoice = function(hand, card, option, currentTurn) {
         return card === exports.getJokerCallCard() && currentTurn !== 0;
       } else if (option === exports.ChooseCardOption.SCome || option === exports.ChooseCardOption.DCome || option === exports.ChooseCardOption.HCome || option === exports.ChooseCardOption.CCome) {
         return card === 'jr' && currentTurn !== 0 && currentTurn !== 9;
-      } else if (card[0] === exports.currentPromise[0]) {
-        return currentTurn !== 0;
       }
     } else if (card === 'jr') {
       return exports.currentPromise === 0 || currentTurn === 9;
+    } else if ((exports.currentPromise != null) && card[0] === exports.currentPromise[0] && currentTurn === 0) {
+      return false;
     }
   } else {
     if (card === exports.getMightyCard()) {
@@ -98,7 +174,7 @@ exports.isValidChoice = function(hand, card, option, currentTurn) {
       return true;
     } else if ((exports.hasFace(hand, 'j')) && option === exports.ChooseCardOption.JokerCall && card !== 'jr') {
       return false;
-    } else if ((exports.hasFace(hand, exports.getCurrentTrickFace(option))) && !exports.isSameFace(card, exports.getCurrentTrickFace(option))) {
+    } else if (exports.currentTrick.length > 0 && (exports.hasFace(hand, exports.getCurrentTrickFace(option))) && !exports.isSameFace(card, exports.getCurrentTrickFace(option))) {
       return false;
     }
   }
@@ -150,4 +226,8 @@ exports.checkDealMiss = function(cards) {
     }
   }
   return score < 1;
+};
+exports.resetGame = function() {
+  exports.resetFriendOption();
+  return exports.resetPromise();
 };

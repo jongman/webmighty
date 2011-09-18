@@ -34,6 +34,7 @@ test = ->
 	assertEqual 2, rule.determineTurnWinner 0, 1
 	rule.setPromise(['d', 14]) # giruda win
 	assertEqual 3, rule.determineTurnWinner 0, 1
+	assertEqual 3, rule.determineTurnWinner 0, 0
 
 	setCards ['c3','c8','c1','jr','ck']
 	rule.setPromise(['c', 14])
@@ -60,6 +61,7 @@ test = ->
 		rule.isValidChoice(hand, card, option, currentTurn)
 
 	# 카드 내기 테스트
+	rule.setPromise ['h', 14] # 제일 영향 안받게 기루는 하트로 해둠
 	# 조커
 	assertFalse testValidChoice([], null, 'jr', rule.ChooseCardOption.HCome, 0), "첫턴 조커"
 	assertTrue testValidChoice([], null, 'jr', rule.ChooseCardOption.HCome, 1), "조커"
@@ -73,8 +75,15 @@ test = ->
 	assertTrue testValidChoice(['c3'], ['jr', 'c2'], 'jr', rule.ChooseCardOption.None, 1), "조콜안했으면 딴거내도됨"
 	assertFalse testValidChoice(['c3'], ['jr', 'c2'], 'c2', rule.ChooseCardOption.JokerCall, 1), "조콜했으면 조커가 나와야지!"
 	assertTrue testValidChoice(['c3'], ['jr', 'c2'], 'jr', rule.ChooseCardOption.JokerCall, 1), "조콜했으면 조커가 나와야지!"
+	assertTrue testValidChoice(['c3'], ['jr', 'c2', 's1'], 's1', rule.ChooseCardOption.JokerCall, 1), "조콜했지만 간지나게 마이티"
+	rule.setPromise ['s', 14]
+	assertFalse testValidChoice(['c3'], ['jr', 'c2', 's1'], 's1', rule.ChooseCardOption.JokerCall, 1), "조콜했을때 마이티 였던 기아를 내는 경우"
 
-	# 마이티
+	rule.setPromise ['h', 14]
+	# 첫턴 기루 
+	assertFalse testValidChoice([], null, 'h3', rule.ChooseCardOption.None, 0), "첫턴 기루 안됨"
+	assertTrue testValidChoice(['d1'], null, 'h3', rule.ChooseCardOption.None, 0), "첫턴 간치기는 가능"
+
 
 	if testFailFlag
 		process.exit(1)
@@ -89,6 +98,7 @@ testhtml = fs.readFileSync(__dirname + '/test.html')
 jqueryjs = fs.readFileSync(__dirname + '/jquery-1.6.2.min.js')
 http = require('http')
 server = http.createServer (req, res) ->
+	# hand implemented serving. 젤 더러운 하드코딩
   if req.url == '/js/clientlib.js'
 	  res.writeHead 200, {'Content-Type': 'text/javascript'}
 	  clientjs = fs.readFileSync(__dirname + '/clientlib.js')
@@ -185,7 +195,7 @@ enterState = (state) ->
 		lastTurnWinner = jugongIndex
 		rule.resetTrick()
 		nowjs.getClient players[lastTurnWinner], ->
-			@now.requestChooseCard rule.currentTrick, rule.ChooseCardOption.None
+			@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
 
 	else if state == everyone.now.END_GAME
 		# 결과 보여주고 일정 시간 후 waiting 상태로 
@@ -341,6 +351,7 @@ everyone.now.commitmentDealMiss = ->
 resetVote = ->
 	votes = (['n',0] for player in players)
 	currentPromise = ['n',12]
+	rule.resetGame()
 	rule.setPromise currentPromise
 	currentVoteIndex = null
 	
@@ -374,14 +385,17 @@ everyone.now.chooseFriendByCard = (card) ->
 	if card in hand
 		@now.requestChooseFriend()
 		return
+	rule.setFriend rule.FriendOption.ByCard, card
 	everyone.now.notifyFriendByCard card
 	afterFriendChoose()
 
 everyone.now.chooseFriendFirstTrick = ->
+	rule.setFriend rule.FriendOption.FirstTrick
 	everyone.now.notifyFriendFirstTrick
 	afterFriendChoose()
 
 everyone.now.chooseFriendNone = ->
+	rule.setFriend rule.FriendOption.NoFriend
 	everyone.now.notifyFriendNone
 	afterFriendChoose()
 
@@ -402,30 +416,31 @@ everyone.now.chooseCard = (card, option) ->
 	if rule.isValidChoice((getHandFromClientId @user.clientId), card, option, currentTurn)
 		if rule.currentTrick.length == 0
 			currentTrickOption = option
-		rule.addTrick(card)
+		rule.addTrick(card, (lastTurnWinner + rule.currentTrick.length)%5)
 		removeCard card
 		everyone.now.notifyPlayCard (indexFromClientId @user.clientId), card, option
 		if rule.currentTrick.length == 5
 			# end of one trick
 			lastTurnWinner = (lastTurnWinner + rule.determineTurnWinner(currentTrickOption, currentTurn))%5
-			everyone.now.takeTrick lastTurnWinner
+			everyone.now.takeTrick currentTurn, lastTurnWinner
 
 			currentTurn += 1
 			if currentTurn == 10
 				# end of all trick
 				now.notifyMsg "우리 모두의 승리!"
+				changeState everyone.now.END_GAME
 			else
 				rule.resetTrick()
 				nowjs.getClient players[lastTurnWinner], ->
-					@now.requestChooseCard currentTurn, rule.currentTrick, rule.ChooseCardOption.None
+					@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
 		else
 			# 다음 사람에게로
 			console.log rule.currentTrick
 			nowjs.getClient players[(lastTurnWinner + rule.currentTrick.length) % 5], ->
-				@now.requestChooseCard rule.currentTrick, currentTrickOption
+				@now.requestChooseCard currentTurn, currentTrickOption
 	else
 		# 잘못된 선택 했으니 반복
-		@now.requestChooseCard rule.currentTrick, rule.ChooseCardOption.None
+		@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
 
 ################################################################################
 # END_GAME

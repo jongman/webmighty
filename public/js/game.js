@@ -51,7 +51,8 @@
     s: "스페이드",
     h: "하트",
     c: "클로버",
-    d: "다이아몬드"
+    d: "다이아몬드",
+    n: "노기루다"
   };
   VALUE_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "잭", "퀸", "킹", "에이스"];
   floor = Math.floor;
@@ -500,6 +501,15 @@
       this.collectCards(winner, collect);
       return this.playedCards = [];
     };
+    PlayingField.prototype.removeCollectedCards = function(player) {
+      var card, _i, _len, _ref;
+      _ref = this.collectCards[player];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        card = _ref[_i];
+        card.remove();
+      }
+      return this.collected[player] = [];
+    };
     PlayingField.prototype.collectCards = function(player, cards) {
       var card, pos, _i, _len, _results;
       _results = [];
@@ -566,6 +576,43 @@
           }).mousedown(function() {
             return finish(card);
           });
+        }, this)(card));
+      }
+      return _results;
+    };
+    PlayingField.prototype.chooseFilteredCard = function(filter, done) {
+      var card, finish, player, _i, _len, _ref, _results;
+      if (done == null) {
+        done = function() {};
+      }
+      player = 0;
+      finish = __bind(function(card) {
+        var c, _i, _len, _ref;
+        _ref = this.hands[player];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          c = _ref[_i];
+          c.elem.removeClass("canChoose").unbind();
+        }
+        return done(card);
+      }, this);
+      _ref = this.hands[player];
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        card = _ref[_i];
+        _results.push(__bind(function(card) {
+          if (filter(card)) {
+            return card.elem.addClass("canChoose").mouseover(function() {
+              return $(this).animate({
+                top: "-=10"
+              }, SPEED_BASE);
+            }).mouseout(function() {
+              return $(this).animate({
+                top: "+=10"
+              }, SPEED_BASE);
+            }).mousedown(function() {
+              return finish(card);
+            });
+          }
         }, this)(card));
       }
       return _results;

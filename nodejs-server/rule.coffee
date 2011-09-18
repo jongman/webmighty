@@ -11,15 +11,73 @@ exports.ChooseCardOption =
 	CCome: 5
 
 ################################################################################
+# Friend
+################################################################################
+exports.FriendOption =
+	None: 0
+	NoFriend: 1
+	ByCard : 2
+	FirstTrick: 3
+
+exports.friendOption = exports.FriendOption.None
+exports.friendKnown = false
+exports.friendIndex = -1
+exports.friendHandler = ->
+
+exports.setFriendHandler = (handler) ->
+	exports.friendHandler = handler
+
+exports.resetFriendOption = ->
+	exports.friendOption = exports.FriendOption.None
+	exports.friendKnown = false
+	exports.friendIndex = -1
+
+exports.setFriend = (option, arg = null) ->
+	exports.friendOption = option
+	exports.friendKnown = option == exports.FriendOption.NoFriend
+	exports.friendIndex = -1
+	if option == exports.FriendOption.ByCard
+		exports.friendCard = arg
+	else
+		exports.friendCard = null
+
+exports.checkFriendCard = (index, card) ->
+	if exports.friendOption == exports.FriendOption.ByCard and card == exports.friendCard
+		exports.friendKnown = true
+		exports.friendIndex = index
+		exports.friendHandler(index)
+
+exports.checkFriendEndTurn = (winnerIndex) ->
+	if exports.friendOption == exports.FriendOption.FirstTrick and exports.currentTurn != 0
+		exports.friendKnown = true
+		exports.friendIndex = winnerIndex
+		exports.friendHandler(winnerIndex)
+
+exports.isFriendByHand = (hand) ->
+	return exports.friendOption == exports.FriendOption.ByCard and exports.friendCard in hand
+
+exports.isFriend = (index) ->
+	return exports.friendKnown and index == exports.friendIndex
+	
+exports.isFriendKnown = () ->
+	exports.friendKnown
+
+################################################################################
 # Trick (현재 턴에 나온 카드 관리)
 ################################################################################
 exports.currentTrick = []
+exports.currentTurn = 0
 
-exports.addTrick = (card) ->
+exports.addTrick = (card, index = null) ->
 	exports.currentTrick.push(card)
+	if index?
+		exports.checkFriendCard(index, card)
 
-exports.resetTrick = ->
+exports.resetTrick = (winnerIndex = null) ->
 	exports.currentTrick = []
+	if winnerIndex?
+		exports.checkFriendEndTurn winnerIndex
+	exports.currentTurn += 1
 
 exports.getCurrentTrickFace = (currentTrickOption) ->
 	if exports.currentTrick.length == 0
@@ -48,6 +106,7 @@ exports.currentPromise = null
 
 exports.setPromise = (promise) ->
 	exports.currentPromise = promise
+	exports.currentTurn = 0
 
 exports.resetPromise = ->
 	exports.currentPromise = null
@@ -86,11 +145,11 @@ exports.isValidChoice = (hand, card, option, currentTurn) ->
 				# 특정 무늬 불렀으면 조커를 내야지!
 				# 근데 막턴이나 첫턴은 안됨
 				return card == 'jr' and currentTurn != 0 and currentTurn != 9
-			else if card[0] == exports.currentPromise[0] # 첫턴에 기루 안됨
-				return currentTurn != 0
 		else if card == 'jr'
 			# 처음에 내는데 콜이 아닌 경우는 맨첨이나 마지막에 버리는 용도
 			return exports.currentPromise == 0 or currentTurn == 9
+		else if exports.currentPromise? and card[0] == exports.currentPromise[0] and currentTurn == 0 # 첫턴에 기루 안됨
+			return false
 	else
 		if card == exports.getMightyCard()
 			return true
@@ -99,7 +158,7 @@ exports.isValidChoice = (hand, card, option, currentTurn) ->
 		else if (exports.hasFace hand, 'j') and option == exports.ChooseCardOption.JokerCall and card != 'jr'
 			# 조커콜 당했는데 조커 안낸 경우
 			return false
-		else if (exports.hasFace hand, exports.getCurrentTrickFace(option)) and not exports.isSameFace(card, exports.getCurrentTrickFace(option))
+		else if exports.currentTrick.length > 0 and (exports.hasFace hand, exports.getCurrentTrickFace(option)) and not exports.isSameFace(card, exports.getCurrentTrickFace(option))
 			# 선과 같은 무늬가 있는데 안 낸 경우
 			return false
 	true
@@ -149,3 +208,6 @@ exports.checkDealMiss = (cards) ->
 			score -= 1
 	return score < 1
 
+exports.resetGame = ->
+	exports.resetFriendOption()
+	exports.resetPromise()
