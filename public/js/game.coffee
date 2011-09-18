@@ -194,7 +194,7 @@ class PlayingField
 				VALUE_ORDER.indexOf(a.face[1]) - VALUE_ORDER.indexOf(b.face[1])
 		)
 		n = @hands[player].length
-		for i in [0..n-1]
+		for i in [0...n]
 			@hands[player][i].elem.css({"z-index": n-i})
 		@repositionCards(player)
 
@@ -203,8 +203,8 @@ class PlayingField
 	deal: (cards, startFrom, done=->) ->
 		@clearCards()
 		assert(cards.length == @players.length)
-		@hands = ([] for i in [0..@players.length-1])
-		@collected = ([] for i in [0..@players.length-1])
+		@hands = ([] for i in [0...@players.length])
+		@collected = ([] for i in [0...@players.length])
 		center = @convertRelativePosition(0.5, 0.5)
 		@cardStack = []
 		for i in [0..52]
@@ -229,8 +229,8 @@ class PlayingField
 			# 셔플을 다 하고 나면 카드를 돌린다
 			$(".group1").promise().done(=>
 				dealt = 0
-				for index in [0..cards[0].length-1]
-					for pl in [0..@players.length-1]
+				for index in [0...cards[0].length]
+					for pl in [0...@players.length]
 						player = (startFrom + pl) % @players.length
 						card = @cardStack.pop()
 						@hands[player].push(card)
@@ -248,9 +248,9 @@ class PlayingField
 
 				setTimeout(
 					=>
-						for i in [0..@cardStack.length-1]
+						for i in [0...@cardStack.length]
 							@cardStack[i].elem.animate({top: "-=#{i * 2}", left: "-=#{ i * 2 }"}, 50)
-						for player in [0..@players.length-1]
+						for player in [0...@players.length]
 							@sortHands(player)
 						null
 					, dealt * SPEED_BASE
@@ -263,7 +263,7 @@ class PlayingField
 		null
 
 	repositionCards: (player) ->
-		for i in [0..@hands[player].length-1]
+		for i in [0...@hands[player].length]
 			pos = @getHandPosition(player, @hands[player].length, i)
 			@hands[player][i].moveTo(pos.x, pos.y, SPEED_BASE * 5)
 
@@ -271,7 +271,7 @@ class PlayingField
 	dealAdditionalCards: (faces, player, done=->) ->
 		n = faces.length
 		assert(n == @cardStack.length)
-		for idx in [0..n-1]
+		for idx in [0...n]
 			card = @cardStack.pop()
 			do (idx, card) =>
 				setTimeout(
@@ -308,7 +308,7 @@ class PlayingField
 		if @players
 			player.profile_elem.remove() for player in @players
 		@players = players
-		for i in [0..@players.length-1]
+		for i in [0...@players.length]
 			{side: side, y: y, x: x} = @getProfilePosition(i)
 			elem = $("#profile_template")
 				.clone()
@@ -362,9 +362,9 @@ class PlayingField
 		@collectCards(winner, collect)
 		@playedCards = []
 
+	# 프렌드 먹은 카드 없애기 위한 구현
 	removeCollectedCards: (player) ->
-		for card in @collectCards[player]
-			card.remove()
+		card.remove() for card in @collected[player]
 		@collected[player] = []
 
 	collectCards: (player, cards) ->
@@ -372,6 +372,7 @@ class PlayingField
 			@collected[player].push(card)
 			pos = @getCollectedPosition(player, @collected[player].length-1)
 			card.moveTo(pos.x, pos.y, SPEED_BASE * 5)
+			card.elem.css({"z-index":@collected[player].length})
 
 	takeCards: (player, cards, done = ->) ->
 		home = @getHandPosition(player, 1, 0)
@@ -379,7 +380,7 @@ class PlayingField
 		cx = home.x + dx
 		cy = home.y + dy
 
-		for i in [0..cards.length-1]
+		for i in [0...cards.length]
 			cards[i].elem
 				.animate({top: cy, left: cx}, SPEED_BASE * 5)
 				.fadeOut(0)

@@ -244,7 +244,7 @@
       };
     };
     PlayingField.prototype.sortHands = function(player) {
-      var i, n, _ref;
+      var i, n;
       if (this.hands[player].length === 0 || this.hands[player][0].face[0] === "b") {
         return;
       }
@@ -256,7 +256,7 @@
         }
       });
       n = this.hands[player].length;
-      for (i = 0, _ref = n - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+      for (i = 0; 0 <= n ? i < n : i > n; 0 <= n ? i++ : i--) {
         this.hands[player][i].elem.css({
           "z-index": n - i
         });
@@ -273,7 +273,7 @@
       this.hands = (function() {
         var _ref, _results;
         _results = [];
-        for (i = 0, _ref = this.players.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+        for (i = 0, _ref = this.players.length; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
           _results.push([]);
         }
         return _results;
@@ -281,7 +281,7 @@
       this.collected = (function() {
         var _ref, _results;
         _results = [];
-        for (i = 0, _ref = this.players.length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+        for (i = 0, _ref = this.players.length; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
           _results.push([]);
         }
         return _results;
@@ -322,7 +322,7 @@
         $(".group1").promise().done(__bind(function() {
           var dealt, face, index, pl, player, _fn, _ref, _ref2;
           dealt = 0;
-          for (index = 0, _ref = cards[0].length - 1; 0 <= _ref ? index <= _ref : index >= _ref; 0 <= _ref ? index++ : index--) {
+          for (index = 0, _ref = cards[0].length; 0 <= _ref ? index < _ref : index > _ref; 0 <= _ref ? index++ : index--) {
             _fn = __bind(function(card, face, player, index, dealt) {
               return setTimeout(__bind(function() {
                 var pos;
@@ -333,7 +333,7 @@
                 return null;
               }, this), dealt * SPEED_BASE);
             }, this);
-            for (pl = 0, _ref2 = this.players.length - 1; 0 <= _ref2 ? pl <= _ref2 : pl >= _ref2; 0 <= _ref2 ? pl++ : pl--) {
+            for (pl = 0, _ref2 = this.players.length; 0 <= _ref2 ? pl < _ref2 : pl > _ref2; 0 <= _ref2 ? pl++ : pl--) {
               player = (startFrom + pl) % this.players.length;
               card = this.cardStack.pop();
               this.hands[player].push(card);
@@ -344,13 +344,13 @@
           }
           setTimeout(__bind(function() {
             var i, player, _ref3, _ref4;
-            for (i = 0, _ref3 = this.cardStack.length - 1; 0 <= _ref3 ? i <= _ref3 : i >= _ref3; 0 <= _ref3 ? i++ : i--) {
+            for (i = 0, _ref3 = this.cardStack.length; 0 <= _ref3 ? i < _ref3 : i > _ref3; 0 <= _ref3 ? i++ : i--) {
               this.cardStack[i].elem.animate({
                 top: "-=" + (i * 2),
                 left: "-=" + (i * 2)
               }, 50);
             }
-            for (player = 0, _ref4 = this.players.length - 1; 0 <= _ref4 ? player <= _ref4 : player >= _ref4; 0 <= _ref4 ? player++ : player--) {
+            for (player = 0, _ref4 = this.players.length; 0 <= _ref4 ? player < _ref4 : player > _ref4; 0 <= _ref4 ? player++ : player--) {
               this.sortHands(player);
             }
             return null;
@@ -365,14 +365,14 @@
     PlayingField.prototype.repositionCards = function(player) {
       var i, pos, _ref, _results;
       _results = [];
-      for (i = 0, _ref = this.hands[player].length - 1; 0 <= _ref ? i <= _ref : i >= _ref; 0 <= _ref ? i++ : i--) {
+      for (i = 0, _ref = this.hands[player].length; 0 <= _ref ? i < _ref : i > _ref; 0 <= _ref ? i++ : i--) {
         pos = this.getHandPosition(player, this.hands[player].length, i);
         _results.push(this.hands[player][i].moveTo(pos.x, pos.y, SPEED_BASE * 5));
       }
       return _results;
     };
     PlayingField.prototype.dealAdditionalCards = function(faces, player, done) {
-      var card, idx, n, _fn, _ref;
+      var card, idx, n, _fn;
       if (done == null) {
         done = function() {};
       }
@@ -387,7 +387,7 @@
           return null;
         }, this), idx * SPEED_BASE * 5);
       }, this);
-      for (idx = 0, _ref = n - 1; 0 <= _ref ? idx <= _ref : idx >= _ref; 0 <= _ref ? idx++ : idx--) {
+      for (idx = 0; 0 <= n ? idx < n : idx > n; 0 <= n ? idx++ : idx--) {
         card = this.cardStack.pop();
         _fn(idx, card);
       }
@@ -428,7 +428,7 @@
       }
       this.players = players;
       _results = [];
-      for (i = 0, _ref2 = this.players.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
+      for (i = 0, _ref2 = this.players.length; 0 <= _ref2 ? i < _ref2 : i > _ref2; 0 <= _ref2 ? i++ : i--) {
         _ref3 = this.getProfilePosition(i), side = _ref3.side, y = _ref3.y, x = _ref3.x;
         elem = $("#profile_template").clone().addClass(side).appendTo(this.elem);
         elem.find(".picture").attr({
@@ -504,7 +504,7 @@
     };
     PlayingField.prototype.removeCollectedCards = function(player) {
       var card, _i, _len, _ref;
-      _ref = this.collectCards[player];
+      _ref = this.collected[player];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         card = _ref[_i];
         card.remove();
@@ -518,7 +518,10 @@
         card = cards[_i];
         this.collected[player].push(card);
         pos = this.getCollectedPosition(player, this.collected[player].length - 1);
-        _results.push(card.moveTo(pos.x, pos.y, SPEED_BASE * 5));
+        card.moveTo(pos.x, pos.y, SPEED_BASE * 5);
+        _results.push(card.elem.css({
+          "z-index": this.collected[player].length
+        }));
       }
       return _results;
     };
@@ -531,7 +534,7 @@
       _ref = DISAPPEAR_DIRECTION[this.getLocationInfo(player).side], dx = _ref[0], dy = _ref[1];
       cx = home.x + dx;
       cy = home.y + dy;
-      for (i = 0, _ref2 = cards.length - 1; 0 <= _ref2 ? i <= _ref2 : i >= _ref2; 0 <= _ref2 ? i++ : i--) {
+      for (i = 0, _ref2 = cards.length; 0 <= _ref2 ? i < _ref2 : i > _ref2; 0 <= _ref2 ? i++ : i--) {
         cards[i].elem.animate({
           top: cy,
           left: cx

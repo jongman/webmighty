@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, assertTrue, buildCommitmentString, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isFriend, isFriendKnown, isJugong, jugongIndex, lang, loctable, myIndex, name2index, readyCount, renderFaceName, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, assertEqual, assertTrue, buildCommitmentString, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isFriend, isFriendKnown, isJugong, jugongIndex, lang, loctable, myIndex, name2index, readyCount, renderFaceName, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -14,6 +14,16 @@
     }
     if (!o) {
       alert("AssertTrue fail: " + msg);
+      return testFailFlag = true;
+    }
+  };
+  assertEqual = function(e, a, msg) {
+    var testFailFlag;
+    if (msg == null) {
+      msg = "";
+    }
+    if (e !== a) {
+      alert("AssertEqual fail: expected " + e + ", actual " + a + "; " + msg);
       return testFailFlag = true;
     }
   };
@@ -159,7 +169,8 @@
             card = chosen[_i];
             window.field.hands[0].remove(card);
           }
-          return window.field.repositionCards(0);
+          window.field.repositionCards(0);
+          return assertEqual(10, window.field.hands[0].length);
         });
       });
     });
@@ -169,6 +180,7 @@
     if (isJugong()) {
       return;
     }
+    console.log('notifyRearrangeHandDone');
     jugongRIndex = getRelativeIndexFromIndex(jugongIndex);
     chosen = window.field.hands[jugongIndex];
     chosen = [chosen[0], chosen[1], chosen[2]];
@@ -279,6 +291,9 @@
       return _results;
     })();
     filter = function(card) {
+      if (card === 'jr') {
+        return true;
+      }
       return rule.isValidChoice(handFace, card.face, option, currentTurn);
     };
     systemMsg(rule.currentTrick);
@@ -314,6 +329,14 @@
           doJokerCall = prompt("조커콜 하나요? (yes / no)");
           if (doJokerCall[0] === 'y') {
             option = rule.ChooseCardOption.JokerCall;
+          }
+        }
+      } else {
+        if (currentTurn === 0 && card.face === 'jr') {
+          answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n");
+          if (answer[0] === 'y') {} else {
+            dontDo = true;
+            now.requestChooseCard(currentTurn, option);
           }
         }
       }

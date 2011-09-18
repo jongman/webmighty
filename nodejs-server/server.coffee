@@ -446,6 +446,7 @@ everyone.now.chooseCard = (card, option) ->
 				@now.requestChooseCard currentTurn, currentTrickOption
 	else
 		# 잘못된 선택 했으니 반복
+		console.log "#{@user.clientId} cant put #{card} with #{option}"
 		@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
 
 ################################################################################

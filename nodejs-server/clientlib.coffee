@@ -5,6 +5,11 @@ assertTrue = (o, msg="") ->
 		alert "AssertTrue fail: #{msg}"
 		testFailFlag = true
 
+assertEqual = (e, a, msg="") ->
+	if e != a
+		alert "AssertEqual fail: expected #{e}, actual #{a}; #{msg}"
+		testFailFlag = true
+
 test = ->
 	assertTrue rule.hasFace(['c3', 'jr'], 'c')
 
@@ -139,6 +144,7 @@ now.requestRearrangeHand = (additionalCards) ->
 						->
 							window.field.hands[0].remove(card) for card in chosen
 							window.field.repositionCards(0)
+							assertEqual 10, window.field.hands[0].length
 						)
 			)
 	)
@@ -146,6 +152,7 @@ now.requestRearrangeHand = (additionalCards) ->
 now.notifyRearrangeHandDone = ->
 	if isJugong()
 		return
+	console.log 'notifyRearrangeHandDone'
 	jugongRIndex = getRelativeIndexFromIndex jugongIndex
 	chosen = window.field.hands[jugongIndex]
 	chosen = [chosen[0], chosen[1], chosen[2]]
@@ -235,8 +242,10 @@ now.requestChooseCard = (currentTurn, option) ->
 	player = 0
 	handFace = (c.face for c in window.field.hands[player])
 	filter = (card) ->
-		#if rule.isValidChoice(handFace, card.face, option, currentTurn)
-			#systemMsg "can pick " + card.face
+		if card == 'jr'
+			# 실제로 조커는 option을 붙여서 내야하므로 isValidChoice가 fail함
+			# 카드 고르는 시점에선 조커는 낼 수 있음
+			return true
 		rule.isValidChoice(handFace, card.face, option, currentTurn)
 
 	systemMsg rule.currentTrick
@@ -272,6 +281,15 @@ now.requestChooseCard = (currentTurn, option) ->
 				doJokerCall = prompt("조커콜 하나요? (yes / no)")
 				if doJokerCall[0] == 'y'
 					option = rule.ChooseCardOption.JokerCall
+		else
+			if currentTurn == 0 and card.face == 'jr'
+				answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n")
+				if answer[0] == 'y'
+					# 그냥 냄 (따로 코드 필요없음)
+				else
+					dontDo = true
+					now.requestChooseCard(currentTurn, option)
+
 		if not dontDo
 			now.chooseCard card.face, option
 	)
