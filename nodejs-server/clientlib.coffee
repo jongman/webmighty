@@ -78,21 +78,16 @@ isJugong = (index=null) ->
 
 doCommitment = ->
 	systemMsg "공약 내세우기"
-	while 1
-		x = prompt('공약 써주세요 (예: n14 s15 pass dealmiss)');
-		if x == 'pass'
-			now.commitmentPass()
-		else if x == 'dealmiss'
-			now.commitmentDealMiss()
-		else if x[0] in ['h','c','n','s','d'] and x.length <= 3 and x[1] in ['1','2']
-			count = parseInt(x.substr(1))
-			if count >= 12 and count <= 20
-				now.commitmentAnnounce x[0], count
+	window.field.choosePromise(13, 14, " ", 0, true,
+		(res) ->
+			console.log(res)
+			if res.result == "pass"
+				now.commitmentPass()
+			else if res.result == "dealmiss"
+				now.commitmentDealMiss()
 			else
-				continue
-		else
-			continue
-		break
+				now.commitmentAnnounce(res.suit, res.value)
+	)
 
 commitmentIndex = 0
 checkForCommitment = ->

@@ -90,28 +90,17 @@
     return index === jugongIndex;
   };
   doCommitment = function() {
-    var count, x, _ref, _ref2, _results;
     systemMsg("공약 내세우기");
-    _results = [];
-    while (1) {
-      x = prompt('공약 써주세요 (예: n14 s15 pass dealmiss)');
-      if (x === 'pass') {
-        now.commitmentPass();
-      } else if (x === 'dealmiss') {
-        now.commitmentDealMiss();
-      } else if (((_ref = x[0]) === 'h' || _ref === 'c' || _ref === 'n' || _ref === 's' || _ref === 'd') && x.length <= 3 && ((_ref2 = x[1]) === '1' || _ref2 === '2')) {
-        count = parseInt(x.substr(1));
-        if (count >= 12 && count <= 20) {
-          now.commitmentAnnounce(x[0], count);
-        } else {
-          continue;
-        }
+    return window.field.choosePromise(13, 14, " ", 0, true, function(res) {
+      console.log(res);
+      if (res.result === "pass") {
+        return now.commitmentPass();
+      } else if (res.result === "dealmiss") {
+        return now.commitmentDealMiss();
       } else {
-        continue;
+        return now.commitmentAnnounce(res.suit, res.value);
       }
-      break;
-    }
-    return _results;
+    });
   };
   commitmentIndex = 0;
   checkForCommitment = function() {

@@ -708,42 +708,48 @@
       }
       return null;
     };
-    PlayingField.prototype.choosePromise = function(minNoGiru, minOthers, canDealMiss, callback) {
-      var finish, get_suit, min_value, selected_suit, selected_value, set_suit, set_value, show_suit, show_value;
+    PlayingField.prototype.choosePromise = function(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, callback) {
+      var finish, getSuit, minValue, selectedSuit, selectedValue, setSuit, setValue, showSuit, showValue;
+      if (defaultSuit == null) {
+        defaultSuit = " ";
+      }
+      if (defaultValue == null) {
+        defaultValue = 0;
+      }
       if (callback == null) {
         callback = function(res) {};
       }
-      selected_suit = " ";
-      selected_value = 0;
-      min_value = 13;
-      show_suit = function(suit) {
-        console.log("show_suit " + suit + " " + SUIT_NAMES[suit]);
+      selectedSuit = defaultSuit;
+      selectedValue = defaultValue;
+      minValue = 13;
+      showSuit = function(suit) {
+        console.log("showSuit " + suit + " " + SUIT_NAMES[suit]);
         return $("#selected_suit").html(SUIT_NAMES[suit]);
       };
-      set_suit = function(suit) {
-        selected_suit = suit;
-        min_value = selected_suit === "n" ? minNoGiru : minOthers;
-        return show_suit(suit);
+      setSuit = function(suit) {
+        selectedSuit = suit;
+        minValue = selectedSuit === "n" ? minNoGiru : minOthers;
+        return showSuit(suit);
       };
-      show_value = function(val) {
-        return $("#selected_value").html(val);
+      showValue = function(val) {
+        return $("#selected_value").html(val === 0 ? "" : val);
       };
-      set_value = function(val) {
-        selected_value = val;
-        show_value(val);
-        if (min_value < selected_value) {
+      setValue = function(val) {
+        selectedValue = val;
+        showValue(val);
+        if (minValue < selectedValue) {
           $("#minus_promise_button").removeAttr("disabled");
         } else {
           $("#minus_promise_button").attr("disabled", "");
         }
-        if (selected_value < 20) {
+        if (selectedValue < 20) {
           $("#plus_promise_button").removeAttr("disabled");
         } else {
           $("#plus_promise_button").attr("disabled", "");
         }
         return $("#choose_promise_dialog .confirm").removeAttr("disabled");
       };
-      get_suit = function(button) {
+      getSuit = function(button) {
         return $(button).attr("id");
       };
       finish = function(res) {
@@ -751,26 +757,26 @@
         return callback(res);
       };
       $("#plus_promise_button").unbind("click").click(function() {
-        return set_value(Math.min(20, selected_value + 1));
+        return setValue(Math.min(20, selectedValue + 1));
       });
       $("#minus_promise_button").unbind("click").click(function() {
-        return set_value(Math.max(min_value, selected_value - 1));
+        return setValue(Math.max(minValue, selectedValue - 1));
       });
       $("#suit_select_buttons button").unbind("mouseover").unbind("mouseout").unbind("click").mouseover(function() {
-        return show_suit(get_suit(this));
+        return showSuit(getSuit(this));
       }).mouseout(function() {
-        return show_suit(selected_suit);
+        return showSuit(selectedSuit);
       }).click(function() {
         $("#suit_select_buttons button.selected").removeClass("selected");
         $(this).addClass("selected");
-        set_suit(get_suit(this));
-        return set_value(min_value);
+        setSuit(getSuit(this));
+        return setValue(minValue);
       });
       $("#promise_confirm_button").unbind("click").click(function() {
         return finish({
           "result": "confirm",
-          "suit": selected_suit,
-          "value": selected_value
+          "suit": selectedSuit,
+          "value": selectedValue
         });
       });
       $("#promise_pass_button").unbind("click").click(function() {
@@ -790,9 +796,9 @@
       } else {
         $("#promise_dealmiss_button").hide();
       }
-      console.log("show_suit..", selected_suit);
-      show_suit(selected_suit);
-      show_value("");
+      console.log("showSuit..", selectedSuit);
+      setSuit(selectedSuit);
+      setValue(selectedValue);
       $("#suit_select_buttons button").removeClass("selected");
       return $("#choose_promise_dialog").fadeIn(100);
     };
@@ -804,7 +810,12 @@
     var GAP;
     window.field = new PlayingField($("#playing_field"));
     $("button.choose_promise").click(function() {
-      return window.field.choosePromise(13, 14, true, function(res) {
+      return window.field.choosePromise(13, 14, true, " ", 0, function(res) {
+        return console.log(res);
+      });
+    });
+    $("button.choose_promise_previous").click(function() {
+      return window.field.choosePromise(17, 17, true, "h", 17, function(res) {
         return console.log(res);
       });
     });

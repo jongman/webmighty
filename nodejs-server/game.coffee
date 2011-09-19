@@ -491,61 +491,61 @@ class PlayingField
 				.mouseout(handlers.onMouseOut)
 		null
 
-	choosePromise: (minNoGiru, minOthers, canDealMiss, callback=(res) ->) ->
+	choosePromise: (minNoGiru, minOthers, canDealMiss, defaultSuit=" ", defaultValue=0, callback=(res) ->) ->
 		# 요 두 값을 정해야 됨..
-		selected_suit = " "
-		selected_value = 0
+		selectedSuit = defaultSuit
+		selectedValue = defaultValue
 
-		min_value = 13
+		minValue = 13
 
 		# 유틸리티 함수들
-		show_suit = (suit) ->
-			console.log "show_suit #{suit} #{SUIT_NAMES[suit]}"
+		showSuit = (suit) ->
+			console.log "showSuit #{suit} #{SUIT_NAMES[suit]}"
 			$("#selected_suit").html(SUIT_NAMES[suit])
-		set_suit = (suit) ->
-			selected_suit = suit
-			min_value = if selected_suit == "n" then minNoGiru else minOthers
-			show_suit(suit)
+		setSuit = (suit) ->
+			selectedSuit = suit
+			minValue = if selectedSuit == "n" then minNoGiru else minOthers
+			showSuit(suit)
 
-		show_value = (val) -> $("#selected_value").html(val)
-		set_value = (val) ->
-			selected_value = val
-			show_value(val)
-			if min_value < selected_value
+		showValue = (val) -> $("#selected_value").html(if val == 0 then "" else val)
+		setValue = (val) ->
+			selectedValue = val
+			showValue(val)
+			if minValue < selectedValue
 				$("#minus_promise_button").removeAttr("disabled")
 			else
 				$("#minus_promise_button").attr("disabled", "")
-			if selected_value < 20
+			if selectedValue < 20
 				$("#plus_promise_button").removeAttr("disabled")
 			else
 				$("#plus_promise_button").attr("disabled", "")
 			$("#choose_promise_dialog .confirm").removeAttr("disabled")
-		get_suit = (button) -> $(button).attr("id")
+		getSuit = (button) -> $(button).attr("id")
 		finish = (res) ->
 			$("#choose_promise_dialog").hide()
 			callback(res)
 
 		# 핸들러
-		$("#plus_promise_button").unbind("click").click(-> set_value(Math.min(20, selected_value+1)))
-		$("#minus_promise_button").unbind("click").click(-> set_value(Math.max(min_value, selected_value-1)))
+		$("#plus_promise_button").unbind("click").click(-> setValue(Math.min(20, selectedValue+1)))
+		$("#minus_promise_button").unbind("click").click(-> setValue(Math.max(minValue, selectedValue-1)))
 		$("#suit_select_buttons button")
 			.unbind("mouseover")
 			.unbind("mouseout")
 			.unbind("click")
-			.mouseover(-> show_suit get_suit this)
-			.mouseout(-> show_suit(selected_suit))
+			.mouseover(-> showSuit getSuit this)
+			.mouseout(-> showSuit(selectedSuit))
 			.click(->
 						$("#suit_select_buttons button.selected").removeClass("selected")
 						$(this).addClass("selected")
-						set_suit get_suit this
+						setSuit getSuit this
 
 						# 숫자는 해당 무늬의 최소 숫자로
-						set_value(min_value)
+						setValue(minValue)
 						
 			)
 		$("#promise_confirm_button")
 			.unbind("click")
-			.click(-> finish({"result": "confirm", "suit": selected_suit, "value": selected_value}))
+			.click(-> finish({"result": "confirm", "suit": selectedSuit, "value": selectedValue}))
 		$("#promise_pass_button")
 			.unbind("click")
 			.click(-> finish({"result": "pass"}))
@@ -563,9 +563,10 @@ class PlayingField
 		else
 			$("#promise_dealmiss_button").hide()
 
-		console.log("show_suit..", selected_suit)
-		show_suit(selected_suit)
-		show_value("")
+		console.log("showSuit..", selectedSuit)
+		
+		setSuit(selectedSuit)
+		setValue(selectedValue)
 		$("#suit_select_buttons button").removeClass("selected")
 
 		# 준비 끝!
@@ -584,7 +585,9 @@ $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
 
 	$("button.choose_promise").click(->
-		window.field.choosePromise(13, 14, true, (res) -> console.log(res)))
+		window.field.choosePromise(13, 14, true, " ", 0, (res) -> console.log(res)))
+	$("button.choose_promise_previous").click(->
+		window.field.choosePromise(17, 17, true, "h", 17, (res) -> console.log(res)))
 	if window.LIBGAME?
 		return
 	window.field.setPlayers([
