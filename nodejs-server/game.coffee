@@ -30,6 +30,7 @@ SUIT_NAMES =
 	c: "클로버"
 	d: "다이아몬드"
 	n: "노기루다"
+	" ": "&nbsp;"
 VALUE_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "잭", "퀸", "킹", "에이스"]
 
 # UTILITIES
@@ -490,8 +491,85 @@ class PlayingField
 				.mouseout(handlers.onMouseOut)
 		null
 
-	choosePromise: (minNoGiru, minGiru, choose=->) ->
-		$("#dialog .choose_promise").fadeIn(100)
+	choosePromise: (minNoGiru, minOthers, canDealMiss, callback=(res) ->) ->
+		# 요 두 값을 정해야 됨..
+		selected_suit = " "
+		selected_value = 0
+
+		min_value = 13
+
+		# 유틸리티 함수들
+		show_suit = (suit) ->
+			console.log "show_suit #{suit} #{SUIT_NAMES[suit]}"
+			$("#selected_suit").html(SUIT_NAMES[suit])
+		set_suit = (suit) ->
+			selected_suit = suit
+			min_value = if selected_suit == "n" then minNoGiru else minOthers
+			show_suit(suit)
+
+		show_value = (val) -> $("#selected_value").html(val)
+		set_value = (val) ->
+			selected_value = val
+			show_value(val)
+			if min_value < selected_value
+				$("#minus_promise_button").removeAttr("disabled")
+			else
+				$("#minus_promise_button").attr("disabled", "")
+			if selected_value < 20
+				$("#plus_promise_button").removeAttr("disabled")
+			else
+				$("#plus_promise_button").attr("disabled", "")
+			$("#choose_promise_dialog .confirm").removeAttr("disabled")
+		get_suit = (button) -> $(button).attr("id")
+		finish = (res) ->
+			$("#choose_promise_dialog").hide()
+			callback(res)
+
+		# 핸들러
+		$("#plus_promise_button").unbind("click").click(-> set_value(Math.min(20, selected_value+1)))
+		$("#minus_promise_button").unbind("click").click(-> set_value(Math.max(min_value, selected_value-1)))
+		$("#suit_select_buttons button")
+			.unbind("mouseover")
+			.unbind("mouseout")
+			.unbind("click")
+			.mouseover(-> show_suit get_suit this)
+			.mouseout(-> show_suit(selected_suit))
+			.click(->
+						$("#suit_select_buttons button.selected").removeClass("selected")
+						$(this).addClass("selected")
+						set_suit get_suit this
+
+						# 숫자는 해당 무늬의 최소 숫자로
+						set_value(min_value)
+						
+			)
+		$("#promise_confirm_button")
+			.unbind("click")
+			.click(-> finish({"result": "confirm", "suit": selected_suit, "value": selected_value}))
+		$("#promise_pass_button")
+			.unbind("click")
+			.click(-> finish({"result": "pass"}))
+		$("#promise_dealmiss_button")
+			.unbind("click")
+			.click(-> finish({"result": "dealmiss"}))
+
+
+		# 폼 초기화
+		$("#value_select_buttons button").attr("disabled", "")
+		$("#choose_promise_dialog .confirm").attr("disabled", "")
+
+		if canDealMiss
+			$("#promise_dealmiss_button").show()
+		else
+			$("#promise_dealmiss_button").hide()
+
+		console.log("show_suit..", selected_suit)
+		show_suit(selected_suit)
+		show_value("")
+		$("#suit_select_buttons button").removeClass("selected")
+
+		# 준비 끝!
+		$("#choose_promise_dialog").fadeIn(100)
 
 
 field = null
@@ -505,7 +583,8 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
 
-	$("button.choose_promise").click(-> window.field.choosePromise(13, 14))
+	$("button.choose_promise").click(->
+		window.field.choosePromise(13, 14, true, (res) -> console.log(res)))
 	if window.LIBGAME?
 		return
 	window.field.setPlayers([

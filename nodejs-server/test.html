@@ -22,35 +22,36 @@
 	<div id="playing_field">
 		<div id="global_message"></div>
 		<div id="dialog">
-			<div class="choose_promise" style="display: none;">
+			<div id="choose_promise_dialog" style="display: none;">
 				<div class="title">
 					공약을 정해 주세요
 				</div>
 				<ul class="promise">
 					<li class="selected">
 						<ul>
-							<li class="select_suit">스페이드</li>
-							<li class="select_promise">14</li>
+							<li id="selected_suit" class="select_suit">&nbsp;</li>
+							<li id="selected_value" class="select_promise">&nbsp;</li>
 						</ul>
 					</li>
 					<li class="buttons">
 						<ul>
-							<li class="select_suit">
-								<button id="spades" class="suit selected">&spades;</button>
-								<button id="diamonds" class="suit">&diams;</button>
-								<button id="hearts" class="suit">&hearts;</button>
-								<button id="clubs" class="suit">&clubs;</button>
-								<button class="suit none">&clubs;</button>
+							<li id="suit_select_buttons" class="select_suit">
+								<button id="s" class="suit">&spades;</button>
+								<button id="d" class="suit">&diams;</button>
+								<button id="h" class="suit">&hearts;</button>
+								<button id="c" class="suit">&clubs;</button>
+								<button id="n" class="suit">노</button>
 							</li>
-							<li class="select_promise">
-								<button class="minus_promise">-</button>
-								<button class="plus_promise">+</button>
+							<li id="value_select_buttons" class="select_promise">
+								<button id="minus_promise_button">-</button>
+								<button id="plus_promise_button">+</button>
 							</li>
 						</ul>
 					</li>
 				</ul>
-				<button class="confirm">출마</button>
-				<button class="cancel">패스</button>
+				<button id="promise_confirm_button">출마</button>
+				<button id="promise_pass_button">패스</button>
+				<button id="promise_dealmiss_button">딜 미스!</button>
 			</div>
 			<div class="choose_multiple" style="display: none;">
 				<div class="title">
