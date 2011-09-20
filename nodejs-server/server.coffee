@@ -379,12 +379,12 @@ everyone.now.chooseFriendByCard = (card) ->
 
 everyone.now.chooseFriendFirstTrick = ->
 	rule.setFriend rule.FriendOption.FirstTrick
-	everyone.now.notifyFriendFirstTrick
+	everyone.now.notifyFriendFirstTrick()
 	afterFriendChoose()
 
 everyone.now.chooseFriendNone = ->
 	rule.setFriend rule.FriendOption.NoFriend
-	everyone.now.notifyFriendNone
+	everyone.now.notifyFriendNone()
 	afterFriendChoose()
 
 afterFriendChoose = ->
@@ -414,16 +414,20 @@ everyone.now.chooseCard = (card, option) ->
 				if card[1] in "tjqk1"
 					scores[lastTurnWinner] += 1 
 					collectedCards[lastTurnWinner].push(card)
-			everyone.now.takeTrick currentTurn, lastTurnWinner
 
-			currentTurn += 1
-			if currentTurn == 10
-				# end of all trick
-				changeState everyone.now.END_GAME
-			else
-				rule.resetTrick(lastTurnWinner)
-				nowjs.getClient players[lastTurnWinner], ->
-					@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
+			setTimeout(->
+					everyone.now.takeTrick currentTurn, lastTurnWinner
+				, 1000)
+			setTimeout(->
+					currentTurn += 1
+					if currentTurn == 10
+						# end of all trick
+						changeState everyone.now.END_GAME
+					else
+						rule.resetTrick(lastTurnWinner)
+						nowjs.getClient players[lastTurnWinner], ->
+							@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
+				, 1500)
 		else
 			# 다음 사람에게로
 			console.log rule.currentTrick
