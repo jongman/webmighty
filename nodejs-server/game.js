@@ -264,15 +264,23 @@
       }
       return this.repositionCards(player);
     };
-    PlayingField.prototype.createCardsFromFace = function(faces) {
-      var card, center, face, _i, _len, _results;
+    PlayingField.prototype.createCardsFromFace = function(faces, player) {
+      var card, cards, center, face, _i, _len;
+      if (player == null) {
+        player = null;
+      }
       center = this.convertRelativePosition(0.5, 0.5);
-      _results = [];
+      cards = [];
       for (_i = 0, _len = faces.length; _i < _len; _i++) {
         face = faces[_i];
-        _results.push(card = new Card(this, "back", "vertical", center.x, center.y));
+        card = new Card(this, face, "vertical", center.x, center.y);
+        if (player != null) {
+          card.setDirection(this.getCardDirection(player));
+        }
+        card.elem.show();
+        cards.push(card);
       }
-      return _results;
+      return cards;
     };
     PlayingField.prototype.deal = function(cards, startFrom, done) {
       var card, center, i;

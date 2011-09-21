@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, assertEqual, assertTrue, buildCommitmentString, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, loctable, myIndex, name2index, onAllReady, readyCount, renderFaceName, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, assertEqual, assertTrue, buildCommitmentString, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -89,16 +89,78 @@
     index || (index = myIndex);
     return index === jugongIndex;
   };
+  lastSuit = null;
   doCommitment = function() {
+    var canDealMiss, card, currentScore, defaultSuit, defaultValue, minNoGiru, minOthers, score, scores, _i, _len, _ref, _ref2, _ref3, _ref4;
     systemMsg("공약 내세우기");
-    return window.field.choosePromise(13, 14, " ", 0, true, function(res) {
+    if (rule.currentPromise != null) {
+      minNoGiru = minOthers = rule.currentPromise[1] + 1;
+    } else {
+      minNoGiru = 13;
+      minOthers = 14;
+    }
+    canDealMiss = rule.checkDealMiss((function() {
+      var _i, _len, _ref, _results;
+      _ref = window.field.hands[0];
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        card = _ref[_i];
+        _results.push(card.face);
+      }
+      return _results;
+    })());
+    if (lastSuit != null) {
+      defaultSuit = lastSuit;
+    } else {
+      scores = {
+        h: 0,
+        s: 0,
+        d: 0,
+        c: 0
+      };
+      _ref = window.field.hands[0];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        card = _ref[_i];
+        if (card.face[0] === 'j') {
+          continue;
+        }
+        score = 0;
+        if (_ref2 = card.face[1], __indexOf.call('123456789', _ref2) >= 0) {
+          score = 1;
+        } else if (_ref3 = card.face[1], __indexOf.call('tjq', _ref3) >= 0) {
+          score = 1.5;
+        } else if (_ref4 = card.face[1], __indexOf.call('k1', _ref4) >= 0) {
+          score = 2;
+        }
+        scores[card.face[0]] += score;
+      }
+      systemMsg("h" + scores.h + "c" + scores.c + "d" + scores.d + "s" + scores.s);
+      currentScore = scores.h;
+      defaultSuit = 'h';
+      if (scores.c > currentScore) {
+        defaultSuit = 'c';
+        currentScore = scores.c;
+      }
+      if (scores.d > currentScore) {
+        defaultSuit = 'd';
+        currentScore = scores.d;
+      }
+      if (scores.s > currentScore) {
+        defaultSuit = 's';
+        currentScore = scores.s;
+      }
+    }
+    defaultValue = minOthers;
+    systemMsg(defaultSuit + defaultValue);
+    return window.field.choosePromise(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, function(res) {
       console.log(res);
       if (res.result === "pass") {
         return now.commitmentPass();
       } else if (res.result === "dealmiss") {
         return now.commitmentDealMiss();
       } else {
-        return now.commitmentAnnounce(res.suit, res.value);
+        now.commitmentAnnounce(res.suit, res.value);
+        return lastSuit = res.suit;
       }
     });
   };
@@ -268,25 +330,35 @@
     return systemMsg("friend is " + index);
   };
   rule.setFriendHandler(friendHandler);
+  setFriendTitle = function() {
+    var cardName;
+    if (rule.friendOption === rule.FriendOption.ByCard) {
+      cardName = renderFaceName(rule.friendCard);
+      return document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + cardName + '프렌드';
+    } else if (rule.friendOption === rule.FriendOption.NoFriend) {
+      return document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '프렌드 없음';
+    } else if (rule.friendOption === rule.FriendOption.FirstTrick) {
+      return document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '초구 프렌드';
+    } else {
+      return document.title = buildCommitmentString.apply(null, rule.currentPromise);
+    }
+  };
   now.notifyFriendByCard = function(card) {
     var cardName;
     cardName = renderFaceName(card);
-    document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + cardName + '프렌드';
     rule.setFriend(rule.FriendOption.ByCard, card);
-    systemMsg("friend is " + card + ' ' + cardName);
+    setFriendTitle();
     if ((rule.isFriendByHand(window.field.hands[0])) && !isJugong()) {
       return window.field.setPlayerType(0, "(프렌드)");
     }
   };
   now.notifyFriendNone = function() {
-    document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '프렌드 없음';
     rule.setFriend(rule.FriendOption.NoFriend);
-    return systemMsg("no friend");
+    return setFriendTitle();
   };
   now.notifyFriendFirstTrick = function() {
-    document.title = buildCommitmentString(face, target) + ', ' + '초구 프렌드';
     rule.setFriend(rule.FriendOption.FirstTrick);
-    return systemMsg("first trick friend");
+    return setFriendTitle();
   };
   now.requestChooseCard = function(currentTurn, option) {
     var c, filter, handFace, player;
@@ -462,7 +534,7 @@
     systemMsg(buildCommitmentString(face, target));
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "공약", buildCommitmentString(face, target));
   };
-  now.notifyDealMiss = function(index) {
+  now.notifyDealMiss = function(index, hand) {
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "딜미스");
   };
   now.notifyPass = function(index) {
@@ -476,29 +548,31 @@
     return systemMsg("players: " + players);
   };
   now.notifyObserver = function(encodedRule, cards, collectedCards) {
-    var c, hand, i, _results;
+    var hand, i, ridx;
     now.resetField();
+    window.field.setPlayers((function() {
+      var _results;
+      _results = [];
+      for (ridx = 0; ridx < 5; ridx++) {
+        _results.push({
+          name: users[getIndexFromRelativeIndex(ridx)].name,
+          picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"
+        });
+      }
+      return _results;
+    })());
     rule.decodeState(encodedRule);
-    window.field.playedCards = window.field.createCardsFromFace(rule.currentTruick);
-    _results = [];
+    window.field.playedCards = window.field.createCardsFromFace(rule.currentTrick);
+    window.field.hands = [];
     for (i = 0; i < 5; i++) {
-      hand = (function() {
-        var _i, _len, _ref, _results2;
-        _ref = cards.slice(i * 10, (i + 1) * 10);
-        _results2 = [];
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          c = _ref[_i];
-          if (c !== '') {
-            _results2.push(c);
-          }
-        }
-        return _results2;
-      })();
-      window.field.hands[i] = window.field.createCardsFromFace(hand);
-      window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i]));
-      _results.push(window.field.repositionCards(i));
+      hand = window.field.createCardsFromFace(cards[i], i);
+      window.field.hands.push(hand);
+      window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i], i));
+      window.field.repositionCards(i);
     }
-    return _results;
+    if (now.state !== now.VOTE && now.state !== now.WAITING_PLAYER) {
+      return setFriendTitle();
+    }
   };
   now.resetField = function() {
     return window.field.clearCards();

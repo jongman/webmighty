@@ -76,9 +76,57 @@ isJugong = (index=null) ->
 # Event handling
 ################################################################################
 
+lastSuit = null
 doCommitment = ->
 	systemMsg "공약 내세우기"
-	window.field.choosePromise(13, 14, " ", 0, true,
+
+	if rule.currentPromise?
+		minNoGiru = minOthers = rule.currentPromise[1]+1
+	else
+		minNoGiru = 13
+		minOthers = 14
+
+	canDealMiss = rule.checkDealMiss (card.face for card in window.field.hands[0])
+	if lastSuit?
+		defaultSuit = lastSuit
+	else
+		scores = 
+			h: 0
+			s: 0
+			d: 0
+			c: 0
+		for card in window.field.hands[0]
+			if card.face[0] == 'j'
+				continue
+
+			score = 0
+			if card.face[1] in '123456789'
+				score = 1
+			else if card.face[1] in 'tjq'
+				score = 1.5
+			else if card.face[1] in 'k1'
+				score = 2
+
+			scores[card.face[0]] += score
+
+		systemMsg "h#{scores.h}c#{scores.c}d#{scores.d}s#{scores.s}"
+		currentScore = scores.h
+		defaultSuit = 'h'
+		if scores.c > currentScore
+			defaultSuit = 'c'
+			currentScore = scores.c
+		if scores.d > currentScore
+			defaultSuit = 'd'
+			currentScore = scores.d
+		if scores.s > currentScore
+			defaultSuit = 's'
+			currentScore = scores.s
+
+	defaultValue = minOthers
+
+	systemMsg defaultSuit+defaultValue
+
+	window.field.choosePromise(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue,
 		(res) ->
 			console.log(res)
 			if res.result == "pass"
@@ -87,6 +135,7 @@ doCommitment = ->
 				now.commitmentDealMiss()
 			else
 				now.commitmentAnnounce(res.suit, res.value)
+				lastSuit = res.suit
 	)
 
 commitmentIndex = 0
@@ -223,23 +272,31 @@ friendHandler = (index) ->
 
 rule.setFriendHandler friendHandler
 
+setFriendTitle = ->
+	if rule.friendOption == rule.FriendOption.ByCard
+		cardName = renderFaceName rule.friendCard
+		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + cardName + '프렌드'
+	else if rule.friendOption == rule.FriendOption.NoFriend
+		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '프렌드 없음'
+	else if rule.friendOption == rule.FriendOption.FirstTrick
+		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '초구 프렌드'
+	else
+		document.title = buildCommitmentString(rule.currentPromise...)
+
 now.notifyFriendByCard = (card) ->
 	cardName = renderFaceName card
-	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + cardName + '프렌드'
 	rule.setFriend rule.FriendOption.ByCard, card
-	systemMsg "friend is " + card + ' ' + cardName
+	setFriendTitle()
 	if (rule.isFriendByHand window.field.hands[0]) and not isJugong()
 		window.field.setPlayerType 0, "(프렌드)"
 
 now.notifyFriendNone = ->
-	document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '프렌드 없음'
 	rule.setFriend rule.FriendOption.NoFriend
-	systemMsg "no friend"
+	setFriendTitle()
 
 now.notifyFriendFirstTrick = ->
-	document.title = buildCommitmentString(face, target) + ', ' + '초구 프렌드'
 	rule.setFriend rule.FriendOption.FirstTrick
-	systemMsg "first trick friend"
+	setFriendTitle()
 
 # 카드 내기
 
@@ -394,8 +451,9 @@ now.notifyVote = (index, face, target) ->
 	systemMsg buildCommitmentString(face, target)
 	window.field.playerMessage((getRelativeIndexFromIndex index), "공약", buildCommitmentString(face, target))
 
-now.notifyDealMiss = (index) ->
+now.notifyDealMiss = (index, hand) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "딜미스")
+	# TODO show dealmiss hand
 
 now.notifyPass = (index) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "패스")
@@ -409,14 +467,21 @@ now.notifyReady = (clientId, index, players) ->
 
 now.notifyObserver = (encodedRule, cards, collectedCards) ->
 	now.resetField()
+	window.field.setPlayers(
+		{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
+		)
 	rule.decodeState encodedRule
-	window.field.playedCards = window.field.createCardsFromFace rule.currentTruick
+	window.field.playedCards = window.field.createCardsFromFace rule.currentTrick
+	window.field.hands = []
 	for i in [0...5]
-		hand = (c for c in cards[i*10...(i+1)*10] when c != '')
+		hand = window.field.createCardsFromFace cards[i], i
 
-		window.field.hands[i] = window.field.createCardsFromFace hand
-		window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i])
+		window.field.hands.push hand
+		window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i], i)
 		window.field.repositionCards(i)
+	
+	if now.state != now.VOTE and now.state != now.WAITING_PLAYER
+		setFriendTitle()
 
 now.resetField = ->
 	window.field.clearCards()

@@ -74,6 +74,16 @@ scores = null
 lastFriendIndex = 0
 jugongIndex = null
 
+generateKey = ->
+	s = ''
+	keystr = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_-+=[]{}:;',./<>?`~"
+	s += keystr[Math.floor(Math.random() * keystr.length)] for i in [1..32]
+	s
+
+playerKeys = {}
+
+restoreDisconnectedPlayer = (user) ->
+
 nowjs.on 'disconnect', ->
 	if @now.playerIndex?
 		players[@now.playerIndex] = ''
@@ -89,6 +99,22 @@ nowjs.on 'connect', ->
 	@now.name ?= 'player' + loginCount
 	@now.showName()
 
+	# 각 유저의 key로 unique하게 identify 가능
+	# 페북 연동시 key를 페북에서 얻은 값으로 확인
+	if @now.key? and @now.oldClientId? and @now.playerIndex?
+		# 모종의 이유로 재접속이 된 경우
+		if @now.key in playerKeys and players[@now.playerIndex] == null and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
+			# restore player
+			players[@now.playerIndex] = @user.clientId
+			playerNames[@now.playerNames] = @now.name
+			@now.observer = false
+			pg.addUser @user.clientId
+			restoreDisconnectedPlayer this
+			return
+
+	@now.oldClientId = @user.clientId
+	@now.key ?= generateKey()
+
 	# TODO room
 	@now.room = 1 # room index
 	#nowjs.getGroup('room-1').addUser(@user.clientId)
@@ -96,14 +122,16 @@ nowjs.on 'connect', ->
 	# TODO observer connect inside game
 	@now.observer = true
 	og.addUser @user.clientId
-	og.getUsers((user) ->
-		console.log user
+	og.getUsers((users) ->
+		console.log users
 	)
 	if everyone.now.state == everyone.now.WAITING_PLAYER
 		@now.notifyMsg "플레이어를 기다리는 중입니다. 플레이 하시려면 참가 버튼을 누르세요"
 	else
 		@now.notifyPlayers players, playerNames
-		#@now.notifyObserver rule.encodeState(), cards, collectedCards
+		hands = ((c for c in cards[i*10...(i+1)*10] when c != '') for i in [0...5])
+		console.log hands
+		@now.notifyObserver rule.encodeState(), hands, collectedCards
 
 everyone.now.chat = (msg) ->
 	everyone.now.receiveChat @now.clientId, @now.name, msg
@@ -291,6 +319,8 @@ checkVoteEnd = ->
 			@now.requestCommitment()
 
 everyone.now.commitmentAnnounce = (face, target) ->
+	if everyone.now.state != everyone.now.VOTE
+		return
 	idx = indexFromClientId @user.clientId
 	if (face == 'n' and target >= 13 or target >= 14) and (not rule.currentPromise? or rule.currentPromise[1] < target)
 		votes[idx] = [face, target]
@@ -302,6 +332,9 @@ everyone.now.commitmentAnnounce = (face, target) ->
 	checkVoteEnd()
 
 everyone.now.commitmentPass = ->
+	if everyone.now.state != everyone.now.VOTE
+		return
+
 	idx = indexFromClientId @user.clientId
 	votes[idx] = ['p', 0]
 	everyone.now.notifyPass idx
@@ -319,10 +352,13 @@ redeal = ->
 		@now.requestCommitment()
 
 everyone.now.commitmentDealMiss = ->
+	if everyone.now.state != everyone.now.VOTE
+		return
+
 	hand = getHandFromClientId @user.clientId
 	if rule.checkDealMiss hand
-		everyone.now.notifyDealMiss (indexFromClientId @user.clientId)
-		redeal()
+		everyone.now.notifyDealMiss (indexFromClientId @user.clientId), hand
+		setTimeout(redeal, 1000)
 	else
 		@now.requestCommitment()
 
@@ -600,6 +636,8 @@ test = ->
 		process.exit(1)
 	else
 		console.log 'All test OK'
+	rule.resetGame()
+	rule.resetTrick()
 
 test()
 

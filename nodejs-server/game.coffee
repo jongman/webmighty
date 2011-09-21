@@ -199,10 +199,17 @@ class PlayingField
 			@hands[player][i].elem.css({"z-index": n-i+20})
 		@repositionCards(player)
 
-	createCardsFromFace: (faces) ->
+	createCardsFromFace: (faces, player = null) ->
 		center = @convertRelativePosition(0.5, 0.5)
+		cards = []
 		for face in faces
-			card = new Card(this, "back", "vertical", center.x, center.y)
+			card = new Card(this, face, "vertical", center.x, center.y)
+			if player?
+					card.setDirection @getCardDirection player
+			card.elem.show()
+			cards.push(card)
+
+		return cards
 			
 
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
