@@ -193,8 +193,6 @@
   };
   now.requestRearrangeHand = function(additionalCards) {
     systemMsg(additionalCards);
-    systemMsg(window.field.cardStack);
-    systemMsg(window.field.cardStack.length);
     return window.field.dealAdditionalCards(additionalCards, 0, function() {
       window.field.globalMessage("교체할 3장의 카드를 골라주세요.");
       return window.field.chooseMultipleCards(3, function(chosen) {
@@ -210,6 +208,9 @@
         })(), rule.currentPromise[0], rule.currentPromise[1]);
         return window.field.takeCards(0, chosen, function() {
           var card, _i, _len;
+          systemMsg(chosen);
+          systemMsg(window.field.hands[0].length);
+          systemMsg(window.field.hands[0]);
           for (_i = 0, _len = chosen.length; _i < _len; _i++) {
             card = chosen[_i];
             window.field.hands[0].remove(card);
@@ -278,31 +279,27 @@
     }));
   };
   now.requestChooseFriend = function() {
-    var x, _ref, _ref2, _ref3, _results;
-    _results = [];
-    while (1) {
-      x = prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)');
+    return window.field.prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)', null, function(x) {
+      var _ref, _ref2, _ref3;
       if (x === 'nofriend') {
-        now.chooseFriendNone();
+        return now.chooseFriendNone();
       } else if (x === 'joker') {
-        now.chooseFriendByCard('jr');
+        return now.chooseFriendByCard('jr');
       } else if (x === 'mighty') {
-        now.chooseFriendByCard(rule.getMightyCard());
+        return now.chooseFriendByCard(rule.getMightyCard());
       } else if (x === 'firsttrick') {
-        now.chooseFriendFirstTrick();
+        return now.chooseFriendFirstTrick();
       } else if ((_ref = x[0], __indexOf.call('hcsd', _ref) >= 0) && x.length === 2 && (_ref2 = x[1], __indexOf.call('123456789tjkqa', _ref2) >= 0)) {
         if (x[1] === 'a') {
           x = x[0] + '1';
         }
-        now.chooseFriendByCard(x);
+        return now.chooseFriendByCard(x);
       } else if ((_ref3 = x[0], __indexOf.call('hcsd', _ref3) >= 0) && x.length === 3 && x[1] === '1' && x[2] === '0') {
-        now.chooseFriendByCard(x[0] + 't');
+        return now.chooseFriendByCard(x[0] + 't');
       } else {
-        continue;
+        return now.requestChooseFriend();
       }
-      break;
-    }
-    return _results;
+    });
   };
   now.notifyChooseFriend = function() {
     if (!isJugong()) {
@@ -381,46 +378,65 @@
     };
     systemMsg(rule.currentTrick);
     return window.field.chooseFilteredCard(filter, function(card) {
-      var answer, doJokerCall, dontDo, suit;
+      var chooseSuit, dontDo;
       dontDo = false;
       if (rule.currentTrick.length === 0) {
         if (card.face === 'jr') {
           if (currentTurn !== 0 && currentTurn !== 9) {
-            while (1) {
-              suit = prompt("무늬를 선택해주세요(s/d/c/h/g:기루)");
-              if (suit[0] === 's') {
-                option = rule.ChooseCardOption.SCome;
-              } else if (suit[0] === 'd') {
-                option = rule.ChooseCardOption.DCome;
-              } else if (suit[0] === 'c') {
-                option = rule.ChooseCardOption.CCome;
-              } else if (suit[0] === 'h') {
-                option = rule.ChooseCardOption.HCome;
-              } else {
-                continue;
-              }
-              break;
-            }
+            chooseSuit = null;
+            chooseSuit = function() {
+              return window.field.prompt("무늬를 선택해주세요(s/d/c/h/g:기루)", null, function(suit) {
+                option = null;
+                if (suit[0] === 'g') {
+                  suit = rule.currentPromise[0];
+                }
+                if (suit[0] === 's') {
+                  option = rule.ChooseCardOption.SCome;
+                } else if (suit[0] === 'd') {
+                  option = rule.ChooseCardOption.DCome;
+                } else if (suit[0] === 'c') {
+                  option = rule.ChooseCardOption.CCome;
+                } else if (suit[0] === 'h') {
+                  option = rule.ChooseCardOption.HCome;
+                }
+                if (option != null) {
+                  return now.chooseCard(card.face, option);
+                } else {
+                  return chooseSuit();
+                }
+              });
+            };
+            chooseSuit();
+            dontDo = true;
           } else if (currentTurn === 0) {
-            answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n");
-            if (answer[0] === 'y') {} else {
-              dontDo = true;
-              now.requestChooseCard(currentTurn, option);
-            }
+            window.field.prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", function(answer) {
+              if (answer[0] === 'y') {
+                return now.chooseCard(card.face, option);
+              } else {
+                dontDo = true;
+                return now.requestChooseCard(currentTurn, option);
+              }
+            });
           }
         } else if (card.face === rule.getJokerCallCard() && currentTurn !== 0) {
-          doJokerCall = prompt("조커콜 하나요? (yes / no)");
-          if (doJokerCall[0] === 'y') {
-            option = rule.ChooseCardOption.JokerCall;
-          }
+          dontDo = true;
+          window.field.prompt("조커콜 하나요? (yes / no)", 'y', function(doJokerCall) {
+            if (doJokerCall[0] === 'y') {
+              return option = rule.ChooseCardOption.JokerCall;
+            }
+          });
         }
       } else {
         if (currentTurn === 0 && card.face === 'jr') {
-          answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n");
-          if (answer[0] === 'y') {} else {
-            dontDo = true;
-            now.requestChooseCard(currentTurn, option);
-          }
+          dontDo = true;
+          window.field.prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", function(answer) {
+            if (answer[0] === 'y') {
+              return now.chooseCard(card.face, option);
+            } else {
+              dontDo = true;
+              return now.requestChooseCard(currentTurn, option);
+            }
+          });
         }
       }
       if (!dontDo) {
@@ -491,6 +507,9 @@
       newPromise = buildCommitmentString(face, target);
       return window.field.globalMessage("공약이 변경되었습니다: " + newPromise);
     }
+  };
+  now.resetRule = function() {
+    return rule.resetGame();
   };
   now.notifyChangeState = function(newState) {
     var ridx;
@@ -583,8 +602,11 @@
   readyCount = 0;
   onAllReady = function() {
     return $("#logwin").find("button").click(function() {
-      now.readyGame();
-      return $("#logwin").find("button").unbind().attr("disabled", "");
+      return window.field.prompt("What's your name?", "", function(n) {
+        now.name = n;
+        now.readyGame();
+        return $("#logwin").find("button").unbind().attr("disabled", "");
+      });
     });
   };
   $(document).ready(function() {

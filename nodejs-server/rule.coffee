@@ -57,7 +57,7 @@ exports.checkFriendCard = (index, card) ->
 		exports.friendHandler(index)
 
 exports.checkFriendEndTurn = (winnerIndex) ->
-	if exports.friendOption == exports.FriendOption.FirstTrick and exports.currentTurn != 0
+	if exports.friendOption == exports.FriendOption.FirstTrick and exports.currentTurn == 0
 		exports.friendKnown = true
 		exports.friendIndex = winnerIndex
 		exports.friendHandler(winnerIndex)

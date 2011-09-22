@@ -85,14 +85,14 @@ playerKeys = {}
 restoreDisconnectedPlayer = (user) ->
 
 nowjs.on 'disconnect', ->
-	if @now.playerIndex?
+	if @now.playerIndex? and players[@now.playerIndex] == @user.clientId
 		players[@now.playerIndex] = ''
 		playerNames[@now.playerIndex] = ''
-		changeState everyone.now.WAITING_PLAYER
-	pg.count (readyCount) ->
-		if readyCount == 0
+		#changeState everyone.now.WAITING_PLAYER
+	#pg.count (readyCount) ->
+		#if readyCount == 0
 			# no one playing
-			changeState everyone.now.WAITING_PLAYER
+			#changeState everyone.now.WAITING_PLAYER
 
 nowjs.on 'connect', ->
 	loginCount += 1
@@ -345,6 +345,7 @@ everyone.now.commitmentPass = ->
 redeal = ->
 	votes = (['n',0] for player in players)
 	rule.resetGame()
+	everyone.now.resetRule()
 	currentVoteIndex = null
 	dealCard()
 	nextPlayer = chooseNextPlayerForVote()

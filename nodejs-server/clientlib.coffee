@@ -15,7 +15,6 @@ test = ->
 
 test()
 
-#now.name = prompt("What's your name?", "")
 systemMsg = (msg) ->
 	$('#log').html(
 		(index, oldHtml) ->
@@ -177,8 +176,6 @@ now.receiveDealtCards = (cards) ->
 
 now.requestRearrangeHand = (additionalCards) ->
 	systemMsg additionalCards
-	systemMsg window.field.cardStack
-	systemMsg window.field.cardStack.length
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
@@ -186,8 +183,11 @@ now.requestRearrangeHand = (additionalCards) ->
 				(chosen) ->
 					# 현재는 이전 공약 그대로
 					now.rearrangeHand (card.face for card in chosen), rule.currentPromise[0], rule.currentPromise[1]
-					window.field.takeCards(0, chosen, 
+					window.field.takeCards(0, chosen,
 						->
+							systemMsg chosen
+							systemMsg window.field.hands[0].length
+							systemMsg window.field.hands[0]
 							window.field.hands[0].remove(card) for card in chosen
 							window.field.repositionCards(0)
 							assertEqual 10, window.field.hands[0].length
@@ -230,8 +230,7 @@ now.notifyRearrangeHand = (cards = ['back','back','back']) ->
 
 # 프렌드 선택
 now.requestChooseFriend = ->
-	while 1
-		x = prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)')
+	window.field.prompt '프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)', null, (x)->
 		if x == 'nofriend'
 			now.chooseFriendNone()
 		else if x == 'joker'
@@ -247,8 +246,7 @@ now.requestChooseFriend = ->
 		else if x[0] in 'hcsd' and x.length == 3 and x[1] == '1' and x[2] == '0'
 			now.chooseFriendByCard(x[0]+'t')
 		else
-			continue
-		break
+			now.requestChooseFriend()
 	
 now.notifyChooseFriend = ->
 	if not isJugong()
@@ -318,39 +316,53 @@ now.requestChooseCard = (currentTurn, option) ->
 			if card.face == 'jr' 
 				if currentTurn != 0 and currentTurn != 9
 					# 조커 선때 무늬 고르기
-					while 1
-						suit = prompt("무늬를 선택해주세요(s/d/c/h/g:기루)")
-						if suit[0] == 's'
-							option = rule.ChooseCardOption.SCome
-						else if suit[0] == 'd'
-							option = rule.ChooseCardOption.DCome
-						else if suit[0] == 'c'
-							option = rule.ChooseCardOption.CCome
-						else if suit[0] == 'h'
-							option = rule.ChooseCardOption.HCome
-						else
-							continue
-						break
+					# 클로져 만들려고 일단 변수 선언
+					chooseSuit = null
+					chooseSuit = ->
+						window.field.prompt "무늬를 선택해주세요(s/d/c/h/g:기루)", null, (suit) ->
+							option = null
+							if suit[0] == 'g'
+								suit = rule.currentPromise[0]
+
+							if suit[0] == 's'
+								option = rule.ChooseCardOption.SCome
+							else if suit[0] == 'd'
+								option = rule.ChooseCardOption.DCome
+							else if suit[0] == 'c'
+								option = rule.ChooseCardOption.CCome
+							else if suit[0] == 'h'
+								option = rule.ChooseCardOption.HCome
+
+							if option?
+								now.chooseCard card.face, option
+							else
+								chooseSuit()
+
+					chooseSuit()
+					dontDo = true
+
 				else if currentTurn == 0
-					answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n")
+					window.field.prompt "첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", (answer) ->
+						if answer[0] == 'y'
+							now.chooseCard card.face, option
+						else
+							dontDo = true
+							now.requestChooseCard(currentTurn, option)
+			else if card.face == rule.getJokerCallCard() and currentTurn != 0
+				# 조커콜 할까요 말까요
+				dontDo = true
+				window.field.prompt "조커콜 하나요? (yes / no)", 'y', (doJokerCall) ->
+					if doJokerCall[0] == 'y'
+						option = rule.ChooseCardOption.JokerCall
+		else
+			if currentTurn == 0 and card.face == 'jr'
+				dontDo = true
+				window.field.prompt "첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", (answer) ->
 					if answer[0] == 'y'
-						# 그냥 냄 (따로 코드 필요없음)
+						now.chooseCard card.face, option
 					else
 						dontDo = true
 						now.requestChooseCard(currentTurn, option)
-			else if card.face == rule.getJokerCallCard() and currentTurn != 0
-				# 조커콜 할까요 말까요
-				doJokerCall = prompt("조커콜 하나요? (yes / no)")
-				if doJokerCall[0] == 'y'
-					option = rule.ChooseCardOption.JokerCall
-		else
-			if currentTurn == 0 and card.face == 'jr'
-				answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n")
-				if answer[0] == 'y'
-					# 그냥 냄 (따로 코드 필요없음)
-				else
-					dontDo = true
-					now.requestChooseCard(currentTurn, option)
 
 		if not dontDo
 			now.chooseCard card.face, option
@@ -418,6 +430,9 @@ now.notifyJugong = (finalJugongIndex, face, target) ->
 		# 주공이 포기하고 무늬 바꾼거
 		newPromise = buildCommitmentString face, target
 		window.field.globalMessage "공약이 변경되었습니다: #{newPromise}"
+
+now.resetRule = ->
+	rule.resetGame()
 
 now.notifyChangeState = (newState) ->
 	systemMsg 'changeState to ' + newState
@@ -496,8 +511,12 @@ now.showName = ->
 readyCount = 0
 onAllReady = ->
 	$("#logwin").find("button").click(->
-		now.readyGame()
-		$("#logwin").find("button").unbind().attr("disabled", "")
+
+		window.field.prompt("What's your name?", "", (n)->
+			now.name = n
+			now.readyGame()
+			$("#logwin").find("button").unbind().attr("disabled", "")
+		)
 	)
 
 $(document).ready ->
