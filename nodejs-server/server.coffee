@@ -40,13 +40,13 @@ everyone = nowjs.initialize server
 loginCount = 0
 
 pgroup = (index) -> nowjs.getGroup('play-' + index)
-ogroup = (index) -> nowjs.getGroup('observer-' + index)
+rgroup = (index) -> nowjs.getGroup('room-' + index)
 
-pu = (user) -> rgroup user.now.room
-ou = (user) -> ogroup user.now.room
+pu = (user) -> pgroup user.now.room
+ru = (user) -> rgroup user.now.room
 
 pg = nowjs.getGroup "play-1"
-og = nowjs.getGroup "observer-1"
+rg = nowjs.getGroup "room-1"
 
 # TODO yame: room is only 1
 everyone.now.room = 1
@@ -121,8 +121,8 @@ nowjs.on 'connect', ->
 
 	# TODO observer connect inside game
 	@now.observer = true
-	og.addUser @user.clientId
-	og.getUsers((users) ->
+	rg.addUser @user.clientId
+	rg.getUsers((users) ->
 		console.log users
 	)
 	if everyone.now.state == everyone.now.WAITING_PLAYER
@@ -160,7 +160,8 @@ enterState = (state) ->
 		nowjs.getClient players[jugongIndex], ->
 			@now.requestRearrangeHand cards[50...53] 
 		pg.now.notifyRearrangeHand()
-		og.now.notifyRearrangeHand(cards[50...53])
+		pg.getUsers (user)->
+			rg.exclude(user).now.notifyRearrangeHand(cards[50...53])
 
 	else if state == everyone.now.CHOOSE_FRIEND
 		nowjs.getClient players[jugongIndex], ->
@@ -206,10 +207,10 @@ dealCard = ->
 		step = 10
 
 	pg.getUsers((user) ->
-		console.log user
-	)
-	og.getUsers((user) ->
-		console.log user
+		console.log "p " + user
+		rg.exclude(user).getUsers((ruser) ->
+			console.log "r " + ruser
+		)
 	)
 	# 각 플레이어는 자신의 hand만
 	pg.getUsers((players) ->
@@ -221,7 +222,9 @@ dealCard = ->
 	)
 
 	# 옵저버는 전체다
-	og.now.notifyCards cards
+	pg.getUsers((user) ->
+		rg.exclude(user).now.notifyCards cards
+	)
 
 ################################################################################
 # WAITING_PLAYER : be ready 5 heroes
@@ -229,13 +232,11 @@ dealCard = ->
 
 everyone.now.readyGame = ->
 	#pg = pu this
-	#og = ou this
 	if pg.now.state != pg.now.WAITING_PLAYER
 		return
 
 	# READY: observer -> ready
 	pg.addUser @user.clientId
-	og.removeUser @user.clientId
 	@now.observer = false
 
 	@now.playerIndex = setReady @user.clientId, @now.name
@@ -386,7 +387,8 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 	console.log getHandFromClientId @user.clientId
 		
 	pg.now.notifyRearrangeHandDone()
-	og.now.notifyRearrangeHandDone cardsToRemove
+	pg.getUsers (user)->
+		rg.exclude(user).now.notifyRearrangeHandDone cardsToRemove
 
 	#TODO RULESET
 	if newFace != rule.currentPromise[0] and newTarget <= 20 and (newTarget >= rule.currentPromise[1]+2 or newTarget == 20 or (newFace == 'n' or rule.currentPromise[0] == 'n') and newTarget >= rule.currentPromise[1] + 1)
