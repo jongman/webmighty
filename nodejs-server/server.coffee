@@ -438,6 +438,7 @@ removeCard = (card) ->
 	cards[cards.indexOf(card)] = ''
 
 everyone.now.chooseCard = (card, option) ->
+	option ?= rule.ChooseCardOption.None
 	if rule.currentTrick.length > 0
 		option = currentTrickOption
 	if rule.isValidChoice((getHandFromClientId @user.clientId), card, option, currentTurn)
@@ -448,6 +449,7 @@ everyone.now.chooseCard = (card, option) ->
 		everyone.now.notifyPlayCard (indexFromClientId @user.clientId), card, option
 		if rule.currentTrick.length == 5
 			# end of one trick
+			console.log rule.currentTrick
 			lastTurnWinner = (lastTurnWinner + rule.determineTurnWinner(currentTrickOption, currentTurn))%5
 			for card in rule.currentTrick
 				if card[1] in "tjqk1"

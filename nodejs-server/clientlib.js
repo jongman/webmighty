@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, assertEqual, assertTrue, buildCommitmentString, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, assertEqual, assertTrue, audiochannels, buildCommitmentString, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -89,9 +89,36 @@
     index || (index = myIndex);
     return index === jugongIndex;
   };
+  channel_max = 10;
+  audiochannels = [];
+  for (a = 0; 0 <= channel_max ? a < channel_max : a > channel_max; 0 <= channel_max ? a++ : a--) {
+    audiochannels[a] = [];
+    audiochannels[a]['channel'] = new Audio();
+    audiochannels[a]['finished'] = -1;
+  }
+  playSound = function(soundName) {
+    var a, elem, thistime, _results;
+    thistime = new Date();
+    elem = $("#sounds ." + soundName).get(0);
+    if (elem.muted) {
+      return;
+    }
+    _results = [];
+    for (a = 0; 0 <= channel_max ? a < channel_max : a > channel_max; 0 <= channel_max ? a++ : a--) {
+      if (audiochannels[a]['finished'] < thistime.getTime()) {
+        audiochannels[a]['finished'] = thistime.getTime() + elem.duration * 1000;
+        audiochannels[a]['channel'].src = elem.src;
+        audiochannels[a]['channel'].load();
+        audiochannels[a]['channel'].play();
+        break;
+      }
+    }
+    return _results;
+  };
   lastSuit = null;
   doCommitment = function() {
     var canDealMiss, card, currentScore, defaultSuit, defaultValue, minNoGiru, minOthers, score, scores, _i, _len, _ref, _ref2, _ref3, _ref4;
+    playSound("myturn");
     systemMsg("공약 내세우기");
     if (rule.currentPromise != null) {
       minNoGiru = minOthers = rule.currentPromise[1] + 1;
@@ -357,8 +384,14 @@
     rule.setFriend(rule.FriendOption.FirstTrick);
     return setFriendTitle();
   };
-  now.requestChooseCard = function(currentTurn, option) {
+  now.requestChooseCard = function(currentTurn, option, fromServer) {
     var c, filter, handFace, player;
+    if (fromServer == null) {
+      fromServer = true;
+    }
+    if (fromServer) {
+      playSound("myturn");
+    }
     player = 0;
     handFace = (function() {
       var _i, _len, _ref, _results;
@@ -414,7 +447,7 @@
                 return now.chooseCard(card.face, option);
               } else {
                 dontDo = true;
-                return now.requestChooseCard(currentTurn, option);
+                return now.requestChooseCard(currentTurn, option, false);
               }
             });
           }
@@ -422,8 +455,11 @@
           dontDo = true;
           window.field.prompt("조커콜 하나요? (yes / no)", 'y', function(doJokerCall) {
             if (doJokerCall[0] === 'y') {
-              return option = rule.ChooseCardOption.JokerCall;
+              option = rule.ChooseCardOption.JokerCall;
+            } else {
+              option = rule.ChooseCardOption.None;
             }
+            return now.chooseCard(card.face, option);
           });
         }
       } else {
@@ -434,7 +470,7 @@
               return now.chooseCard(card.face, option);
             } else {
               dontDo = true;
-              return now.requestChooseCard(currentTurn, option);
+              return now.requestChooseCard(currentTurn, option, false);
             }
           });
         }
@@ -449,8 +485,10 @@
     optionStr = null;
     if (rule.currentTrick.length === 0) {
       if (option === rule.ChooseCardOption.JokerCall) {
+        playSound("jokercall");
         optionStr = "조커 콜!";
       } else if (option === rule.ChooseCardOption.HCome || option === rule.ChooseCardOption.SCome || option === rule.ChooseCardOption.DCome || option === rule.ChooseCardOption.CCome) {
+        playSound("playjoker");
         optionStr = "기루다 컴!";
         if (option === rule.ChooseCardOption.HCome && rule.currentPromise[0] !== 'h') {
           optionStr = "하트 컴!";
@@ -465,6 +503,11 @@
     }
     if (!(optionStr != null)) {
       optionStr = renderFaceName(card);
+      if (rule.currentTrick.length !== 0 && card[0] === rule.currentPromise[0] && (rule.currentTurn === 0 || rule.currentTurn === 9 || (option === rule.ChooseCardOption.None || option === rule.ChooseCardOption.JokerCall)) && rule.getCurrentTrickFace(option) !== card[0] && rule.currentTrick[0] !== rule.getMightyCard()) {
+        playSound("gan");
+      } else {
+        playSound("playcard");
+      }
     }
     window.field.playCard(getRelativeIndexFromIndex(index), card, optionStr);
     return rule.addTrick(card, index);
@@ -559,7 +602,24 @@
   now.notifyPass = function(index) {
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "패스");
   };
-  now.notifyVictory = function(victoryFlag) {};
+  now.notifyVictory = function(victoryFlag) {
+    var isIAmOnRuler, isMyWin, isMywin;
+    isIAmOnRuler = isJugong() || rule.isFriend(myIndex);
+    isMyWin = null;
+    if (victoryFlag === rule.Victory.LoseByBackRun || victoryFlag === rule.Victory.Lose) {
+      isMywin = !isIAmOnRuler;
+    } else {
+      isMywin = isIAmOnRuler;
+    }
+    if (isMywin) {
+      playSound("win");
+      if (victoryFlag === rule.Victory.LoseByBackRun || victoryFlag === rule.Victory.WinByRun || victoryFlag === rule.Victory.WinByNoticedRun) {
+        return playSound("clap");
+      }
+    } else {
+      return playSound("lose");
+    }
+  };
   now.notifyReady = function(clientId, index, players) {
     if (clientId === now.core.clientId) {
       myIndex = index;
@@ -610,6 +670,9 @@
     });
   };
   $(document).ready(function() {
+    $("button.prompt").click(function() {
+      return playSound("playcard");
+    });
     readyCount += 1;
     systemMsg("abc");
     if (readyCount === 2) {

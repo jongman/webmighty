@@ -840,20 +840,20 @@
   $(document).ready(function() {
     var GAP;
     window.field = new PlayingField($("#playing_field"));
-    $("button.prompt").click(function() {
-      return window.field.prompt("프롬프트 테스트", "기본값", function(r) {
-        return alert(r);
-      });
-    });
-    $("button.choose_promise").click(function() {
-      return window.field.choosePromise(13, 14, true, " ", 0, function(res) {
-        return console.log(res);
-      });
-    });
-    $("button.choose_promise_previous").click(function() {
-      return window.field.choosePromise(17, 17, true, "h", 17, function(res) {
-        return console.log(res);
-      });
+    $("#sounds .toggle").click(function() {
+      var v;
+      v = $("#sounds .toggle").text();
+      if (v === "mute") {
+        $("#sounds .toggle").text("unmute");
+        return $("#sounds").find("audio").prop({
+          muted: true
+        });
+      } else {
+        $("#sounds .toggle").text("mute");
+        return $("#sounds").find("audio").prop({
+          muted: false
+        });
+      }
     });
     if (window.LIBGAME != null) {
       return;

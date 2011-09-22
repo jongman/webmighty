@@ -74,9 +74,29 @@ isJugong = (index=null) ->
 ################################################################################
 # Event handling
 ################################################################################
+channel_max = 10
+audiochannels = []
+for a in [0...channel_max]
+	audiochannels[a] = []
+	audiochannels[a]['channel'] = new Audio()
+	audiochannels[a]['finished'] = -1
+
+playSound = (soundName) ->
+	thistime = new Date()
+	elem = $("#sounds ." + soundName).get(0)
+	if elem.muted
+		return
+	for a in [0...channel_max]
+		if audiochannels[a]['finished'] < thistime.getTime()
+			audiochannels[a]['finished'] = thistime.getTime() + elem.duration*1000
+			audiochannels[a]['channel'].src = elem.src
+			audiochannels[a]['channel'].load()
+			audiochannels[a]['channel'].play()
+			break
 
 lastSuit = null
 doCommitment = ->
+	playSound "myturn"
 	systemMsg "공약 내세우기"
 
 	if rule.currentPromise?
@@ -298,7 +318,9 @@ now.notifyFriendFirstTrick = ->
 
 # 카드 내기
 
-now.requestChooseCard = (currentTurn, option) ->
+now.requestChooseCard = (currentTurn, option, fromServer = true) ->
+	if fromServer
+		playSound "myturn"
 	player = 0
 	handFace = (c.face for c in window.field.hands[player])
 	filter = (card) ->
@@ -347,13 +369,16 @@ now.requestChooseCard = (currentTurn, option) ->
 							now.chooseCard card.face, option
 						else
 							dontDo = true
-							now.requestChooseCard(currentTurn, option)
+							now.requestChooseCard(currentTurn, option, false)
 			else if card.face == rule.getJokerCallCard() and currentTurn != 0
 				# 조커콜 할까요 말까요
 				dontDo = true
 				window.field.prompt "조커콜 하나요? (yes / no)", 'y', (doJokerCall) ->
 					if doJokerCall[0] == 'y'
 						option = rule.ChooseCardOption.JokerCall
+					else
+						option = rule.ChooseCardOption.None
+					now.chooseCard card.face, option
 		else
 			if currentTurn == 0 and card.face == 'jr'
 				dontDo = true
@@ -362,7 +387,7 @@ now.requestChooseCard = (currentTurn, option) ->
 						now.chooseCard card.face, option
 					else
 						dontDo = true
-						now.requestChooseCard(currentTurn, option)
+						now.requestChooseCard(currentTurn, option, false)
 
 		if not dontDo
 			now.chooseCard card.face, option
@@ -374,8 +399,10 @@ now.notifyPlayCard = (index, card, option) ->
 
 	if rule.currentTrick.length == 0
 		if option == rule.ChooseCardOption.JokerCall
+			playSound "jokercall"
 			optionStr = "조커 콜!"
 		else if option in [rule.ChooseCardOption.HCome, rule.ChooseCardOption.SCome, rule.ChooseCardOption.DCome, rule.ChooseCardOption.CCome]
+			playSound "playjoker"
 			optionStr = "기루다 컴!"
 			if option == rule.ChooseCardOption.HCome and rule.currentPromise[0] != 'h'
 				optionStr = "하트 컴!"
@@ -388,6 +415,10 @@ now.notifyPlayCard = (index, card, option) ->
 
 	if not optionStr?
 		optionStr = renderFaceName card
+		if rule.currentTrick.length != 0 and card[0] == rule.currentPromise[0] and (rule.currentTurn == 0 or rule.currentTurn == 9 or option in [rule.ChooseCardOption.None,rule.ChooseCardOption.JokerCall]) and rule.getCurrentTrickFace(option) != card[0] and rule.currentTrick[0] != rule.getMightyCard()
+			playSound "gan"
+		else
+			playSound "playcard"
 
 	window.field.playCard (getRelativeIndexFromIndex index), card, optionStr
 	rule.addTrick(card, index)
@@ -474,7 +505,20 @@ now.notifyPass = (index) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "패스")
 
 now.notifyVictory = (victoryFlag) ->
+	isIAmOnRuler = isJugong() or rule.isFriend(myIndex)
+	isMyWin = null
+	if victoryFlag in [rule.Victory.LoseByBackRun, rule.Victory.Lose]
+		isMywin = not isIAmOnRuler
+	else
+		isMywin = isIAmOnRuler
 	
+	if isMywin
+		playSound "win"
+		if victoryFlag in [rule.Victory.LoseByBackRun, rule.Victory.WinByRun, rule.Victory.WinByNoticedRun]
+			playSound "clap"
+	else
+		playSound "lose"
+
 now.notifyReady = (clientId, index, players) ->
 	if clientId == now.core.clientId
 		myIndex = index
@@ -520,6 +564,9 @@ onAllReady = ->
 	)
 
 $(document).ready ->
+	$("button.prompt").click(->
+		playSound "playcard"
+	)
 	readyCount += 1
 	systemMsg "abc"
 	if readyCount == 2

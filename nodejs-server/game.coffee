@@ -606,12 +606,21 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
 
-	$("button.prompt").click(->
-		window.field.prompt("프롬프트 테스트", "기본값", (r) -> alert r))
-	$("button.choose_promise").click(->
-		window.field.choosePromise(13, 14, true, " ", 0, (res) -> console.log(res)))
-	$("button.choose_promise_previous").click(->
-		window.field.choosePromise(17, 17, true, "h", 17, (res) -> console.log(res)))
+	$("#sounds .toggle").click(->
+		v = $("#sounds .toggle").text()
+		if v == "mute"
+			$("#sounds .toggle").text("unmute")
+			$("#sounds").find("audio").prop({muted: true})
+		else
+			$("#sounds .toggle").text("mute")
+			$("#sounds").find("audio").prop({muted: false})
+	)
+	#$("button.prompt").click(->
+		#window.field.prompt("프롬프트 테스트", "기본값", (r) -> alert r))
+	#$("button.choose_promise").click(->
+		#window.field.choosePromise(13, 14, true, " ", 0, (res) -> console.log(res)))
+	#$("button.choose_promise_previous").click(->
+		#window.field.choosePromise(17, 17, true, "h", 17, (res) -> console.log(res)))
 	if window.LIBGAME?
 		return
 	window.field.setPlayers([
