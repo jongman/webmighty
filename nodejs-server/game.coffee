@@ -355,7 +355,9 @@ class PlayingField
 
 		card.elem.css("z-index", @playedCards.length)
 		card.setDirection("vertical")
+		@moveToPlayedPosition(player, card)
 
+	moveToPlayedPosition: (player, card)->
 		angle = @getLocationInfo(player).angle
 		center = @convertRelativePosition(0.5, 0.5)
 		x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS

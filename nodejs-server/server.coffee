@@ -83,16 +83,40 @@ generateKey = ->
 playerKeys = {}
 
 restoreDisconnectedPlayer = (user) ->
+	user.now.notifyRestorePlayer rule.encodeState()
+
+restoreObserver = (user) ->
+	user.now.notifyPlayers players, playerNames
+	hands = ((c for c in cards[i*10...(i+1)*10] when c != '') for i in [0...5])
+	if everyone.now.state == everyone.now.REARRANGE_HAND
+		hands[jugongIndex] = hands[jugongIndex].concat(cards[50...53])
+	console.log hands
+	user.now.notifyObserver rule.encodeState(), hands, collectedCards, lastTurnWinner, jugongIndex
+
+waitForReconnectingTimer = {}
 
 nowjs.on 'disconnect', ->
 	if @now.playerIndex?
-		players[@now.playerIndex] = ''
-		playerNames[@now.playerIndex] = ''
-		changeState everyone.now.WAITING_PLAYER
-	pg.count (readyCount) ->
-		if readyCount == 0
-			# no one playing
-			changeState everyone.now.WAITING_PLAYER
+		pg.hasClient @user.clientId, (wasPlayer) ->
+			if wasPlayer
+				disconnectedUser = this
+				timeout = 10000
+				onPlayerDisconnect = ->
+					if disconnectedUser.now.key in playerKeys and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
+						players[disconnectedUser.now.playerIndex] = ''
+						playerNames[disconnectedUser.now.playerIndex] = ''
+						disconnectedPlayers[disconnectedUser.now.playerIndex] = null
+						delete playerKeys[disconnectedUser.now.key]
+
+				onPlayerDisconnect()
+				#if everyone.now.state == everyone.now.WAITING_PLAYER
+					#onPlayerDisconnect()
+				#else
+					#waitForReconnectingTimer[@now.playerIndex] = setTimeout(onPlayerDisconnect, timeout)
+				pg.count (readyCount) ->
+					if readyCount == 0
+						# no one playing
+						changeState everyone.now.WAITING_PLAYER
 
 nowjs.on 'connect', ->
 	loginCount += 1
@@ -103,7 +127,7 @@ nowjs.on 'connect', ->
 	# 페북 연동시 key를 페북에서 얻은 값으로 확인
 	if @now.key? and @now.oldClientId? and @now.playerIndex?
 		# 모종의 이유로 재접속이 된 경우
-		if @now.key in playerKeys and players[@now.playerIndex] == null and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
+		if @now.key in playerKeys and (players[@now.playerIndex] == null or platers[@now.playerIndex] == @user.clientId) and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
 			# restore player
 			players[@now.playerIndex] = @user.clientId
 			playerNames[@now.playerNames] = @now.name
@@ -128,10 +152,7 @@ nowjs.on 'connect', ->
 	if everyone.now.state == everyone.now.WAITING_PLAYER
 		@now.notifyMsg "플레이어를 기다리는 중입니다. 플레이 하시려면 참가 버튼을 누르세요"
 	else
-		@now.notifyPlayers players, playerNames
-		hands = ((c for c in cards[i*10...(i+1)*10] when c != '') for i in [0...5])
-		console.log hands
-		@now.notifyObserver rule.encodeState(), hands, collectedCards
+		restoreObserver this
 
 everyone.now.chat = (msg) ->
 	everyone.now.receiveChat @now.clientId, @now.name, msg
@@ -238,7 +259,7 @@ everyone.now.readyGame = ->
 	og.removeUser @user.clientId
 	@now.observer = false
 
-	@now.playerIndex = setReady @user.clientId, @now.name
+	@now.playerIndex = setReady @now.key, @user.clientId, @now.name
 
 	pg.count (readyCount) ->
 		console.log "READY " + readyCount
@@ -251,17 +272,19 @@ everyone.now.readyGame = ->
 		#changeState(everyone.now.VOTE)
 
 
-setReady = (clientId, name) ->
+setReady = (key, clientId, name) ->
 	index = players.length
 	if players.length < 5
 		players.push(clientId)
 		playerNames.push(name)
+		playerKeys[key] = clientId
 	else
 		for i in [0...5]
 			if playerNames[i] == ''
 				players[i] = clientId
 				playerNames[i] = name
 				index = i
+				playerKeys[key] = clientId
 				break
 	everyone.now.notifyReady clientId, index, playerNames
 	return index
@@ -481,8 +504,9 @@ everyone.now.chooseCard = (card, option) ->
 endGame = ->
 	assertTrue 20 >= scores[0]+scores[1]+scores[2]+scores[3]+scores[4] # 묻는거 때문에 20안됨
 	rulers = [jugongIndex]
-	if rule.friendIndex?
+	if rule.friendIndex? and rule.friendIndex != jugongIndex
 		rulers.push(rule.friendIndex)
+	jugongIndex = null
 	# 묻은게 여당 득점이므로 20 - 야당 먹은거로 여당 득점 계산
 	console.log "end of a game"
 	console.log "ruler: #{rulers}"
@@ -539,8 +563,9 @@ everyone.now.debugReset = ->
 resetGame = ->
 	everyone.now.state = everyone.now.WAITING_PLAYER
 	everyone.now.resetField()
-	#players = []
-	#playerNames = []
+	rule.resetGame()
+	players = []
+	playerNames = []
 	cards = []
 	collectedCards = [[],[],[],[],[]]
 

@@ -467,7 +467,7 @@
       return this.players[player].profile_elem.find(".type").html(typeName).addClass(typeName);
     };
     PlayingField.prototype.playCard = function(player, card, render_as) {
-      var angle, c, center, face, x, y, _i, _len, _ref;
+      var c, face, _i, _len, _ref;
       if (render_as == null) {
         render_as = null;
       }
@@ -494,6 +494,10 @@
       this.repositionCards(player);
       card.elem.css("z-index", this.playedCards.length);
       card.setDirection("vertical");
+      return this.moveToPlayedPosition(player, card);
+    };
+    PlayingField.prototype.moveToPlayedPosition = function(player, card) {
+      var angle, center, x, y;
       angle = this.getLocationInfo(player).angle;
       center = this.convertRelativePosition(0.5, 0.5);
       x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS;

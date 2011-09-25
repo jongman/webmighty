@@ -125,7 +125,7 @@
           continue;
         }
         score = 0;
-        if (_ref2 = card.face[1], __indexOf.call('123456789', _ref2) >= 0) {
+        if (_ref2 = card.face[1], __indexOf.call('23456789', _ref2) >= 0) {
           score = 1;
         } else if (_ref3 = card.face[1], __indexOf.call('tjq', _ref3) >= 0) {
           score = 1.5;
@@ -547,9 +547,11 @@
     }
     return systemMsg("players: " + players);
   };
-  now.notifyObserver = function(encodedRule, cards, collectedCards) {
-    var hand, i, ridx;
+  now.notifyObserver = function(encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) {
+    var card, hand, i, ridx, _ref, _ref2;
+    myIndex = 0;
     now.resetField();
+    jugongIndex = jugongIndex_;
     window.field.setPlayers((function() {
       var _results;
       _results = [];
@@ -562,13 +564,22 @@
       return _results;
     })());
     rule.decodeState(encodedRule);
+    systemMsg(rule.currentPromise);
     window.field.playedCards = window.field.createCardsFromFace(rule.currentTrick);
+    if ((jugongIndex != null) && ((_ref = now.state) === now.VOTE_KILL || _ref === now.REARRANGE_HAND || _ref === now.CHOOSE_FRIEND || _ref === now.TAKE_TURN)) {
+      window.field.setPlayerType(getRelativeIndexFromIndex(jugongIndex), "주공");
+    }
+    for (i = 0, _ref2 = window.field.playedCards.length; 0 <= _ref2 ? i < _ref2 : i > _ref2; 0 <= _ref2 ? i++ : i--) {
+      card = window.field.playedCards[i];
+      window.field.moveToPlayedPosition(i + currentTrickStartIndex, card);
+    }
     window.field.hands = [];
     for (i = 0; i < 5; i++) {
       hand = window.field.createCardsFromFace(cards[i], i);
       window.field.hands.push(hand);
       window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i], i));
       window.field.repositionCards(i);
+      window.field.sortHands(i);
     }
     if (now.state !== now.VOTE && now.state !== now.WAITING_PLAYER) {
       return setFriendTitle();

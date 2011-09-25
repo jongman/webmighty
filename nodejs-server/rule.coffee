@@ -230,11 +230,13 @@ exports.encodeState = ->
 		exports.currentTurn,
 		exports.friendOption,
 		exports.friendKnown,
-		exports.friendIndex]
+		exports.friendIndex,
+		exports.currentPromise]
 
 exports.decodeState = (o) ->
 	[ exports.currentTrick,
 		exports.currentTurn,
 		exports.friendOption,
 		exports.friendKnown,
-		exports.friendIndex] = o
+		exports.friendIndex,
+		exports.currentPromise] = o

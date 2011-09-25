@@ -239,8 +239,8 @@ exports.resetGame = function() {
   return exports.resetPromise();
 };
 exports.encodeState = function() {
-  return [exports.currentTrick, exports.currentTurn, exports.friendOption, exports.friendKnown, exports.friendIndex];
+  return [exports.currentTrick, exports.currentTurn, exports.friendOption, exports.friendKnown, exports.friendIndex, exports.currentPromise];
 };
 exports.decodeState = function(o) {
-  return exports.currentTrick = o[0], exports.currentTurn = o[1], exports.friendOption = o[2], exports.friendKnown = o[3], exports.friendIndex = o[4], o;
+  return exports.currentTrick = o[0], exports.currentTurn = o[1], exports.friendOption = o[2], exports.friendKnown = o[3], exports.friendIndex = o[4], exports.currentPromise = o[5], o;
 };

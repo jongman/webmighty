@@ -100,7 +100,7 @@ doCommitment = ->
 				continue
 
 			score = 0
-			if card.face[1] in '123456789'
+			if card.face[1] in '23456789'
 				score = 1
 			else if card.face[1] in 'tjq'
 				score = 1.5
@@ -465,13 +465,24 @@ now.notifyReady = (clientId, index, players) ->
 		myIndex = index
 	systemMsg "players: " + players
 
-now.notifyObserver = (encodedRule, cards, collectedCards) ->
+now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) ->
+	myIndex = 0
 	now.resetField()
+	jugongIndex = jugongIndex_
 	window.field.setPlayers(
 		{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
 		)
 	rule.decodeState encodedRule
+	systemMsg rule.currentPromise
 	window.field.playedCards = window.field.createCardsFromFace rule.currentTrick
+	if jugongIndex? and (now.state in [ now.VOTE_KILL, now.REARRANGE_HAND, now.CHOOSE_FRIEND, now.TAKE_TURN])
+		window.field.setPlayerType (getRelativeIndexFromIndex jugongIndex), "주공"
+
+
+	for i in [0...window.field.playedCards.length]
+		card = window.field.playedCards[i]
+		window.field.moveToPlayedPosition(i+currentTrickStartIndex, card)
+
 	window.field.hands = []
 	for i in [0...5]
 		hand = window.field.createCardsFromFace cards[i], i
@@ -479,6 +490,7 @@ now.notifyObserver = (encodedRule, cards, collectedCards) ->
 		window.field.hands.push hand
 		window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i], i)
 		window.field.repositionCards(i)
+		window.field.sortHands(i)
 	
 	if now.state != now.VOTE and now.state != now.WAITING_PLAYER
 		setFriendTitle()
