@@ -500,6 +500,21 @@ class PlayingField
 				.mouseout(handlers.onMouseOut)
 		null
 
+	prompt: (question, defaultValue = null, callback=(res) ->) ->
+		defaultValue ?= ""
+		$("#prompt_dialog .title").text(question)
+		$("#prompt_dialog .value").val(defaultValue)
+		$("#prompt_dialog .confirm")
+			.unbind("click")
+			.click(-> 
+				ret = $("#prompt_dialog .value").val()
+				if ret == ""
+					return
+				$("#prompt_dialog").hide()
+				callback(ret)
+			)
+		$("#prompt_dialog").fadeIn(100)
+		
 	choosePromise: (minNoGiru, minOthers, canDealMiss, defaultSuit=" ", defaultValue=0, callback=(res) ->) ->
 		# 요 두 값을 정해야 됨..
 		selectedSuit = defaultSuit
@@ -593,10 +608,21 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
 
-	$("button.choose_promise").click(->
-		window.field.choosePromise(13, 14, true, " ", 0, (res) -> console.log(res)))
-	$("button.choose_promise_previous").click(->
-		window.field.choosePromise(17, 17, true, "h", 17, (res) -> console.log(res)))
+	$("#sounds .toggle").click(->
+		v = $("#sounds .toggle").text()
+		if v == "mute"
+			$("#sounds .toggle").text("unmute")
+			$("#sounds").find("audio").prop({muted: true})
+		else
+			$("#sounds .toggle").text("mute")
+			$("#sounds").find("audio").prop({muted: false})
+	)
+	#$("button.prompt").click(->
+		#window.field.prompt("프롬프트 테스트", "기본값", (r) -> alert r))
+	#$("button.choose_promise").click(->
+		#window.field.choosePromise(13, 14, true, " ", 0, (res) -> console.log(res)))
+	#$("button.choose_promise_previous").click(->
+		#window.field.choosePromise(17, 17, true, "h", 17, (res) -> console.log(res)))
 	if window.LIBGAME?
 		return
 	window.field.setPlayers([

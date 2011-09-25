@@ -15,7 +15,6 @@ test = ->
 
 test()
 
-#now.name = prompt("What's your name?", "")
 systemMsg = (msg) ->
 	$('#log').html(
 		(index, oldHtml) ->
@@ -75,9 +74,29 @@ isJugong = (index=null) ->
 ################################################################################
 # Event handling
 ################################################################################
+channel_max = 10
+audiochannels = []
+for a in [0...channel_max]
+	audiochannels[a] = []
+	audiochannels[a]['channel'] = new Audio()
+	audiochannels[a]['finished'] = -1
+
+playSound = (soundName) ->
+	thistime = new Date()
+	elem = $("#sounds ." + soundName).get(0)
+	if elem.muted
+		return
+	for a in [0...channel_max]
+		if audiochannels[a]['finished'] < thistime.getTime()
+			audiochannels[a]['finished'] = thistime.getTime() + elem.duration*1000
+			audiochannels[a]['channel'].src = elem.src
+			audiochannels[a]['channel'].load()
+			audiochannels[a]['channel'].play()
+			break
 
 lastSuit = null
 doCommitment = ->
+	playSound "myturn"
 	systemMsg "공약 내세우기"
 
 	if rule.currentPromise?
@@ -177,8 +196,6 @@ now.receiveDealtCards = (cards) ->
 
 now.requestRearrangeHand = (additionalCards) ->
 	systemMsg additionalCards
-	systemMsg window.field.cardStack
-	systemMsg window.field.cardStack.length
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
@@ -186,8 +203,11 @@ now.requestRearrangeHand = (additionalCards) ->
 				(chosen) ->
 					# 현재는 이전 공약 그대로
 					now.rearrangeHand (card.face for card in chosen), rule.currentPromise[0], rule.currentPromise[1]
-					window.field.takeCards(0, chosen, 
+					window.field.takeCards(0, chosen,
 						->
+							systemMsg chosen
+							systemMsg window.field.hands[0].length
+							systemMsg window.field.hands[0]
 							window.field.hands[0].remove(card) for card in chosen
 							window.field.repositionCards(0)
 							assertEqual 10, window.field.hands[0].length
@@ -230,8 +250,7 @@ now.notifyRearrangeHand = (cards = ['back','back','back']) ->
 
 # 프렌드 선택
 now.requestChooseFriend = ->
-	while 1
-		x = prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)')
+	window.field.prompt '프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)', null, (x)->
 		if x == 'nofriend'
 			now.chooseFriendNone()
 		else if x == 'joker'
@@ -247,8 +266,7 @@ now.requestChooseFriend = ->
 		else if x[0] in 'hcsd' and x.length == 3 and x[1] == '1' and x[2] == '0'
 			now.chooseFriendByCard(x[0]+'t')
 		else
-			continue
-		break
+			now.requestChooseFriend()
 	
 now.notifyChooseFriend = ->
 	if not isJugong()
@@ -300,7 +318,9 @@ now.notifyFriendFirstTrick = ->
 
 # 카드 내기
 
-now.requestChooseCard = (currentTurn, option) ->
+now.requestChooseCard = (currentTurn, option, fromServer = true) ->
+	if fromServer
+		playSound "myturn"
 	player = 0
 	handFace = (c.face for c in window.field.hands[player])
 	filter = (card) ->
@@ -318,39 +338,56 @@ now.requestChooseCard = (currentTurn, option) ->
 			if card.face == 'jr' 
 				if currentTurn != 0 and currentTurn != 9
 					# 조커 선때 무늬 고르기
-					while 1
-						suit = prompt("무늬를 선택해주세요(s/d/c/h/g:기루)")
-						if suit[0] == 's'
-							option = rule.ChooseCardOption.SCome
-						else if suit[0] == 'd'
-							option = rule.ChooseCardOption.DCome
-						else if suit[0] == 'c'
-							option = rule.ChooseCardOption.CCome
-						else if suit[0] == 'h'
-							option = rule.ChooseCardOption.HCome
-						else
-							continue
-						break
+					# 클로져 만들려고 일단 변수 선언
+					chooseSuit = null
+					chooseSuit = ->
+						window.field.prompt "무늬를 선택해주세요(s/d/c/h/g:기루)", null, (suit) ->
+							option = null
+							if suit[0] == 'g'
+								suit = rule.currentPromise[0]
+
+							if suit[0] == 's'
+								option = rule.ChooseCardOption.SCome
+							else if suit[0] == 'd'
+								option = rule.ChooseCardOption.DCome
+							else if suit[0] == 'c'
+								option = rule.ChooseCardOption.CCome
+							else if suit[0] == 'h'
+								option = rule.ChooseCardOption.HCome
+
+							if option?
+								now.chooseCard card.face, option
+							else
+								chooseSuit()
+
+					chooseSuit()
+					dontDo = true
+
 				else if currentTurn == 0
-					answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n")
-					if answer[0] == 'y'
-						# 그냥 냄 (따로 코드 필요없음)
-					else
-						dontDo = true
-						now.requestChooseCard(currentTurn, option)
+					window.field.prompt "첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", (answer) ->
+						if answer[0] == 'y'
+							now.chooseCard card.face, option
+						else
+							dontDo = true
+							now.requestChooseCard(currentTurn, option, false)
 			else if card.face == rule.getJokerCallCard() and currentTurn != 0
 				# 조커콜 할까요 말까요
-				doJokerCall = prompt("조커콜 하나요? (yes / no)")
-				if doJokerCall[0] == 'y'
-					option = rule.ChooseCardOption.JokerCall
+				dontDo = true
+				window.field.prompt "조커콜 하나요? (yes / no)", 'y', (doJokerCall) ->
+					if doJokerCall[0] == 'y'
+						option = rule.ChooseCardOption.JokerCall
+					else
+						option = rule.ChooseCardOption.None
+					now.chooseCard card.face, option
 		else
 			if currentTurn == 0 and card.face == 'jr'
-				answer = prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n")
-				if answer[0] == 'y'
-					# 그냥 냄 (따로 코드 필요없음)
-				else
-					dontDo = true
-					now.requestChooseCard(currentTurn, option)
+				dontDo = true
+				window.field.prompt "첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", (answer) ->
+					if answer[0] == 'y'
+						now.chooseCard card.face, option
+					else
+						dontDo = true
+						now.requestChooseCard(currentTurn, option, false)
 
 		if not dontDo
 			now.chooseCard card.face, option
@@ -362,8 +399,10 @@ now.notifyPlayCard = (index, card, option) ->
 
 	if rule.currentTrick.length == 0
 		if option == rule.ChooseCardOption.JokerCall
+			playSound "jokercall"
 			optionStr = "조커 콜!"
 		else if option in [rule.ChooseCardOption.HCome, rule.ChooseCardOption.SCome, rule.ChooseCardOption.DCome, rule.ChooseCardOption.CCome]
+			playSound "playjoker"
 			optionStr = "기루다 컴!"
 			if option == rule.ChooseCardOption.HCome and rule.currentPromise[0] != 'h'
 				optionStr = "하트 컴!"
@@ -376,6 +415,10 @@ now.notifyPlayCard = (index, card, option) ->
 
 	if not optionStr?
 		optionStr = renderFaceName card
+		if rule.currentTrick.length != 0 and card[0] == rule.currentPromise[0] and (rule.currentTurn == 0 or rule.currentTurn == 9 or option in [rule.ChooseCardOption.None,rule.ChooseCardOption.JokerCall]) and rule.getCurrentTrickFace(option) != card[0] and rule.currentTrick[0] != rule.getMightyCard()
+			playSound "gan"
+		else
+			playSound "playcard"
 
 	window.field.playCard (getRelativeIndexFromIndex index), card, optionStr
 	rule.addTrick(card, index)
@@ -419,6 +462,9 @@ now.notifyJugong = (finalJugongIndex, face, target) ->
 		newPromise = buildCommitmentString face, target
 		window.field.globalMessage "공약이 변경되었습니다: #{newPromise}"
 
+now.resetRule = ->
+	rule.resetGame()
+
 now.notifyChangeState = (newState) ->
 	systemMsg 'changeState to ' + newState
 	if newState == now.VOTE
@@ -459,7 +505,20 @@ now.notifyPass = (index) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "패스")
 
 now.notifyVictory = (victoryFlag) ->
+	isIAmOnRuler = isJugong() or rule.isFriend(myIndex)
+	isMyWin = null
+	if victoryFlag in [rule.Victory.LoseByBackRun, rule.Victory.Lose]
+		isMywin = not isIAmOnRuler
+	else
+		isMywin = isIAmOnRuler
 	
+	if isMywin
+		playSound "win"
+		if victoryFlag in [rule.Victory.LoseByBackRun, rule.Victory.WinByRun, rule.Victory.WinByNoticedRun]
+			playSound "clap"
+	else
+		playSound "lose"
+
 now.notifyReady = (clientId, index, players) ->
 	if clientId == now.core.clientId
 		myIndex = index
@@ -508,11 +567,18 @@ now.showName = ->
 readyCount = 0
 onAllReady = ->
 	$("#logwin").find("button").click(->
-		now.readyGame()
-		$("#logwin").find("button").unbind().attr("disabled", "")
+
+		window.field.prompt("What's your name?", "", (n)->
+			now.name = n
+			now.readyGame()
+			$("#logwin").find("button").unbind().attr("disabled", "")
+		)
 	)
 
 $(document).ready ->
+	$("button.prompt").click(->
+		playSound "playcard"
+	)
 	readyCount += 1
 	systemMsg "abc"
 	if readyCount == 2

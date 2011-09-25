@@ -417,6 +417,11 @@ a:hover {
 	border: 1px solid #aaa;
 }
 
+/* prompt 다이얼로그 */
+#prompt_dialog {
+	width: 300px;
+}
+
 /* 공약 다이얼로그 */
 #choose_promise_dialog {
 	width: 300px;

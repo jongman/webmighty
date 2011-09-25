@@ -22,6 +22,13 @@
 	<div id="playing_field">
 		<div id="global_message"></div>
 		<div id="dialog">
+			<div id="prompt_dialog" style="display: none;">
+				<div class="title">
+					?를 입력해 주세요
+				</div>
+				<input class="value" type="text" size="30"></input>
+				<button class="confirm">입력</button>
+			</div>
 			<div id="choose_promise_dialog" style="display: none;">
 				<div class="title">
 					공약을 정해 주세요
@@ -77,9 +84,21 @@
 			</dl>
 		</div>
 	</div>
+	<div id="sounds">
+		<audio class="playcard" src="static/sound/playcard.wav" preload volume="0.7"></audio>
+		<audio class="myturn" src="static/sound/myturn.wav" preload></audio>
+		<audio class="playjoker" src="static/sound/playjoker.wav" preload></audio>
+		<audio class="jokercall" src="static/sound/jokercall.wav" preload></audio>
+		<audio class="win" src="static/sound/win.wav" preload></audio>
+		<audio class="lose" src="static/sound/lose.wav" preload></audio>
+		<audio class="gan" src="static/sound/gan.wav" preload></audio>
+		<audio class="clap" src="static/sound/clap.wav" preload></audio>
+		<button class="toggle">mute</button>
+	</div>
 	<div id="dev">
 		<button class="choose_promise">공약 정하기</button>
 		<button class="choose_promise_previous">공약 정하기 (하트 17 에서 시작)</button>
+		<button class="prompt">prompt test</button>
 	</div>
 	<div id="logwin">
 		<button>참가</button>

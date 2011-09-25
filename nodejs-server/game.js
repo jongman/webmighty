@@ -720,6 +720,29 @@
       }
       return null;
     };
+    PlayingField.prototype.prompt = function(question, defaultValue, callback) {
+      if (defaultValue == null) {
+        defaultValue = null;
+      }
+      if (callback == null) {
+        callback = function(res) {};
+      }
+      if (defaultValue == null) {
+        defaultValue = "";
+      }
+      $("#prompt_dialog .title").text(question);
+      $("#prompt_dialog .value").val(defaultValue);
+      $("#prompt_dialog .confirm").unbind("click").click(function() {
+        var ret;
+        ret = $("#prompt_dialog .value").val();
+        if (ret === "") {
+          return;
+        }
+        $("#prompt_dialog").hide();
+        return callback(ret);
+      });
+      return $("#prompt_dialog").fadeIn(100);
+    };
     PlayingField.prototype.choosePromise = function(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, callback) {
       var finish, getSuit, minValue, selectedSuit, selectedValue, setSuit, setValue, showSuit, showValue;
       if (defaultSuit == null) {
@@ -821,15 +844,20 @@
   $(document).ready(function() {
     var GAP;
     window.field = new PlayingField($("#playing_field"));
-    $("button.choose_promise").click(function() {
-      return window.field.choosePromise(13, 14, true, " ", 0, function(res) {
-        return console.log(res);
-      });
-    });
-    $("button.choose_promise_previous").click(function() {
-      return window.field.choosePromise(17, 17, true, "h", 17, function(res) {
-        return console.log(res);
-      });
+    $("#sounds .toggle").click(function() {
+      var v;
+      v = $("#sounds .toggle").text();
+      if (v === "mute") {
+        $("#sounds .toggle").text("unmute");
+        return $("#sounds").find("audio").prop({
+          muted: true
+        });
+      } else {
+        $("#sounds .toggle").text("mute");
+        return $("#sounds").find("audio").prop({
+          muted: false
+        });
+      }
     });
     if (window.LIBGAME != null) {
       return;

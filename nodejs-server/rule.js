@@ -63,7 +63,7 @@ exports.checkFriendCard = function(index, card) {
   }
 };
 exports.checkFriendEndTurn = function(winnerIndex) {
-  if (exports.friendOption === exports.FriendOption.FirstTrick && exports.currentTurn !== 0) {
+  if (exports.friendOption === exports.FriendOption.FirstTrick && exports.currentTurn === 0) {
     exports.friendKnown = true;
     exports.friendIndex = winnerIndex;
     return exports.friendHandler(winnerIndex);

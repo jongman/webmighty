@@ -40,13 +40,13 @@ everyone = nowjs.initialize server
 loginCount = 0
 
 pgroup = (index) -> nowjs.getGroup('play-' + index)
-ogroup = (index) -> nowjs.getGroup('observer-' + index)
+rgroup = (index) -> nowjs.getGroup('room-' + index)
 
-pu = (user) -> rgroup user.now.room
-ou = (user) -> ogroup user.now.room
+pu = (user) -> pgroup user.now.room
+ru = (user) -> rgroup user.now.room
 
 pg = nowjs.getGroup "play-1"
-og = nowjs.getGroup "observer-1"
+rg = nowjs.getGroup "room-1"
 
 # TODO yame: room is only 1
 everyone.now.room = 1
@@ -95,28 +95,26 @@ restoreObserver = (user) ->
 
 waitForReconnectingTimer = {}
 
-nowjs.on 'disconnect', ->
+pg.on 'leave', ->
 	if @now.playerIndex?
-		pg.hasClient @user.clientId, (wasPlayer) ->
-			if wasPlayer
-				disconnectedUser = this
-				timeout = 10000
-				onPlayerDisconnect = ->
-					if disconnectedUser.now.key in playerKeys and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
-						players[disconnectedUser.now.playerIndex] = ''
-						playerNames[disconnectedUser.now.playerIndex] = ''
-						disconnectedPlayers[disconnectedUser.now.playerIndex] = null
-						delete playerKeys[disconnectedUser.now.key]
+		disconnectedUser = this
+		timeout = 10000
+		onPlayerDisconnect = ->
+			if disconnectedUser.now.key in playerKeys and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
+				players[disconnectedUser.now.playerIndex] = ''
+				playerNames[disconnectedUser.now.playerIndex] = ''
+				disconnectedPlayers[disconnectedUser.now.playerIndex] = null
+				delete playerKeys[disconnectedUser.now.key]
 
-				onPlayerDisconnect()
-				#if everyone.now.state == everyone.now.WAITING_PLAYER
-					#onPlayerDisconnect()
-				#else
-					#waitForReconnectingTimer[@now.playerIndex] = setTimeout(onPlayerDisconnect, timeout)
-				pg.count (readyCount) ->
-					if readyCount == 0
-						# no one playing
-						changeState everyone.now.WAITING_PLAYER
+		onPlayerDisconnect()
+		#if everyone.now.state == everyone.now.WAITING_PLAYER
+			#onPlayerDisconnect()
+		#else
+			#waitForReconnectingTimer[@now.playerIndex] = setTimeout(onPlayerDisconnect, timeout)
+		pg.count (readyCount) ->
+			if readyCount == 0
+				# no one playing
+				changeState everyone.now.WAITING_PLAYER
 
 nowjs.on 'connect', ->
 	loginCount += 1
@@ -145,8 +143,8 @@ nowjs.on 'connect', ->
 
 	# TODO observer connect inside game
 	@now.observer = true
-	og.addUser @user.clientId
-	og.getUsers((users) ->
+	rg.addUser @user.clientId
+	rg.getUsers((users) ->
 		console.log users
 	)
 	if everyone.now.state == everyone.now.WAITING_PLAYER
@@ -181,7 +179,8 @@ enterState = (state) ->
 		nowjs.getClient players[jugongIndex], ->
 			@now.requestRearrangeHand cards[50...53] 
 		pg.now.notifyRearrangeHand()
-		og.now.notifyRearrangeHand(cards[50...53])
+		pg.getUsers (user)->
+			rg.exclude(user).now.notifyRearrangeHand(cards[50...53])
 
 	else if state == everyone.now.CHOOSE_FRIEND
 		nowjs.getClient players[jugongIndex], ->
@@ -227,10 +226,10 @@ dealCard = ->
 		step = 10
 
 	pg.getUsers((user) ->
-		console.log user
-	)
-	og.getUsers((user) ->
-		console.log user
+		console.log "p " + user
+		rg.exclude(user).getUsers((ruser) ->
+			console.log "r " + ruser
+		)
 	)
 	# 각 플레이어는 자신의 hand만
 	pg.getUsers((players) ->
@@ -242,7 +241,9 @@ dealCard = ->
 	)
 
 	# 옵저버는 전체다
-	og.now.notifyCards cards
+	pg.getUsers((user) ->
+		rg.exclude(user).now.notifyCards cards
+	)
 
 ################################################################################
 # WAITING_PLAYER : be ready 5 heroes
@@ -250,13 +251,11 @@ dealCard = ->
 
 everyone.now.readyGame = ->
 	#pg = pu this
-	#og = ou this
 	if pg.now.state != pg.now.WAITING_PLAYER
 		return
 
 	# READY: observer -> ready
 	pg.addUser @user.clientId
-	og.removeUser @user.clientId
 	@now.observer = false
 
 	@now.playerIndex = setReady @now.key, @user.clientId, @now.name
@@ -367,6 +366,7 @@ everyone.now.commitmentPass = ->
 redeal = ->
 	votes = (['n',0] for player in players)
 	rule.resetGame()
+	everyone.now.resetRule()
 	currentVoteIndex = null
 	dealCard()
 	nextPlayer = chooseNextPlayerForVote()
@@ -409,7 +409,8 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 	console.log getHandFromClientId @user.clientId
 		
 	pg.now.notifyRearrangeHandDone()
-	og.now.notifyRearrangeHandDone cardsToRemove
+	pg.getUsers (user)->
+		rg.exclude(user).now.notifyRearrangeHandDone cardsToRemove
 
 	#TODO RULESET
 	if newFace != rule.currentPromise[0] and newTarget <= 20 and (newTarget >= rule.currentPromise[1]+2 or newTarget == 20 or (newFace == 'n' or rule.currentPromise[0] == 'n') and newTarget >= rule.currentPromise[1] + 1)
@@ -458,6 +459,7 @@ removeCard = (card) ->
 	cards[cards.indexOf(card)] = ''
 
 everyone.now.chooseCard = (card, option) ->
+	option ?= rule.ChooseCardOption.None
 	if rule.currentTrick.length > 0
 		option = currentTrickOption
 	if rule.isValidChoice((getHandFromClientId @user.clientId), card, option, currentTurn)
@@ -468,6 +470,7 @@ everyone.now.chooseCard = (card, option) ->
 		everyone.now.notifyPlayCard (indexFromClientId @user.clientId), card, option
 		if rule.currentTrick.length == 5
 			# end of one trick
+			console.log rule.currentTrick
 			lastTurnWinner = (lastTurnWinner + rule.determineTurnWinner(currentTrickOption, currentTurn))%5
 			for card in rule.currentTrick
 				if card[1] in "tjqk1"
