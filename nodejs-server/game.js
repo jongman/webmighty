@@ -288,7 +288,7 @@
         done = function() {};
       }
       this.clearCards();
-      assert(cards.length === this.players.length);
+      assert(cards.length === this.players.length, "플레이어 수와 나눠줄 카드 덱 수가 동일해야함");
       this.hands = (function() {
         var _ref, _results;
         _results = [];
@@ -396,7 +396,6 @@
         done = function() {};
       }
       n = faces.length;
-      assert(n === this.cardStack.length);
       _fn = __bind(function(idx, card) {
         return setTimeout(__bind(function() {
           card.setFace(faces[idx]);
@@ -407,6 +406,11 @@
         }, this), idx * SPEED_BASE * 5);
       }, this);
       for (idx = 0; 0 <= n ? idx < n : idx > n; 0 <= n ? idx++ : idx--) {
+        if (this.cardStack.length === 0) {
+          card = new Card(this, face, "vertical", center.x, center.y);
+          card.elem.fadeIn(0);
+          this.cardStack.push(card);
+        }
         card = this.cardStack.pop();
         _fn(idx, card);
       }

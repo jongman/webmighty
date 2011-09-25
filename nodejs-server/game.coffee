@@ -215,7 +215,7 @@ class PlayingField
 	# 각 플레이어의 카드가 주어질 때 셔플 애니메이션을 보여주고, hand[] 에 각 카드를 등록한다
 	deal: (cards, startFrom, done=->) ->
 		@clearCards()
-		assert(cards.length == @players.length)
+		assert(cards.length == @players.length, "플레이어 수와 나눠줄 카드 덱 수가 동일해야함")
 		@hands = ([] for i in [0...@players.length])
 		@collected = ([] for i in [0...@players.length])
 		center = @convertRelativePosition(0.5, 0.5)
@@ -283,8 +283,13 @@ class PlayingField
 	# cardStack 에 남은 카드들을 player 에게 준다.
 	dealAdditionalCards: (faces, player, done=->) ->
 		n = faces.length
-		assert(n == @cardStack.length)
+		# 6마 고려하면 무의미한 assert
+		#assert(n == @cardStack.length, "남은 카드 장 수와 추가로 지급하기로 한 카드 수가 다릅니다.")
 		for idx in [0...n]
+			if @cardStack.length == 0
+				card = new Card(this, face, "vertical", center.x, center.y)
+				card.elem.fadeIn(0)
+				@cardStack.push(card)
 			card = @cardStack.pop()
 			do (idx, card) =>
 				setTimeout(

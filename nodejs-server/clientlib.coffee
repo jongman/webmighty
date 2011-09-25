@@ -42,8 +42,9 @@ jugongIndex = -1
 ################################################################################
 
 FACE_ORDER = (giruda_ = null) ->
-	giruda_ or= rule.currentPromise[0]
-	giruda_ or= 'n'
+	if rule.currentPromise?
+		giruda_ ?= rule.currentPromise[0]
+	giruda_ ?= 'n'
 	if giruda_ == 's'
 		return "jsdch"
 	if giruda_ == 'd'
@@ -68,7 +69,7 @@ getIndexFromRelativeIndex = (ridx) ->
 isJugong = (index=null) ->
 	if now.observer and not index?
 		return false
-	index or= myIndex
+	index ?= myIndex
 	return index == jugongIndex
 
 ################################################################################
@@ -128,7 +129,6 @@ doCommitment = ->
 
 			scores[card.face[0]] += score
 
-		systemMsg "h#{scores.h}c#{scores.c}d#{scores.d}s#{scores.s}"
 		currentScore = scores.h
 		defaultSuit = 'h'
 		if scores.c > currentScore
@@ -142,8 +142,6 @@ doCommitment = ->
 			currentScore = scores.s
 
 	defaultValue = minOthers
-
-	systemMsg defaultSuit+defaultValue
 
 	window.field.choosePromise(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue,
 		(res) ->
@@ -195,7 +193,6 @@ now.receiveDealtCards = (cards) ->
 # 주공 당선 후 손 정리
 
 now.requestRearrangeHand = (additionalCards) ->
-	systemMsg additionalCards
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
@@ -218,7 +215,6 @@ now.requestRearrangeHand = (additionalCards) ->
 now.notifyRearrangeHandDone = (cards = null)->
 	if isJugong()
 		return
-	systemMsg cards
 	jugongRIndex = getRelativeIndexFromIndex jugongIndex
 	chosen = window.field.hands[jugongRIndex]
 	chosen = [chosen[0], chosen[1], chosen[2]]
@@ -241,8 +237,6 @@ now.notifyRearrangeHandDone = (cards = null)->
 now.notifyRearrangeHand = (cards = ['back','back','back']) ->
 	if isJugong()
 		return
-	systemMsg window.field.cardStack
-	systemMsg window.field.cardStack.length
 	window.field.dealAdditionalCards(cards, getRelativeIndexFromIndex jugongIndex,
 		->
 			window.field.globalMessage("#{users[jugongIndex].name} 님이 당을 재정비하고 있습니다.")
@@ -305,7 +299,7 @@ now.notifyFriendByCard = (card) ->
 	cardName = renderFaceName card
 	rule.setFriend rule.FriendOption.ByCard, card
 	setFriendTitle()
-	if (rule.isFriendByHand window.field.hands[0]) and not isJugong()
+	if (rule.isFriendByHand(c.face for c in window.field.hands[0])) and not isJugong()
 		window.field.setPlayerType 0, "(프렌드)"
 
 now.notifyFriendNone = ->
@@ -329,8 +323,6 @@ now.requestChooseCard = (currentTurn, option, fromServer = true) ->
 			# 카드 고르는 시점에선 조커는 낼 수 있음
 			return true
 		rule.isValidChoice(handFace, card.face, option, currentTurn)
-
-	systemMsg rule.currentTrick
 
 	window.field.chooseFilteredCard(filter, (card) ->
 		dontDo = false
@@ -494,7 +486,6 @@ now.notifyMsg = (msg) ->
 
 now.notifyVote = (index, face, target) ->
 	rule.setPromise([face, target])
-	systemMsg buildCommitmentString(face, target)
 	window.field.playerMessage((getRelativeIndexFromIndex index), "공약", buildCommitmentString(face, target))
 
 now.notifyDealMiss = (index, hand) ->
@@ -531,12 +522,17 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 	window.field.setPlayers(
 		{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
 		)
+	window.field.collected = [[],[],[],[],[]]
 	rule.decodeState encodedRule
-	systemMsg rule.currentPromise
 	window.field.playedCards = window.field.createCardsFromFace rule.currentTrick
+
 	if jugongIndex? and (now.state in [ now.VOTE_KILL, now.REARRANGE_HAND, now.CHOOSE_FRIEND, now.TAKE_TURN])
 		window.field.setPlayerType (getRelativeIndexFromIndex jugongIndex), "주공"
 
+	if now.state == now.TAKE_TURN
+		# 게임 진행중인 경우
+		if rule.isFriendKnown()
+			window.field.setPlayerType getRelativeIndexFromIndex(rule.friendIndex), "프렌드"
 
 	for i in [0...window.field.playedCards.length]
 		card = window.field.playedCards[i]
@@ -547,7 +543,9 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 		hand = window.field.createCardsFromFace cards[i], i
 
 		window.field.hands.push hand
-		window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i], i)
+		if isJugong(i) or rule.isFriend(i)
+		else
+			window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i], i)
 		window.field.repositionCards(i)
 		window.field.sortHands(i)
 	
@@ -568,7 +566,9 @@ readyCount = 0
 onAllReady = ->
 	$("#logwin").find("button").click(->
 
-		window.field.prompt("What's your name?", "", (n)->
+		window.field.prompt("What's your name?", now.name, (n)->
+			if n == ""
+				return
 			now.name = n
 			now.readyGame()
 			$("#logwin").find("button").unbind().attr("disabled", "")
@@ -580,13 +580,11 @@ $(document).ready ->
 		playSound "playcard"
 	)
 	readyCount += 1
-	systemMsg "abc"
 	if readyCount == 2
 		onAllReady()
 		
 now.ready ->
 	readyCount += 1
-	systemMsg "def"
 	if readyCount == 2
 		onAllReady()
 

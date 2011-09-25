@@ -53,8 +53,14 @@
     if (giruda_ == null) {
       giruda_ = null;
     }
-    giruda_ || (giruda_ = rule.currentPromise[0]);
-    giruda_ || (giruda_ = 'n');
+    if (rule.currentPromise != null) {
+      if (giruda_ == null) {
+        giruda_ = rule.currentPromise[0];
+      }
+    }
+    if (giruda_ == null) {
+      giruda_ = 'n';
+    }
     if (giruda_ === 's') {
       return "jsdch";
     }
@@ -86,7 +92,9 @@
     if (now.observer && !(index != null)) {
       return false;
     }
-    index || (index = myIndex);
+    if (index == null) {
+      index = myIndex;
+    }
     return index === jugongIndex;
   };
   channel_max = 10;
@@ -161,7 +169,6 @@
         }
         scores[card.face[0]] += score;
       }
-      systemMsg("h" + scores.h + "c" + scores.c + "d" + scores.d + "s" + scores.s);
       currentScore = scores.h;
       defaultSuit = 'h';
       if (scores.c > currentScore) {
@@ -178,7 +185,6 @@
       }
     }
     defaultValue = minOthers;
-    systemMsg(defaultSuit + defaultValue);
     return window.field.choosePromise(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, function(res) {
       console.log(res);
       if (res.result === "pass") {
@@ -219,7 +225,6 @@
     });
   };
   now.requestRearrangeHand = function(additionalCards) {
-    systemMsg(additionalCards);
     return window.field.dealAdditionalCards(additionalCards, 0, function() {
       window.field.globalMessage("교체할 3장의 카드를 골라주세요.");
       return window.field.chooseMultipleCards(3, function(chosen) {
@@ -256,7 +261,6 @@
     if (isJugong()) {
       return;
     }
-    systemMsg(cards);
     jugongRIndex = getRelativeIndexFromIndex(jugongIndex);
     chosen = window.field.hands[jugongRIndex];
     chosen = [chosen[0], chosen[1], chosen[2]];
@@ -299,8 +303,6 @@
     if (isJugong()) {
       return;
     }
-    systemMsg(window.field.cardStack);
-    systemMsg(window.field.cardStack.length);
     return window.field.dealAdditionalCards(cards, getRelativeIndexFromIndex(jugongIndex, function() {
       return window.field.globalMessage("" + users[jugongIndex].name + " 님이 당을 재정비하고 있습니다.");
     }));
@@ -368,11 +370,20 @@
     }
   };
   now.notifyFriendByCard = function(card) {
-    var cardName;
+    var c, cardName;
     cardName = renderFaceName(card);
     rule.setFriend(rule.FriendOption.ByCard, card);
     setFriendTitle();
-    if ((rule.isFriendByHand(window.field.hands[0])) && !isJugong()) {
+    if ((rule.isFriendByHand((function() {
+      var _i, _len, _ref, _results;
+      _ref = window.field.hands[0];
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        c = _ref[_i];
+        _results.push(c.face);
+      }
+      return _results;
+    })())) && !isJugong()) {
       return window.field.setPlayerType(0, "(프렌드)");
     }
   };
@@ -409,7 +420,6 @@
       }
       return rule.isValidChoice(handFace, card.face, option, currentTurn);
     };
-    systemMsg(rule.currentTrick);
     return window.field.chooseFilteredCard(filter, function(card) {
       var chooseSuit, dontDo;
       dontDo = false;
@@ -593,7 +603,6 @@
   };
   now.notifyVote = function(index, face, target) {
     rule.setPromise([face, target]);
-    systemMsg(buildCommitmentString(face, target));
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "공약", buildCommitmentString(face, target));
   };
   now.notifyDealMiss = function(index, hand) {
@@ -642,11 +651,16 @@
       }
       return _results;
     })());
+    window.field.collected = [[], [], [], [], []];
     rule.decodeState(encodedRule);
-    systemMsg(rule.currentPromise);
     window.field.playedCards = window.field.createCardsFromFace(rule.currentTrick);
     if ((jugongIndex != null) && ((_ref = now.state) === now.VOTE_KILL || _ref === now.REARRANGE_HAND || _ref === now.CHOOSE_FRIEND || _ref === now.TAKE_TURN)) {
       window.field.setPlayerType(getRelativeIndexFromIndex(jugongIndex), "주공");
+    }
+    if (now.state === now.TAKE_TURN) {
+      if (rule.isFriendKnown()) {
+        window.field.setPlayerType(getRelativeIndexFromIndex(rule.friendIndex), "프렌드");
+      }
     }
     for (i = 0, _ref2 = window.field.playedCards.length; 0 <= _ref2 ? i < _ref2 : i > _ref2; 0 <= _ref2 ? i++ : i--) {
       card = window.field.playedCards[i];
@@ -656,7 +670,9 @@
     for (i = 0; i < 5; i++) {
       hand = window.field.createCardsFromFace(cards[i], i);
       window.field.hands.push(hand);
-      window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i], i));
+      if (isJugong(i) || rule.isFriend(i)) {} else {
+        window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i], i));
+      }
       window.field.repositionCards(i);
       window.field.sortHands(i);
     }
@@ -673,7 +689,10 @@
   readyCount = 0;
   onAllReady = function() {
     return $("#logwin").find("button").click(function() {
-      return window.field.prompt("What's your name?", "", function(n) {
+      return window.field.prompt("What's your name?", now.name, function(n) {
+        if (n === "") {
+          return;
+        }
         now.name = n;
         now.readyGame();
         return $("#logwin").find("button").unbind().attr("disabled", "");
@@ -685,14 +704,12 @@
       return playSound("playcard");
     });
     readyCount += 1;
-    systemMsg("abc");
     if (readyCount === 2) {
       return onAllReady();
     }
   });
   now.ready(function() {
     readyCount += 1;
-    systemMsg("def");
     if (readyCount === 2) {
       return onAllReady();
     }
