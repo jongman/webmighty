@@ -90,7 +90,7 @@ restoreObserver = (user) ->
 	hands = ((c for c in cards[i*10...(i+1)*10] when c != '') for i in [0...5])
 	if everyone.now.state == everyone.now.REARRANGE_HAND
 		hands[jugongIndex] = hands[jugongIndex].concat(cards[50...53])
-	console.log hands
+
 	user.now.notifyObserver rule.encodeState(), hands, collectedCards, lastTurnWinner, jugongIndex
 
 waitForReconnectingTimer = {}
@@ -98,8 +98,10 @@ waitForReconnectingTimer = {}
 pg.on 'leave', ->
 	if @now.playerIndex?
 		disconnectedUser = this
-		timeout = 10000
+		#timeout = 10000
 		onPlayerDisconnect = ->
+			console.log disconnectedUser.now.key in playerKeys
+			console.log disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
 			if disconnectedUser.now.key in playerKeys and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
 				players[disconnectedUser.now.playerIndex] = ''
 				playerNames[disconnectedUser.now.playerIndex] = ''
@@ -638,7 +640,7 @@ test = ->
 	testValidChoice = (cards, hand, card, option, currentTurn) ->
 		rule.resetTrick()
 		rule.addTrick(c) for c in cards
-		hand or= [card]
+		hand ?= [card]
 		rule.isValidChoice(hand, card, option, currentTurn)
 
 	# 카드 내기 테스트

@@ -31,6 +31,7 @@ exports.FriendOption =
 exports.friendOption = exports.FriendOption.None
 exports.friendKnown = false
 exports.friendIndex = null
+exports.friendCard = null
 exports.friendHandler = ->
 
 exports.setFriendHandler = (handler) ->
@@ -231,6 +232,7 @@ exports.encodeState = ->
 		exports.friendOption,
 		exports.friendKnown,
 		exports.friendIndex,
+		exports.friendCard,
 		exports.currentPromise]
 
 exports.decodeState = (o) ->
@@ -239,4 +241,5 @@ exports.decodeState = (o) ->
 		exports.friendOption,
 		exports.friendKnown,
 		exports.friendIndex,
+		exports.friendCard,
 		exports.currentPromise] = o
