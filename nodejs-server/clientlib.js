@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, assertEqual, assertTrue, audiochannels, buildCommitmentString, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromClientId, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, assertEqual, assertTrue, audiochannels, buildCommitmentString, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -70,9 +70,6 @@
     return "jsdch";
   };
   VALUE_ORDER = "23456789tjqk1";
-  getRelativeIndexFromClientId = function(clientId) {
-    return (client2index[clientId] - myIndex + 5) % 5;
-  };
   getRelativeIndexFromIndex = function(idx) {
     return (idx - myIndex + 5) % 5;
   };
@@ -517,11 +514,9 @@
     return rule.resetTrick(winnerIndex);
   };
   NetworkUser = (function() {
-    function NetworkUser(clientId, name, index) {
-      this.clientId = clientId;
+    function NetworkUser(name, index) {
       this.name = name;
       this.index = index;
-      client2index[this.clientId] = this.index;
       name2index[this.name] = this.index;
     }
     return NetworkUser;
@@ -557,6 +552,9 @@
   now.notifyChangeState = function(newState) {
     var ridx;
     systemMsg('changeState to ' + newState);
+    if (newState !== now.WAITING_PLAYER) {
+      window.field.hidePlayerList();
+    }
     if (newState === now.VOTE) {
       document.title = "새 게임을 시작합니다.";
       commitmentIndex = 0;
@@ -574,16 +572,27 @@
       })());
     }
   };
-  now.notifyPlayers = function(clientIds, names) {
-    var clientId, i, index, name, _results;
-    _results = [];
+  now.notifyPlayers = function(names) {
+    var i, image, index, name;
+    users = {};
+    window.field.clearPlayerList();
     for (i = 0; i < 5; i++) {
-      clientId = clientIds[i];
+      if (i >= names.length) {
+        break;
+      }
       name = names[i];
       index = i;
-      _results.push(users[index] = new NetworkUser(clientId, name, index));
+      image = "";
+      if (name !== "") {
+        users[index] = new NetworkUser(name, index);
+        window.field.addPlayerToList(index, name, image);
+      } else {
+        window.field.removePlayerFromList(index);
+      }
     }
-    return _results;
+    if (now.state === now.WAITING_PLAYER) {
+      return window.field.showPlayerList();
+    }
   };
   now.notifyMsg = function(msg) {
     if (window.field != null) {
@@ -621,10 +630,14 @@
     }
   };
   now.notifyReady = function(clientId, index, players) {
+    var image;
     if (clientId === now.core.clientId) {
       myIndex = index;
     }
-    return systemMsg("players: " + players);
+    systemMsg("players: " + players);
+    image = "";
+    window.field.addPlayerToList(index, players[index], image);
+    return window.field.showPlayerList();
   };
   now.notifyObserver = function(encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) {
     var card, hand, i, ridx, _ref, _ref2;
@@ -673,6 +686,7 @@
   readyCount = 0;
   onAllReady = function() {
     return $("#logwin").find("button").click(function() {
+      window.field.hidePlayerList();
       return window.field.prompt("What's your name?", "", function(n) {
         now.name = n;
         now.readyGame();

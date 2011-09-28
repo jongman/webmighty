@@ -422,6 +422,63 @@ a:hover {
 	width: 300px;
 }
 
+/* player list 다이얼로그 */
+#player_list_dialog {
+	width: 300px;
+	top: -100px;
+	position: relative;
+}
+
+#player_list_dialog ul {
+	list-style: none;
+	padding: 0px;
+}
+
+#player_list_dialog ul li {
+	text-align: center;
+}
+
+
+#player_list_dialog ul li dl
+{
+	margin: 0;
+	width: 300px;
+}
+
+#player_list_dialog ul li dl dt
+{
+	margin-left: 10px;
+	float: left;
+	overflow: hidden;
+}
+
+#player_list_dialog ul li dl dd
+{
+	margin: 10px;
+	min-height: 40px;
+	width: 270px;
+	padding: 4px;
+	line-height: 150%;
+	background-color: rgba(0, 0, 0, 0.1);
+	border: 1px solid #999;
+
+	box-shadow: 0px 0px 8px #eee;
+	-moz-box-shadow: 0px 0px 8px #eee;
+	-webkit-box-shadow: 0px 0px 8px #eee;
+
+	border-radius: 4px;
+	-moz-border-radius: 4px;
+	-webkit-border-radius: 4px;
+}
+
+
+#player_list_dialog ul li {
+}
+
+#player_list_dialog ul li.unoccupied {
+	color: #fff;
+}
+
 /* 공약 다이얼로그 */
 #choose_promise_dialog {
 	width: 300px;

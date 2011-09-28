@@ -405,6 +405,33 @@ class PlayingField
 				done()
 			, SPEED_BASE * 5)
 
+	showPlayerList: ->
+		$("#player_list_dialog").show()
+
+	hidePlayerList: ->
+		$("#player_list_dialog").hide()
+
+	addPlayerToList: (index, name, image) ->
+		elem = $("#player_list_dialog").find("li").eq(index)
+		# TODO 하드코딩 -> 페북 프로필 이미지 
+		image = "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"
+		if elem?
+			elem.find(".picture").attr({src: image})
+			elem.find(".name").html(name)
+			elem.find(".type").text("")
+			elem.find(".message_content").text("전적 없음")
+
+	clearPlayerList: ->
+		@removePlayerFromList i for i in [0...5]
+
+	removePlayerFromList: (index) ->
+		elem = $("#player_list_dialog").find("li").eq(index)
+		if elem?
+			elem.find(".picture").attr({src: "static/question.png"})
+			elem.find(".name").html("")
+			elem.find(".type").text("빈 자리")
+			elem.find(".message_content").text("")
+
 	chooseCard: (done=->) ->
 		player = 0
 		finish = (card) =>

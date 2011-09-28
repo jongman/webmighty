@@ -572,6 +572,45 @@
         return done();
       }, this), SPEED_BASE * 5);
     };
+    PlayingField.prototype.showPlayerList = function() {
+      return $("#player_list_dialog").show();
+    };
+    PlayingField.prototype.hidePlayerList = function() {
+      return $("#player_list_dialog").hide();
+    };
+    PlayingField.prototype.addPlayerToList = function(index, name, image) {
+      var elem;
+      elem = $("#player_list_dialog").find("li").eq(index);
+      image = "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg";
+      if (elem != null) {
+        elem.find(".picture").attr({
+          src: image
+        });
+        elem.find(".name").html(name);
+        elem.find(".type").text("");
+        return elem.find(".message_content").text("전적 없음");
+      }
+    };
+    PlayingField.prototype.clearPlayerList = function() {
+      var i, _results;
+      _results = [];
+      for (i = 0; i < 5; i++) {
+        _results.push(this.removePlayerFromList(i));
+      }
+      return _results;
+    };
+    PlayingField.prototype.removePlayerFromList = function(index) {
+      var elem;
+      elem = $("#player_list_dialog").find("li").eq(index);
+      if (elem != null) {
+        elem.find(".picture").attr({
+          src: "static/question.png"
+        });
+        elem.find(".name").html("");
+        elem.find(".type").text("빈 자리");
+        return elem.find(".message_content").text("");
+      }
+    };
     PlayingField.prototype.chooseCard = function(done) {
       var card, finish, player, _i, _len, _ref, _results;
       if (done == null) {

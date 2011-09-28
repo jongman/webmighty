@@ -56,9 +56,6 @@ FACE_ORDER = (giruda_ = null) ->
 
 VALUE_ORDER = "23456789tjqk1"
 
-getRelativeIndexFromClientId = (clientId) ->
-	return (client2index[clientId] - myIndex + 5) % 5
-
 getRelativeIndexFromIndex = (idx) ->
 	return (idx - myIndex + 5) % 5
 
@@ -432,8 +429,7 @@ now.takeTrick = (currentTurn, winnerIndex) ->
 ################################################################################
 
 class NetworkUser
-	constructor: (@clientId, @name, @index) ->
-		client2index[@clientId] = @index
+	constructor: (@name, @index) ->
 		name2index[@name] = @index
 
 buildCommitmentString = (face, target) ->
@@ -467,6 +463,8 @@ now.resetRule = ->
 
 now.notifyChangeState = (newState) ->
 	systemMsg 'changeState to ' + newState
+	if newState != now.WAITING_PLAYER
+		window.field.hidePlayerList()
 	if newState == now.VOTE
 		document.title = "새 게임을 시작합니다."
 		commitmentIndex = 0
@@ -480,12 +478,24 @@ now.notifyChangeState = (newState) ->
 		#client2index = {}
 		#users = {}
 
-now.notifyPlayers = (clientIds, names) ->
+now.notifyPlayers = (names) ->
+	users = {}
+	window.field.clearPlayerList()
 	for i in [0...5]
-		clientId = clientIds[i]
+		if i >= names.length
+			break
 		name = names[i]
 		index = i
-		users[index] = new NetworkUser(clientId, name, index)
+		# TODO profile image
+		image = ""
+		if name != ""
+			users[index] = new NetworkUser(name, index)
+			window.field.addPlayerToList index, name, image
+		else
+			window.field.removePlayerFromList index
+
+	if now.state == now.WAITING_PLAYER
+		window.field.showPlayerList()
 
 now.notifyMsg = (msg) ->
 	if window.field?
@@ -523,6 +533,10 @@ now.notifyReady = (clientId, index, players) ->
 	if clientId == now.core.clientId
 		myIndex = index
 	systemMsg "players: " + players
+	# TODO receive profile image src
+	image = ""
+	window.field.addPlayerToList index, players[index], image
+	window.field.showPlayerList()
 
 now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) ->
 	myIndex = 0
@@ -568,6 +582,7 @@ readyCount = 0
 onAllReady = ->
 	$("#logwin").find("button").click(->
 
+		window.field.hidePlayerList()
 		window.field.prompt("What's your name?", "", (n)->
 			now.name = n
 			now.readyGame()

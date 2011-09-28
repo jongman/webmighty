@@ -86,7 +86,7 @@ restoreDisconnectedPlayer = (user) ->
 	user.now.notifyRestorePlayer rule.encodeState()
 
 restoreObserver = (user) ->
-	user.now.notifyPlayers players, playerNames
+	user.now.notifyPlayers playerNames
 	hands = ((c for c in cards[i*10...(i+1)*10] when c != '') for i in [0...5])
 	if everyone.now.state == everyone.now.REARRANGE_HAND
 		hands[jugongIndex] = hands[jugongIndex].concat(cards[50...53])
@@ -107,6 +107,7 @@ pg.on 'leave', ->
 				delete playerKeys[disconnectedUser.now.key]
 
 		onPlayerDisconnect()
+		everyone.now.notifyPlayers players
 		#if everyone.now.state == everyone.now.WAITING_PLAYER
 			#onPlayerDisconnect()
 		#else
@@ -147,8 +148,12 @@ nowjs.on 'connect', ->
 	rg.getUsers((users) ->
 		console.log users
 	)
+	pg.getUsers((users) ->
+		console.log "current READY " + users.length
+	)
 	if everyone.now.state == everyone.now.WAITING_PLAYER
-		@now.notifyMsg "플레이어를 기다리는 중입니다. 플레이 하시려면 참가 버튼을 누르세요"
+		#@now.notifyMsg "플레이어를 기다리는 중입니다. 플레이 하시려면 참가 버튼을 누르세요"
+		@now.notifyPlayers playerNames
 	else
 		restoreObserver this
 
@@ -264,7 +269,7 @@ everyone.now.readyGame = ->
 		console.log "READY " + readyCount
 		if readyCount == 5
 			console.log "DEALING"
-			everyone.now.notifyPlayers players, playerNames
+			everyone.now.notifyPlayers playerNames
 			changeState everyone.now.VOTE
 	# don't implement 6 player for now
 	#else if everyone.now.readyCount == 6
