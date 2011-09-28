@@ -132,7 +132,9 @@ exports.setPromise = function(promise) {
   return exports.currentTurn = 0;
 };
 exports.resetPromise = function() {
-  return exports.currentPromise = null;
+  exports.currentPromise = null;
+  exports.currentTurn = 0;
+  return exports.currentTrick = 0;
 };
 exports.getMightyCard = function() {
   if ((exports.currentPromise != null) && exports.currentPromise[0] === 's') {
