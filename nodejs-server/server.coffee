@@ -95,17 +95,18 @@ restoreObserver = (user) ->
 
 waitForReconnectingTimer = {}
 
+disconnectedPlayers = {}
+
 pg.on 'leave', ->
 	if @now.playerIndex?
 		disconnectedUser = this
 		#timeout = 10000
 		onPlayerDisconnect = ->
-			console.log disconnectedUser.now.key in playerKeys
-			console.log disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
-			if disconnectedUser.now.key in playerKeys and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
+			if playerKeys[disconnectedUser.now.key]? and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
+				console.log "onPlayerDisconnect"
 				players[disconnectedUser.now.playerIndex] = ''
 				playerNames[disconnectedUser.now.playerIndex] = ''
-				disconnectedPlayers[disconnectedUser.now.playerIndex] = null
+				disconnectedPlayers[disconnectedUser.now.playerIndex] = disconnectedUser.user.clientId
 				delete playerKeys[disconnectedUser.now.key]
 
 		onPlayerDisconnect()
@@ -128,7 +129,10 @@ nowjs.on 'connect', ->
 	# 페북 연동시 key를 페북에서 얻은 값으로 확인
 	if @now.key? and @now.oldClientId? and @now.playerIndex?
 		# 모종의 이유로 재접속이 된 경우
-		if @now.key in playerKeys and (players[@now.playerIndex] == null or platers[@now.playerIndex] == @user.clientId) and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
+		console.log playerKeys[@now.key]? 
+		console.log (players[@now.playerIndex] == null or players[@now.playerIndex] == @user.clientId) 
+		console.log disconnectedPlayers[@now.playerIndex] == @now.oldClientId
+		if playerKeys[@now.key]? and (players[@now.playerIndex] == null or platers[@now.playerIndex] == @user.clientId) and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
 			# restore player
 			players[@now.playerIndex] = @user.clientId
 			playerNames[@now.playerNames] = @now.name
@@ -551,6 +555,7 @@ endGame = ->
 			console.log "야당 승리!"
 			everyone.now.notifyMsg "야당 승리!"
 			everyone.now.notifyVictory rule.Victory.Lose
+	rule.resetGame()
 	setTimeout(->
 			changeState(everyone.now.VOTE)
 		, 5000)
@@ -574,8 +579,8 @@ resetGame = ->
 	everyone.now.state = everyone.now.WAITING_PLAYER
 	everyone.now.resetField()
 	rule.resetGame()
-	players = []
-	playerNames = []
+	#players = []
+	#playerNames = []
 	cards = []
 	collectedCards = [[],[],[],[],[]]
 
