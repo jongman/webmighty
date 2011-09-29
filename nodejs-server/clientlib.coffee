@@ -457,6 +457,10 @@ now.notifyChangeState = (newState) ->
 	systemMsg 'changeState to ' + newState
 	if newState != now.WAITING_PLAYER
 		window.field.hidePlayerList()
+	if newState == now.WAITING_PLAYER
+		window.field.setPlayers([])
+		window.field.showPlayerList()
+		#$("#logwin").find("button").unbind().removeAttr("disabled")
 	if newState == now.VOTE
 		document.title = "새 게임을 시작합니다."
 		commitmentIndex = 0
@@ -578,16 +582,30 @@ now.showName = ->
 # (TEST only) set ready when page load
 readyCount = 0
 onAllReady = ->
+	window.field.setPlayerListHandler(->
+		if now.name.substr(0,6) == "player"
+			window.field.prompt("What's your name?", now.name, (n)->
+				if n == ""
+					return
+				now.name = n
+				now.readyGame()
+			)
+		else
+			now.readyGame()
+	)
+
+	window.field.showPlayerList()
 	$("#logwin").find("button").click(->
 
-		window.field.hidePlayerList()
-		window.field.prompt("What's your name?", now.name, (n)->
-			if n == ""
-				return
-			now.name = n
+		if now.name.substr(0,6) == "player"
+			window.field.prompt("What's your name?", now.name, (n)->
+				if n == ""
+					return
+				now.name = n
+				now.readyGame()
+			)
+		else
 			now.readyGame()
-			$("#logwin").find("button").unbind().attr("disabled", "")
-		)
 	)
 
 $(document).ready ->

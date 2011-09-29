@@ -420,13 +420,17 @@ a:hover {
 /* prompt 다이얼로그 */
 #prompt_dialog {
 	width: 300px;
+	left: 40px;
+	position:absolute;
+	z-index: 1050;
 }
 
 /* player list 다이얼로그 */
 #player_list_dialog {
 	width: 300px;
 	top: -100px;
-	position: relative;
+	left: 40px;
+	position:absolute;
 }
 
 #player_list_dialog ul {

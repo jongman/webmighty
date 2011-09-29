@@ -565,6 +565,10 @@
     if (newState !== now.WAITING_PLAYER) {
       window.field.hidePlayerList();
     }
+    if (newState === now.WAITING_PLAYER) {
+      window.field.setPlayers([]);
+      window.field.showPlayerList();
+    }
     if (newState === now.VOTE) {
       document.title = "새 게임을 시작합니다.";
       commitmentIndex = 0;
@@ -701,16 +705,32 @@
   };
   readyCount = 0;
   onAllReady = function() {
+    window.field.setPlayerListHandler(function() {
+      if (now.name.substr(0, 6) === "player") {
+        return window.field.prompt("What's your name?", now.name, function(n) {
+          if (n === "") {
+            return;
+          }
+          now.name = n;
+          return now.readyGame();
+        });
+      } else {
+        return now.readyGame();
+      }
+    });
+    window.field.showPlayerList();
     return $("#logwin").find("button").click(function() {
-      window.field.hidePlayerList();
-      return window.field.prompt("What's your name?", now.name, function(n) {
-        if (n === "") {
-          return;
-        }
-        now.name = n;
-        now.readyGame();
-        return $("#logwin").find("button").unbind().attr("disabled", "");
-      });
+      if (now.name.substr(0, 6) === "player") {
+        return window.field.prompt("What's your name?", now.name, function(n) {
+          if (n === "") {
+            return;
+          }
+          now.name = n;
+          return now.readyGame();
+        });
+      } else {
+        return now.readyGame();
+      }
     });
   };
   $(document).ready(function() {

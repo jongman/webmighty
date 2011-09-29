@@ -109,8 +109,10 @@ pg.on 'leave', ->
 				disconnectedPlayers[disconnectedUser.now.playerIndex] = disconnectedUser.user.clientId
 				delete playerKeys[disconnectedUser.now.key]
 
+				everyone.now.notifyPlayers playerNames
+				changeState everyone.now.WAITING_PLAYER
+
 		onPlayerDisconnect()
-		everyone.now.notifyPlayers players
 		#if everyone.now.state == everyone.now.WAITING_PLAYER
 			#onPlayerDisconnect()
 		#else
@@ -265,22 +267,29 @@ everyone.now.readyGame = ->
 	if pg.now.state != pg.now.WAITING_PLAYER
 		return
 
-	# READY: observer -> ready
-	pg.addUser @user.clientId
-	@now.observer = false
+	readyUserClientId = @user.clientId
+	pg.hasClient(@user.clientId, (bool) ->
+		# if user is already set to ready, ignore it
+		if bool
+			return
+		nowjs.getClient readyUserClientId, ->
 
-	@now.playerIndex = setReady @now.key, @user.clientId, @now.name
+			# READY: observer -> ready
+			pg.addUser @user.clientId
+			@now.observer = false
 
-	pg.count (readyCount) ->
-		console.log "READY " + readyCount
-		if readyCount == 5
-			console.log "DEALING"
-			everyone.now.notifyPlayers playerNames
-			changeState everyone.now.VOTE
-	# don't implement 6 player for now
-	#else if everyone.now.readyCount == 6
-		#changeState(everyone.now.VOTE)
+			@now.playerIndex = setReady @now.key, @user.clientId, @now.name
 
+			pg.count (readyCount) ->
+				console.log "READY " + readyCount
+				if readyCount == 5
+					console.log "DEALING"
+					everyone.now.notifyPlayers playerNames
+					changeState everyone.now.VOTE
+			# don't implement 6 player for now
+			#else if everyone.now.readyCount == 6
+				#changeState(everyone.now.VOTE)
+	)
 
 setReady = (key, clientId, name) ->
 	index = players.length

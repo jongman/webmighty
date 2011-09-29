@@ -576,6 +576,9 @@
         return done();
       }, this), SPEED_BASE * 5);
     };
+    PlayingField.prototype.setPlayerListHandler = function(handler) {
+      return $("#player_list_dialog .ready").unbind("click").click(handler);
+    };
     PlayingField.prototype.showPlayerList = function() {
       return $("#player_list_dialog").show();
     };
@@ -764,6 +767,7 @@
       return null;
     };
     PlayingField.prototype.prompt = function(question, defaultValue, callback) {
+      var handler;
       if (defaultValue == null) {
         defaultValue = null;
       }
@@ -775,7 +779,7 @@
       }
       $("#prompt_dialog .title").text(question);
       $("#prompt_dialog .value").val(defaultValue);
-      $("#prompt_dialog .confirm").unbind("click").click(function() {
+      handler = function() {
         var ret;
         ret = $("#prompt_dialog .value").val();
         if (ret === "") {
@@ -783,8 +787,15 @@
         }
         $("#prompt_dialog").hide();
         return callback(ret);
+      };
+      $("#prompt_dialog .value").unbind("keypress").keypress(function(e) {
+        if (e.keyCode === 13) {
+          return handler();
+        }
       });
-      return $("#prompt_dialog").fadeIn(100);
+      $("#prompt_dialog .confirm").unbind("click").click(handler);
+      $("#prompt_dialog").fadeIn(100);
+      return $("#prompt_dialog .value").focus();
     };
     PlayingField.prototype.choosePromise = function(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, callback) {
       var finish, getSuit, minValue, selectedSuit, selectedValue, setSuit, setValue, showSuit, showValue;

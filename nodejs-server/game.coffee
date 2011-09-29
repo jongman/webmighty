@@ -410,6 +410,9 @@ class PlayingField
 				done()
 			, SPEED_BASE * 5)
 
+	setPlayerListHandler: (handler) ->
+		$("#player_list_dialog .ready").unbind("click").click(handler)
+
 	showPlayerList: ->
 		$("#player_list_dialog").show()
 
@@ -536,16 +539,24 @@ class PlayingField
 		defaultValue ?= ""
 		$("#prompt_dialog .title").text(question)
 		$("#prompt_dialog .value").val(defaultValue)
+		handler = ->
+			ret = $("#prompt_dialog .value").val()
+			if ret == ""
+				return
+			$("#prompt_dialog").hide()
+			callback(ret)
+
+		$("#prompt_dialog .value")
+			.unbind("keypress")
+			.keypress((e) ->
+				if e.keyCode == 13
+					handler()
+			)
 		$("#prompt_dialog .confirm")
 			.unbind("click")
-			.click(-> 
-				ret = $("#prompt_dialog .value").val()
-				if ret == ""
-					return
-				$("#prompt_dialog").hide()
-				callback(ret)
-			)
+			.click(handler)
 		$("#prompt_dialog").fadeIn(100)
+		$("#prompt_dialog .value").focus()
 		
 	choosePromise: (minNoGiru, minOthers, canDealMiss, defaultSuit=" ", defaultValue=0, callback=(res) ->) ->
 		# 요 두 값을 정해야 됨..
