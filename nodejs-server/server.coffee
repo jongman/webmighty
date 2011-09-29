@@ -1,4 +1,6 @@
+allowGuestPlay = true
 rule = require './rule'
+fb = require './facebook.cfg'
 
 ################################################################################
 # Utilities (딴데로 빼야 하나?)
@@ -7,6 +9,15 @@ rule = require './rule'
 String::endsWith = (str) ->
 	this.length >= str.length and this.substr(this.length - str.length) == str
 
+String::format = (arg...)->
+	formatted = this
+	for i in [0...arg.length]
+		regexp = new RegExp('\\{'+i+'\\}', 'gi')
+		formatted = formatted.replace(regexp, arg[i])
+	formatted
+
+
+
 ################################################################################
 # Server init
 ################################################################################
@@ -14,24 +25,42 @@ String::endsWith = (str) ->
 fs = require 'fs'
 http = require 'http'
 path = require 'path'
+urllib = require 'url'
 
+console.log "91"
 server = http.createServer (req, res) ->
-	url = if req.url in ['/', ''] then '/test.html' else req.url
+	parseResult = urllib.parse req.url
+
+	isHomeRequest = parseResult.pathname in ['/', '']
+	console.log parseResult, isHomeRequest
+	url = if isHomeRequest then '/test.html' else parseResult.pathname
+	errorPath = false
+	if not (isHomeRequest or url.substr(0,7) == '/static')
+		errorPath = not (url in ["/rule.js", "/clientlib.js", "/game.js", "nowjs/now.js"])
 	file_path = __dirname + url
 	path.exists(file_path, (exists) ->
-		if exists
+		if exists and not errorPath
 			# node-mime 같은걸 쓰던지, 제대로 된 웹서버를 쓰던지 해야 -_-;
 			if file_path.endsWith(".css")
 				res.setHeader('Content-Type', 'text/css')
 			else if file_path.endsWith(".js")
 				res.setHeader('Content-Type', 'text/javascript')
-			res.end fs.readFileSync(file_path)
+			if isHomeRequest
+				data = fs.readFileSync(file_path, "utf8")
+				data = data.format(fb.app_id, fb.app_secret, fb.my_url)
+				res.end data
+			else
+				res.end fs.readFileSync(file_path)
 		else
 			res.writeHead(404, {'Content-Type': 'text/plain'})
 			res.end()
 	)
+console.log "94"
 nowjs = require 'now'
+console.log nowjs
+console.log "97"
 everyone = nowjs.initialize server
+console.log "100"
 
 ################################################################################
 # Logic
@@ -63,8 +92,19 @@ everyone.now.TAKE_TURN = 6
 everyone.now.END_GAME = 7
 
 everyone.now.state = everyone.now.WAITING_PLAYER
+
+class Player
+	constructor: (@clientId, @name, @image, @fbUserID)->
+	clear: ->
+		@name = ''
+		@clientId = ''
+		@image = ''
+		@fbUserID = null
+
 players = []
-playerNames = []
+getPlayerInfos = ->
+	[x.name, x.image] for x in players
+playerKeys = {}
 cards = []
 collectedCards = [[],[],[],[],[]]
 currentTurn = 0
@@ -80,13 +120,12 @@ generateKey = ->
 	s += keystr[Math.floor(Math.random() * keystr.length)] for i in [1..32]
 	s
 
-playerKeys = {}
 
 restoreDisconnectedPlayer = (user) ->
 	user.now.notifyRestorePlayer rule.encodeState()
 
 restoreObserver = (user) ->
-	user.now.notifyPlayers playerNames
+	user.now.notifyPlayers getPlayerInfos()
 	hands = ((c for c in cards[i*10...(i+1)*10] when c != '') for i in [0...5])
 	if everyone.now.state == everyone.now.REARRANGE_HAND
 		hands[jugongIndex] = hands[jugongIndex].concat(cards[50...53])
@@ -102,14 +141,13 @@ pg.on 'leave', ->
 		disconnectedUser = this
 		#timeout = 10000
 		onPlayerDisconnect = ->
-			if playerKeys[disconnectedUser.now.key]? and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex]
+			if playerKeys[disconnectedUser.now.key]? and disconnectedUser.user.clientId == players[disconnectedUser.now.playerIndex].clientId
 				console.log "onPlayerDisconnect"
-				players[disconnectedUser.now.playerIndex] = ''
-				playerNames[disconnectedUser.now.playerIndex] = ''
+				players[disconnectedUser.now.playerIndex].clear()
 				disconnectedPlayers[disconnectedUser.now.playerIndex] = disconnectedUser.user.clientId
 				delete playerKeys[disconnectedUser.now.key]
 
-				everyone.now.notifyPlayers playerNames
+				everyone.now.notifyPlayers getPlayerInfos()
 				changeState everyone.now.WAITING_PLAYER
 
 		onPlayerDisconnect()
@@ -126,18 +164,19 @@ nowjs.on 'connect', ->
 	loginCount += 1
 	@now.name ?= 'player' + loginCount
 	@now.showName()
+	@now.setAllowGuestPlay(allowGuestPlay)
 
 	# 각 유저의 key로 unique하게 identify 가능
 	# 페북 연동시 key를 페북에서 얻은 값으로 확인
 	if @now.key? and @now.oldClientId? and @now.playerIndex?
 		# 모종의 이유로 재접속이 된 경우
 		console.log playerKeys[@now.key]? 
-		console.log (players[@now.playerIndex] == null or players[@now.playerIndex] == @user.clientId) 
+		console.log (players[@now.playerIndex] == null or players[@now.playerIndex].clientId == @user.clientId) 
 		console.log disconnectedPlayers[@now.playerIndex] == @now.oldClientId
-		if playerKeys[@now.key]? and (players[@now.playerIndex] == null or platers[@now.playerIndex] == @user.clientId) and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
+		if playerKeys[@now.key]? and (players[@now.playerIndex] == null or platerObjs[@now.playerIndex].clientId == @user.clientId) and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
 			# restore player
-			players[@now.playerIndex] = @user.clientId
-			playerNames[@now.playerNames] = @now.name
+			players[@now.playerIndex].clientId = @user.clientId
+			players[@now.playerIndex].name = @now.name
 			@now.observer = false
 			pg.addUser @user.clientId
 			restoreDisconnectedPlayer this
@@ -160,8 +199,7 @@ nowjs.on 'connect', ->
 		console.log "current READY " + users.length
 	)
 	if everyone.now.state == everyone.now.WAITING_PLAYER
-		#@now.notifyMsg "플레이어를 기다리는 중입니다. 플레이 하시려면 참가 버튼을 누르세요"
-		@now.notifyPlayers playerNames
+		@now.notifyPlayers getPlayerInfos()
 	else
 		restoreObserver this
 
@@ -189,14 +227,14 @@ enterState = (state) ->
 		changeState everyone.now.REARRANGE_HAND
 
 	else if state == everyone.now.REARRANGE_HAND
-		nowjs.getClient players[jugongIndex], ->
+		nowjs.getClient players[jugongIndex].clientId, ->
 			@now.requestRearrangeHand cards[50...53] 
 		pg.now.notifyRearrangeHand()
 		pg.getUsers (user)->
 			rg.exclude(user).now.notifyRearrangeHand(cards[50...53])
 
 	else if state == everyone.now.CHOOSE_FRIEND
-		nowjs.getClient players[jugongIndex], ->
+		nowjs.getClient players[jugongIndex].clientId, ->
 			@now.requestChooseFriend()
 		everyone.now.notifyChooseFriend()
 
@@ -204,7 +242,7 @@ enterState = (state) ->
 		currentTurn = 0
 		lastTurnWinner = jugongIndex
 		rule.resetTrick()
-		nowjs.getClient players[lastTurnWinner], ->
+		nowjs.getClient players[lastTurnWinner].clientId, ->
 			@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
 
 	else if state == everyone.now.END_GAME
@@ -245,8 +283,8 @@ dealCard = ->
 		)
 	)
 	# 각 플레이어는 자신의 hand만
-	pg.getUsers((players) ->
-		for player in players
+	pg.getUsers((playerInGroup) ->
+		for player in playerInGroup
 			console.log (player + " gets " + cards[idx...idx+step])
 			nowjs.getClient player, ->
 				@now.receiveDealtCards cards[idx...idx+step]
@@ -268,7 +306,15 @@ everyone.now.readyGame = ->
 		return
 
 	readyUserClientId = @user.clientId
-	pg.hasClient(@user.clientId, (bool) ->
+
+	if not @now.fbUserID? and not allowGuestPlay
+		return
+
+	for player in players
+		if @now.fbUserID? and player.fbUserID == @now.fbUserId
+			return
+
+	pg.hasClient @user.clientId, (bool) ->
 		# if user is already set to ready, ignore it
 		if bool
 			return
@@ -278,34 +324,34 @@ everyone.now.readyGame = ->
 			pg.addUser @user.clientId
 			@now.observer = false
 
-			@now.playerIndex = setReady @now.key, @user.clientId, @now.name
+			@now.image ?= ""
+			@now.playerIndex = setReady @now.key, @user.clientId, @now.name, @now.image
 
 			pg.count (readyCount) ->
 				console.log "READY " + readyCount
 				if readyCount == 5
 					console.log "DEALING"
-					everyone.now.notifyPlayers playerNames
+					everyone.now.notifyPlayers getPlayerInfos()
 					changeState everyone.now.VOTE
 			# don't implement 6 player for now
 			#else if everyone.now.readyCount == 6
 				#changeState(everyone.now.VOTE)
-	)
 
-setReady = (key, clientId, name) ->
+setReady = (key, clientId, name, image, fbUserID) ->
 	index = players.length
 	if players.length < 5
-		players.push(clientId)
-		playerNames.push(name)
+		players.push(new Player(clientId, name, image, fbUserID))
 		playerKeys[key] = clientId
 	else
 		for i in [0...5]
-			if playerNames[i] == ''
-				players[i] = clientId
-				playerNames[i] = name
+			if players[i].name == ''
+				players[i].clientId = clientId
+				players[i].name = name
+				players[i].image = image
 				index = i
 				playerKeys[key] = clientId
 				break
-	everyone.now.notifyReady clientId, index, playerNames
+	everyone.now.notifyReady clientId, index, getPlayerInfos()
 	return index
 
 
@@ -319,11 +365,11 @@ currentVoteIndex = null
 chooseNextPlayerForVote = () ->
 	if not currentVoteIndex?
 		currentVoteIndex = lastFriendIndex
-		return players[currentVoteIndex]
+		return players[currentVoteIndex].clientId
 	else
 		currentVoteIndex = (currentVoteIndex + 1) % votes.length
 		currentVoteIndex = (currentVoteIndex + 1) % votes.length while votes[currentVoteIndex][0] == 'p'
-		return players[currentVoteIndex]
+		return players[currentVoteIndex].clientId
 
 allPass = ->
 	passes = (vote for vote in votes when vote[0] == 'p')
@@ -345,7 +391,7 @@ allPassExceptOne = ->
 
 checkVoteEnd = ->
 	if allPassExceptOne()
-		console.log 'vote success jugong: ' + players[jugongIndex]
+		console.log 'vote success jugong: ' + players[jugongIndex].name
 		everyone.now.notifyJugong jugongIndex, rule.currentPromise[0], rule.currentPromise[1]
 		changeState everyone.now.VOTE_KILL
 
@@ -507,13 +553,13 @@ everyone.now.chooseCard = (card, option) ->
 						changeState everyone.now.END_GAME
 					else
 						rule.resetTrick(lastTurnWinner)
-						nowjs.getClient players[lastTurnWinner], ->
+						nowjs.getClient players[lastTurnWinner].clientId, ->
 							@now.requestChooseCard currentTurn, rule.ChooseCardOption.None
 				, 1500)
 		else
 			# 다음 사람에게로
 			console.log rule.currentTrick
-			nowjs.getClient players[(lastTurnWinner + rule.currentTrick.length) % 5], ->
+			nowjs.getClient players[(lastTurnWinner + rule.currentTrick.length) % 5].clientId, ->
 				@now.requestChooseCard currentTurn, currentTrickOption
 	else
 		# 잘못된 선택 했으니 반복
@@ -574,7 +620,10 @@ endGame = ->
 ################################################################################
 
 indexFromClientId = (clientId) ->
-	return players.indexOf clientId
+	for i in [0 ... players.length]
+		if players[i].clientId == clientId
+			return i
+	return -1
 
 getHandFromClientId = (clientId) ->
 	idx = indexFromClientId clientId
@@ -588,8 +637,6 @@ resetGame = ->
 	everyone.now.state = everyone.now.WAITING_PLAYER
 	everyone.now.resetField()
 	rule.resetGame()
-	#players = []
-	#playerNames = []
 	cards = []
 	collectedCards = [[],[],[],[],[]]
 

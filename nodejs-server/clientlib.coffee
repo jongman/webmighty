@@ -1,4 +1,5 @@
 window.LIBGAME = 1
+allowGuestPlay = false
 
 assertTrue = (o, msg="") ->
 	if not o
@@ -199,9 +200,6 @@ now.requestRearrangeHand = (additionalCards) ->
 					now.rearrangeHand (card.face for card in chosen), rule.currentPromise[0], rule.currentPromise[1]
 					window.field.takeCards(0, chosen,
 						->
-							systemMsg chosen
-							systemMsg window.field.hands[0].length
-							systemMsg window.field.hands[0]
 							window.field.hands[0].remove(card) for card in chosen
 							window.field.repositionCards(0)
 							assertEqual 10, window.field.hands[0].length
@@ -222,8 +220,6 @@ now.notifyRearrangeHandDone = (cards = null)->
 		for c in window.field.hands[jugongRIndex]
 			if c.face in cards
 				chosen.push(c)
-		systemMsg chosen
-		systemMsg (c for c in window.field.hands[jugongRIndex]  when c.face in cards)
 
 	window.field.takeCards(jugongRIndex, chosen,
 		->
@@ -474,16 +470,17 @@ now.notifyChangeState = (newState) ->
 		#client2index = {}
 		#users = {}
 
-now.notifyPlayers = (names) ->
+now.notifyPlayers = (infos) ->
 	users = {}
 	window.field.clearPlayerList()
 	for i in [0...5]
-		if i >= names.length
+		if i >= infos.length
 			break
-		name = names[i]
+		name = infos[i][0]
+		image = ""
+		image = infos[i][1]
 		index = i
 		# TODO profile image
-		image = ""
 		if name != ""
 			users[index] = new NetworkUser(name, index)
 			window.field.addPlayerToList index, name, image
@@ -524,13 +521,12 @@ now.notifyVictory = (victoryFlag) ->
 	else
 		playSound "lose"
 
-now.notifyReady = (clientId, index, players) ->
+now.notifyReady = (clientId, index, playerInfos) ->
 	if clientId == now.core.clientId
 		myIndex = index
-	systemMsg "players: " + players
+	systemMsg "players: " + playerInfos
 	# TODO receive profile image src
-	image = ""
-	window.field.addPlayerToList index, players[index], image
+	window.field.addPlayerToList index, playerInfos[index][0], playerInfos[index][1]
 	window.field.showPlayerList()
 
 now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) ->
@@ -582,6 +578,30 @@ now.showName = ->
 # (TEST only) set ready when page load
 readyCount = 0
 onAllReady = ->
+	now.fbUserID = null
+
+	fbHandler = (response)->
+		$("#oneliner").text("")
+		if response.status == "connected" and response.authResponse?
+			window.fbAccessToken = response.authResponse.accessToken
+			now.image = "http://graph.facebook.com/" + response.authResponse.userID + "/picture"
+			now.fbUserID = response.authResponse.userID
+			FB.api('/me', (user)->
+				if user?
+					#image = document.getElementById('image');
+					#image.src = 'http://graph.facebook.com/' + user.id + '/picture';
+					now.name = user.name
+			)
+		else
+			now.image = ""
+			now.fbUserID = null
+			if not allowGuestPlay
+				$("#oneliner").text("플레이하기 위해선 페이스북 로그인이 필요합니다.")
+
+	FB.getLoginStatus fbHandler
+	FB.Event.subscribe("auth.authResponseChange", fbHandler)
+	FB.Event.subscribe("auth.statusChange", fbHandler)
+
 	window.field.setPlayerListHandler(->
 		if now.name.substr(0,6) == "player"
 			window.field.prompt("What's your name?", now.name, (n)->
@@ -620,6 +640,11 @@ now.ready ->
 	readyCount += 1
 	if readyCount == 2
 		onAllReady()
+
+now.setAllowGuestPlay = (bool) ->
+	allowGuestPlay = bool
+	if allowGuestPlay
+		$("#oneliner").text("")
 
 loctable = {
 	en: {

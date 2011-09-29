@@ -588,7 +588,9 @@
     PlayingField.prototype.addPlayerToList = function(index, name, image) {
       var elem;
       elem = $("#player_list_dialog").find("li").eq(index);
-      image = "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg";
+      if (image === "") {
+        image = "static/guest.png";
+      }
       if (elem != null) {
         elem.find(".picture").attr({
           src: image

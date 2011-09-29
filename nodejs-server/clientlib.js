@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, assertEqual, assertTrue, audiochannels, buildCommitmentString, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, allowGuestPlay, assertEqual, assertTrue, audiochannels, buildCommitmentString, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -7,6 +7,7 @@
     return -1;
   };
   window.LIBGAME = 1;
+  allowGuestPlay = false;
   assertTrue = function(o, msg) {
     var testFailFlag;
     if (msg == null) {
@@ -237,9 +238,6 @@
         })(), rule.currentPromise[0], rule.currentPromise[1]);
         return window.field.takeCards(0, chosen, function() {
           var card, _i, _len;
-          systemMsg(chosen);
-          systemMsg(window.field.hands[0].length);
-          systemMsg(window.field.hands[0]);
           for (_i = 0, _len = chosen.length; _i < _len; _i++) {
             card = chosen[_i];
             window.field.hands[0].remove(card);
@@ -270,19 +268,6 @@
           chosen.push(c);
         }
       }
-      systemMsg(chosen);
-      systemMsg((function() {
-        var _j, _len2, _ref3, _ref4, _results;
-        _ref3 = window.field.hands[jugongRIndex];
-        _results = [];
-        for (_j = 0, _len2 = _ref3.length; _j < _len2; _j++) {
-          c = _ref3[_j];
-          if (_ref4 = c.face, __indexOf.call(cards, _ref4) >= 0) {
-            _results.push(c);
-          }
-        }
-        return _results;
-      })());
     }
     return window.field.takeCards(jugongRIndex, chosen, function() {
       var card, _j, _len2;
@@ -586,17 +571,18 @@
       })());
     }
   };
-  now.notifyPlayers = function(names) {
+  now.notifyPlayers = function(infos) {
     var i, image, index, name;
     users = {};
     window.field.clearPlayerList();
     for (i = 0; i < 5; i++) {
-      if (i >= names.length) {
+      if (i >= infos.length) {
         break;
       }
-      name = names[i];
-      index = i;
+      name = infos[i][0];
       image = "";
+      image = infos[i][1];
+      index = i;
       if (name !== "") {
         users[index] = new NetworkUser(name, index);
         window.field.addPlayerToList(index, name, image);
@@ -642,14 +628,12 @@
       return playSound("lose");
     }
   };
-  now.notifyReady = function(clientId, index, players) {
-    var image;
+  now.notifyReady = function(clientId, index, playerInfos) {
     if (clientId === now.core.clientId) {
       myIndex = index;
     }
-    systemMsg("players: " + players);
-    image = "";
-    window.field.addPlayerToList(index, players[index], image);
+    systemMsg("players: " + playerInfos);
+    window.field.addPlayerToList(index, playerInfos[index][0], playerInfos[index][1]);
     return window.field.showPlayerList();
   };
   now.notifyObserver = function(encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) {
@@ -705,6 +689,30 @@
   };
   readyCount = 0;
   onAllReady = function() {
+    var fbHandler;
+    now.fbUserID = null;
+    fbHandler = function(response) {
+      $("#oneliner").text("");
+      if (response.status === "connected" && (response.authResponse != null)) {
+        window.fbAccessToken = response.authResponse.accessToken;
+        now.image = "http://graph.facebook.com/" + response.authResponse.userID + "/picture";
+        now.fbUserID = response.authResponse.userID;
+        return FB.api('/me', function(user) {
+          if (user != null) {
+            return now.name = user.name;
+          }
+        });
+      } else {
+        now.image = "";
+        now.fbUserID = null;
+        if (!allowGuestPlay) {
+          return $("#oneliner").text("플레이하기 위해선 페이스북 로그인이 필요합니다.");
+        }
+      }
+    };
+    FB.getLoginStatus(fbHandler);
+    FB.Event.subscribe("auth.authResponseChange", fbHandler);
+    FB.Event.subscribe("auth.statusChange", fbHandler);
     window.field.setPlayerListHandler(function() {
       if (now.name.substr(0, 6) === "player") {
         return window.field.prompt("What's your name?", now.name, function(n) {
@@ -748,6 +756,12 @@
       return onAllReady();
     }
   });
+  now.setAllowGuestPlay = function(bool) {
+    allowGuestPlay = bool;
+    if (allowGuestPlay) {
+      return $("#oneliner").text("");
+    }
+  };
   loctable = {
     en: {
       패스: 'Pass'

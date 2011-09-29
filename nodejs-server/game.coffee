@@ -421,8 +421,8 @@ class PlayingField
 
 	addPlayerToList: (index, name, image) ->
 		elem = $("#player_list_dialog").find("li").eq(index)
-		# TODO 하드코딩 -> 페북 프로필 이미지 
-		image = "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"
+		if image == ""
+			image = "static/guest.png"
 		if elem?
 			elem.find(".picture").attr({src: image})
 			elem.find(".name").html(name)

@@ -19,6 +19,10 @@
 	<script src="/static/respond.min.js"></script>
 </head>
 <body>
+	<script src="http://connect.facebook.net/en_US/all.js"></script>
+	<div id="fb-root"></div>
+	<fb:login-button autologoutlink="true"></fb:login-button>
+	<div id="oneliner"></div>
 	<div id="playing_field">
 		<div id="global_message"></div>
 		<div id="dialog">
@@ -185,5 +189,12 @@
 	<script type="application/javascript" src="rule.js"></script>
 	<script type="application/javascript" src="clientlib.js"></script>
 	<script type="application/javascript" src="game.js"></script>
+	<script>
+			FB.init({ 
+				appId:'{0}', cookie:true, 
+				status:true, xfbml:true,
+				oauth:true
+			});
+	</script>
 	</body>
 </html>
