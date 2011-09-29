@@ -273,7 +273,7 @@ renderFaceName = (face) ->
 friendHandler = (index) ->
 	window.field.setPlayerType getRelativeIndexFromIndex(index), "프렌드"
 	window.field.removeCollectedCards getRelativeIndexFromIndex(index)
-	systemMsg "friend is " + index
+	systemMsg "friend is " + users[index].name
 
 rule.setFriendHandler friendHandler
 
@@ -417,7 +417,7 @@ now.takeTrick = (currentTurn, winnerIndex) ->
 ################################################################################
 
 class NetworkUser
-	constructor: (@name, @index) ->
+	constructor: (@name, @index, @image) ->
 		name2index[@name] = @index
 
 buildCommitmentString = (face, target) ->
@@ -462,8 +462,8 @@ now.notifyChangeState = (newState) ->
 		commitmentIndex = 0
 		rule.resetGame()
 		window.field.setPlayers(
-			{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
-			)
+			{name: users[getIndexFromRelativeIndex(ridx)].name , picture: (if users[getIndexFromRelativeIndex(ridx)].image == "" then "static/guest.png" else users[getIndexFromRelativeIndex(ridx)].image)} for ridx in [0...5]
+		)
 
 	#else if newState == now.END_GAME
 		#name2index = {}
@@ -482,7 +482,7 @@ now.notifyPlayers = (infos) ->
 		index = i
 		# TODO profile image
 		if name != ""
-			users[index] = new NetworkUser(name, index)
+			users[index] = new NetworkUser(name, index, image)
 			window.field.addPlayerToList index, name, image
 		else
 			window.field.removePlayerFromList index
@@ -534,7 +534,7 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 	now.resetField()
 	jugongIndex = jugongIndex_
 	window.field.setPlayers(
-		{name: users[getIndexFromRelativeIndex(ridx)].name , picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"} for ridx in [0...5]
+		{name: users[getIndexFromRelativeIndex(ridx)].name , picture: (if users[getIndexFromRelativeIndex(ridx)].image == "" then "static/guest.png" else users[getIndexFromRelativeIndex(ridx)].image)} for ridx in [0...5]
 		)
 	window.field.collected = [[],[],[],[],[]]
 	rule.decodeState encodedRule
@@ -585,12 +585,12 @@ onAllReady = ->
 		if response.status == "connected" and response.authResponse?
 			window.fbAccessToken = response.authResponse.accessToken
 			now.image = "http://graph.facebook.com/" + response.authResponse.userID + "/picture"
-			now.fbUserID = response.authResponse.userID
 			FB.api('/me', (user)->
 				if user?
 					#image = document.getElementById('image');
 					#image.src = 'http://graph.facebook.com/' + user.id + '/picture';
 					now.name = user.name
+					now.fbUserID = user.id
 			)
 		else
 			now.image = ""
@@ -614,7 +614,8 @@ onAllReady = ->
 			now.readyGame()
 	)
 
-	window.field.showPlayerList()
+	if now.state == now.WAITING_PLAYER
+		window.field.showPlayerList()
 	$("#logwin").find("button").click(->
 
 		if now.name.substr(0,6) == "player"

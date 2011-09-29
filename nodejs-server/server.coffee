@@ -27,12 +27,10 @@ http = require 'http'
 path = require 'path'
 urllib = require 'url'
 
-console.log "91"
 server = http.createServer (req, res) ->
 	parseResult = urllib.parse req.url
 
 	isHomeRequest = parseResult.pathname in ['/', '']
-	console.log parseResult, isHomeRequest
 	url = if isHomeRequest then '/test.html' else parseResult.pathname
 	errorPath = false
 	if not (isHomeRequest or url.substr(0,7) == '/static')
@@ -55,12 +53,8 @@ server = http.createServer (req, res) ->
 			res.writeHead(404, {'Content-Type': 'text/plain'})
 			res.end()
 	)
-console.log "94"
 nowjs = require 'now'
-console.log nowjs
-console.log "97"
 everyone = nowjs.initialize server
-console.log "100"
 
 ################################################################################
 # Logic
@@ -170,9 +164,6 @@ nowjs.on 'connect', ->
 	# 페북 연동시 key를 페북에서 얻은 값으로 확인
 	if @now.key? and @now.oldClientId? and @now.playerIndex?
 		# 모종의 이유로 재접속이 된 경우
-		console.log playerKeys[@now.key]? 
-		console.log (players[@now.playerIndex] == null or players[@now.playerIndex].clientId == @user.clientId) 
-		console.log disconnectedPlayers[@now.playerIndex] == @now.oldClientId
 		if playerKeys[@now.key]? and (players[@now.playerIndex] == null or platerObjs[@now.playerIndex].clientId == @user.clientId) and disconnectedPlayers[@now.playerIndex] == @now.oldClientId
 			# restore player
 			players[@now.playerIndex].clientId = @user.clientId
@@ -283,13 +274,11 @@ dealCard = ->
 		)
 	)
 	# 각 플레이어는 자신의 hand만
-	pg.getUsers((playerInGroup) ->
-		for player in playerInGroup
-			console.log (player + " gets " + cards[idx...idx+step])
-			nowjs.getClient player, ->
-				@now.receiveDealtCards cards[idx...idx+step]
-			idx += step
-	)
+	for player in players
+		console.log (player.name + " gets " + cards[idx...idx+step])
+		nowjs.getClient player.clientId, ->
+			@now.receiveDealtCards cards[idx...idx+step]
+		idx += step
 
 	# 옵저버는 전체다
 	pg.getUsers((user) ->
@@ -308,10 +297,12 @@ everyone.now.readyGame = ->
 	readyUserClientId = @user.clientId
 
 	if not @now.fbUserID? and not allowGuestPlay
+		console.log "guest not allowed"
 		return
 
 	for player in players
-		if @now.fbUserID? and player.fbUserID == @now.fbUserId
+		if @now.fbUserID? and player.name != "" and player.fbUserID == @now.fbUserId
+			console.log "duplicated facebook user: #{player.name} #{@now.name}"
 			return
 
 	pg.hasClient @user.clientId, (bool) ->
@@ -325,7 +316,7 @@ everyone.now.readyGame = ->
 			@now.observer = false
 
 			@now.image ?= ""
-			@now.playerIndex = setReady @now.key, @user.clientId, @now.name, @now.image
+			@now.playerIndex = setReady @now.key, @user.clientId, @now.name, @now.image, @now.fbUserID
 
 			pg.count (readyCount) ->
 				console.log "READY " + readyCount
@@ -490,7 +481,7 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 
 friendHandler = (index) ->
 	lastFriendIndex = index
-	console.log "friend is " + playerNames[index]
+	console.log "friend is " + players[index].name
 
 rule.setFriendHandler friendHandler
 

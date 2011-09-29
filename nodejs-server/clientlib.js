@@ -335,7 +335,7 @@
   friendHandler = function(index) {
     window.field.setPlayerType(getRelativeIndexFromIndex(index), "프렌드");
     window.field.removeCollectedCards(getRelativeIndexFromIndex(index));
-    return systemMsg("friend is " + index);
+    return systemMsg("friend is " + users[index].name);
   };
   rule.setFriendHandler(friendHandler);
   setFriendTitle = function() {
@@ -509,9 +509,10 @@
     return rule.resetTrick(winnerIndex);
   };
   NetworkUser = (function() {
-    function NetworkUser(name, index) {
+    function NetworkUser(name, index, image) {
       this.name = name;
       this.index = index;
+      this.image = image;
       name2index[this.name] = this.index;
     }
     return NetworkUser;
@@ -564,7 +565,7 @@
         for (ridx = 0; ridx < 5; ridx++) {
           _results.push({
             name: users[getIndexFromRelativeIndex(ridx)].name,
-            picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"
+            picture: (users[getIndexFromRelativeIndex(ridx)].image === "" ? "static/guest.png" : users[getIndexFromRelativeIndex(ridx)].image)
           });
         }
         return _results;
@@ -584,7 +585,7 @@
       image = infos[i][1];
       index = i;
       if (name !== "") {
-        users[index] = new NetworkUser(name, index);
+        users[index] = new NetworkUser(name, index, image);
         window.field.addPlayerToList(index, name, image);
       } else {
         window.field.removePlayerFromList(index);
@@ -647,7 +648,7 @@
       for (ridx = 0; ridx < 5; ridx++) {
         _results.push({
           name: users[getIndexFromRelativeIndex(ridx)].name,
-          picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"
+          picture: (users[getIndexFromRelativeIndex(ridx)].image === "" ? "static/guest.png" : users[getIndexFromRelativeIndex(ridx)].image)
         });
       }
       return _results;
@@ -696,10 +697,10 @@
       if (response.status === "connected" && (response.authResponse != null)) {
         window.fbAccessToken = response.authResponse.accessToken;
         now.image = "http://graph.facebook.com/" + response.authResponse.userID + "/picture";
-        now.fbUserID = response.authResponse.userID;
         return FB.api('/me', function(user) {
           if (user != null) {
-            return now.name = user.name;
+            now.name = user.name;
+            return now.fbUserID = user.id;
           }
         });
       } else {
@@ -726,7 +727,9 @@
         return now.readyGame();
       }
     });
-    window.field.showPlayerList();
+    if (now.state === now.WAITING_PLAYER) {
+      window.field.showPlayerList();
+    }
     return $("#logwin").find("button").click(function() {
       if (now.name.substr(0, 6) === "player") {
         return window.field.prompt("What's your name?", now.name, function(n) {
