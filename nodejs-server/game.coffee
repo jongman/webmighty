@@ -442,6 +442,7 @@ class PlayingField
 
 	chooseCard: (done=->) ->
 		player = 0
+		baseY = @getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2
 		finish = (card) =>
 			for c in @hands[player]
 				c.elem
@@ -452,12 +453,13 @@ class PlayingField
 			do (card) =>
 				card.elem
 					.addClass("canChoose")
-					.mouseover(-> $(this).animate({top: "-=10"}, SPEED_BASE))
-					.mouseout(-> $(this).animate({top: "+=10"}, SPEED_BASE))
+					.mouseover(-> $(this).animate({top: baseY-10 + "px"}, SPEED_BASE))
+					.mouseout(-> $(this).animate({top: baseY + "px"}, SPEED_BASE))
 					.mousedown(-> finish(card))
 
 	chooseFilteredCard: (filter, done=->) ->
 		player = 0
+		baseY = @getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2
 		finish = (card) =>
 			for c in @hands[player]
 				c.elem
@@ -469,12 +471,13 @@ class PlayingField
 				if filter(card)
 					card.elem
 						.addClass("canChoose")
-						.mouseover(-> $(this).animate({top: "-=10"}, SPEED_BASE))
-						.mouseout(-> $(this).animate({top: "+=10"}, SPEED_BASE))
+						.mouseover(-> $(this).animate({top: baseY-10 + "px"}, SPEED_BASE))
+						.mouseout(-> $(this).animate({top: baseY + "px"}, SPEED_BASE))
 						.mousedown(-> finish(card))
 
 	chooseMultipleCards: (choose, done=->) ->
 		player = 0
+		baseY = @getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2
 		@chosen = []
 		multiple = @elem.find(".choose_multiple")
 		multiple.find(".choose_count").html(choose)
@@ -494,11 +497,11 @@ class PlayingField
 			raise = ->
 				if not raised
 					raised = true
-					card.elem.animate({top: "-=10"}, SPEED_BASE)
+					card.elem.animate({top: baseY-10 + "px"}, SPEED_BASE)
 			deraise = ->
 				if raised
 					raised = false
-					card.elem.animate({top: "+=10"}, SPEED_BASE)
+					card.elem.animate({top: baseY + "px"}, SPEED_BASE)
 
 			{
 				onMouseOver: =>

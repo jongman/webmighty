@@ -121,7 +121,7 @@ exports.setPromise = (promise) ->
 exports.resetPromise = ->
 	exports.currentPromise = null
 	exports.currentTurn = 0
-	exports.currentTrick = 0
+	exports.currentTrick = []
 
 exports.getMightyCard = ->
 	if exports.currentPromise? and exports.currentPromise[0] == 's'

@@ -621,11 +621,12 @@
       }
     };
     PlayingField.prototype.chooseCard = function(done) {
-      var card, finish, player, _i, _len, _ref, _results;
+      var baseY, card, finish, player, _i, _len, _ref, _results;
       if (done == null) {
         done = function() {};
       }
       player = 0;
+      baseY = this.getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2;
       finish = __bind(function(card) {
         var c, _i, _len, _ref;
         _ref = this.hands[player];
@@ -642,11 +643,11 @@
         _results.push(__bind(function(card) {
           return card.elem.addClass("canChoose").mouseover(function() {
             return $(this).animate({
-              top: "-=10"
+              top: baseY - 10 + "px"
             }, SPEED_BASE);
           }).mouseout(function() {
             return $(this).animate({
-              top: "+=10"
+              top: baseY + "px"
             }, SPEED_BASE);
           }).mousedown(function() {
             return finish(card);
@@ -656,11 +657,12 @@
       return _results;
     };
     PlayingField.prototype.chooseFilteredCard = function(filter, done) {
-      var card, finish, player, _i, _len, _ref, _results;
+      var baseY, card, finish, player, _i, _len, _ref, _results;
       if (done == null) {
         done = function() {};
       }
       player = 0;
+      baseY = this.getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2;
       finish = __bind(function(card) {
         var c, _i, _len, _ref;
         _ref = this.hands[player];
@@ -678,11 +680,11 @@
           if (filter(card)) {
             return card.elem.addClass("canChoose").mouseover(function() {
               return $(this).animate({
-                top: "-=10"
+                top: baseY - 10 + "px"
               }, SPEED_BASE);
             }).mouseout(function() {
               return $(this).animate({
-                top: "+=10"
+                top: baseY + "px"
               }, SPEED_BASE);
             }).mousedown(function() {
               return finish(card);
