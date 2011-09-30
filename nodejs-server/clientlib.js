@@ -745,7 +745,7 @@
     });
   };
   $(document).ready(function() {
-    $("button.prompt").click(function() {
+    $("button.prompt").unbind("click").click(function() {
       return playSound("playcard");
     });
     readyCount += 1;

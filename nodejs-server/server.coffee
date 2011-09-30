@@ -44,6 +44,7 @@ server = http.createServer (req, res) ->
 			else if file_path.endsWith(".js")
 				res.setHeader('Content-Type', 'text/javascript')
 			if isHomeRequest
+				res.setHeader('Content-Type', 'text/html')
 				data = fs.readFileSync(file_path, "utf8")
 				data = data.format(fb.app_id, fb.app_secret, fb.my_url)
 				res.end data

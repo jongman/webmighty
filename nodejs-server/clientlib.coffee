@@ -630,7 +630,7 @@ onAllReady = ->
 	)
 
 $(document).ready ->
-	$("button.prompt").click(->
+	$("button.prompt").unbind("click").click(->
 		playSound "playcard"
 	)
 	readyCount += 1
