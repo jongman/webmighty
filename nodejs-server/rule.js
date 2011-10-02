@@ -134,7 +134,7 @@ exports.setPromise = function(promise) {
 exports.resetPromise = function() {
   exports.currentPromise = null;
   exports.currentTurn = 0;
-  return exports.currentTrick = 0;
+  return exports.currentTrick = [];
 };
 exports.getMightyCard = function() {
   if ((exports.currentPromise != null) && exports.currentPromise[0] === 's') {
