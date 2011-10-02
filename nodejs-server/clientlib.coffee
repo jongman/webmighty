@@ -95,6 +95,7 @@ playSound = (soundName) ->
 
 lastSuit = null
 doCommitment = ->
+	now.notfyImTakingAction()
 	playSound "myturn"
 	systemMsg "공약 내세우기"
 
@@ -191,6 +192,7 @@ now.receiveDealtCards = (cards) ->
 # 주공 당선 후 손 정리
 
 now.requestRearrangeHand = (additionalCards) ->
+	now.notfyImTakingAction()
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
@@ -306,6 +308,8 @@ now.notifyFriendFirstTrick = ->
 # 카드 내기
 
 now.requestChooseCard = (currentTurn, option, fromServer = true) ->
+	if fromServer
+		now.notfyImTakingAction()
 	if fromServer
 		playSound "myturn"
 	player = 0
@@ -571,6 +575,9 @@ now.resetField = ->
 ################################################################################
 # Miscellaneous
 ################################################################################
+
+now.notifyInAction = (index) ->
+	# TODO display player[index] is currently taking action
 
 now.showName = ->
 	systemMsg "i am #{@now.name}"

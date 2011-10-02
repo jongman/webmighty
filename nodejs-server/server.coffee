@@ -198,6 +198,9 @@ nowjs.on 'connect', ->
 everyone.now.chat = (msg) ->
 	everyone.now.receiveChat @now.clientId, @now.name, msg
 
+everyone.now.notfyImTakingAction = ->
+	everyone.now.notifyInAction indexFromClientId(@now.clientId)
+
 enterState = (state) ->
 	# TODO refactor to state pattern
 	if state == everyone.now.WAITING_PLAYER
