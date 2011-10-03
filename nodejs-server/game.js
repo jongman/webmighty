@@ -1,5 +1,5 @@
 (function() {
-  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, Card, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
+  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, COLLECTED_CARD_GAP, Card, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -14,6 +14,7 @@
   SPEED_BASE = 50;
   PI = Math.PI;
   PLAYED_CARD_RADIUS = 60;
+  COLLECTED_CARD_GAP = 20;
   PLAYER_LOCATION = {
     5: [
       {
@@ -168,56 +169,65 @@
       }
     };
     PlayingField.prototype.getCollectedPosition = function(player, index) {
-      return this.getHandPosition(player, 14, index + 15);
+      return this.getHandPosition(player, this.collected[player].length, index, COLLECTED_CARD_GAP);
     };
-    PlayingField.prototype.getHandPosition = function(player, cards, index) {
-      var cx, cy, dx, dy, fx, fy, location, side, totalWidth, _ref;
+    PlayingField.prototype.getHandPosition = function(player, cards, index, adjust) {
+      var adjustx, adjusty, cx, cy, dx, dy, fx, fy, location, side, totalWidth, _ref;
+      if (adjust == null) {
+        adjust = 0;
+      }
       _ref = this.getLocationInfo(player), side = _ref.side, location = _ref.location;
       PLAYER_LOCATION[this.players.length][player];
+      adjustx = adjusty = 0;
       dx = dy = 0;
       if (side === "top" || side === "bottom") {
         cx = this.convertRelativePosition(location, 0).x;
         if (side === "top") {
           cy = CARD_HEIGHT / 2;
           dx = -1;
+          adjusty = adjust;
         } else {
           cy = this.getSize().height - CARD_HEIGHT / 2;
           dx = 1;
+          adjusty = -adjust;
         }
       } else {
         cy = this.convertRelativePosition(0, location).y;
         if (side === "left") {
           cx = CARD_HEIGHT / 2;
           dy = 1;
+          adjustx = adjust;
         } else {
           cx = this.getSize().width - CARD_HEIGHT / 2;
           dy = -1;
+          adjustx = -adjust;
         }
       }
       totalWidth = CARD_WIDTH + (cards - 1) * CARD_OVERLAP;
-      fx = cx + dx * (floor(totalWidth / 2) - CARD_WIDTH / 2);
-      fy = cy + dy * (floor(totalWidth / 2) - CARD_WIDTH / 2);
+      fx = cx + dx * (floor(totalWidth / 2) - CARD_WIDTH / 2) + adjustx;
+      fy = cy + dy * (floor(totalWidth / 2) - CARD_WIDTH / 2) + adjusty;
       return {
         x: floor(fx - dx * CARD_OVERLAP * index),
         y: floor(fy - dy * CARD_OVERLAP * index)
       };
     };
     PlayingField.prototype.getProfilePosition = function(player) {
-      var height, location, side, width, _ref;
+      var computedGap, height, location, side, width, _ref;
       _ref = this.getLocationInfo(player), side = _ref.side, location = _ref.location;
       width = side === "top" || side === "bottom" ? 254 : 200;
       height = side === "top" || side === "bottom" ? 50 : 104;
+      computedGap = CARD_HEIGHT + PROFILE_CARD_GAP + COLLECTED_CARD_GAP;
       if (side === "top" || side === "bottom") {
         return {
           side: side,
           x: this.convertRelativePosition(location, 0).x - width / 2,
-          y: side === "top" ? CARD_HEIGHT + PROFILE_CARD_GAP : this.getSize().height - CARD_HEIGHT - PROFILE_CARD_GAP - height
+          y: side === "top" ? computedGap : this.getSize().height - height - computedGap
         };
       } else {
         return {
           side: side,
           y: this.convertRelativePosition(0, location).y - height / 2,
-          x: side === "left" ? CARD_HEIGHT + PROFILE_CARD_GAP : this.getSize().width - CARD_HEIGHT - PROFILE_CARD_GAP - width
+          x: side === "left" ? computedGap : this.getSize().width - width - computedGap
         };
       }
     };
@@ -524,7 +534,7 @@
           take.push(card);
         }
       }
-      this.playerMessage(winner, "턴 승리", "이 턴을 승리하였습니다!");
+      this.playerMessage(winner, "턴 승리", "이 턴을 승리!");
       this.takeCards(winner, take);
       this.collectCards(winner, collect);
       return this.playedCards = [];
@@ -539,16 +549,23 @@
       return this.collected[player] = [];
     };
     PlayingField.prototype.collectCards = function(player, cards) {
-      var card, pos, _i, _len, _results;
-      _results = [];
+      var card, index, pos, _i, _j, _len, _len2, _ref, _results;
       for (_i = 0, _len = cards.length; _i < _len; _i++) {
         card = cards[_i];
         this.collected[player].push(card);
-        pos = this.getCollectedPosition(player, this.collected[player].length - 1);
+      }
+      index = 0;
+      _ref = this.collected[player];
+      _results = [];
+      for (_j = 0, _len2 = _ref.length; _j < _len2; _j++) {
+        card = _ref[_j];
+        card.setDirection(this.getCardDirection(player));
+        pos = this.getCollectedPosition(player, index);
         card.moveTo(pos.x, pos.y, SPEED_BASE * 5);
-        _results.push(card.elem.css({
-          "z-index": this.collected[player].length
-        }));
+        card.elem.css({
+          "z-index": this.collected[player].length - index
+        });
+        _results.push(index += 1);
       }
       return _results;
     };
@@ -695,11 +712,12 @@
       return _results;
     };
     PlayingField.prototype.chooseMultipleCards = function(choose, done) {
-      var card, finished, getHandlers, handlers, multiple, player, _i, _len, _ref;
+      var baseY, card, finished, getHandlers, handlers, multiple, player, _i, _len, _ref;
       if (done == null) {
         done = function() {};
       }
       player = 0;
+      baseY = this.getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2;
       this.chosen = [];
       multiple = this.elem.find(".choose_multiple");
       multiple.find(".choose_count").html(choose);
@@ -721,7 +739,7 @@
           if (!raised) {
             raised = true;
             return card.elem.animate({
-              top: "-=10"
+              top: baseY - 10 + "px"
             }, SPEED_BASE);
           }
         };
@@ -729,7 +747,7 @@
           if (raised) {
             raised = false;
             return card.elem.animate({
-              top: "+=10"
+              top: baseY + "px"
             }, SPEED_BASE);
           }
         };

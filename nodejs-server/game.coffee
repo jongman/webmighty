@@ -8,6 +8,7 @@ CARD_OVERLAP = 20
 SPEED_BASE = 50
 PI = Math.PI
 PLAYED_CARD_RADIUS = 60
+COLLECTED_CARD_GAP = 20
 PLAYER_LOCATION =
 	5: [
 		{ side: "bottom", location: 0.5, angle: PI * (3 / 2)}
@@ -124,33 +125,39 @@ class PlayingField
 
 	# 플레이어 x가 y장째 수집한 카드의 위치는?
 	getCollectedPosition: (player, index) ->
-		return @getHandPosition(player, 14, index + 15)
+		return @getHandPosition(player, @collected[player].length, index, COLLECTED_CARD_GAP)
+		#return @getHandPosition(player, 14, index + 15)
 
 	# 플레이어 x가 y장 카드를 가지고 있을 때, z번 카드의 가운데 위치는?
-	getHandPosition: (player, cards, index) ->
+	getHandPosition: (player, cards, index, adjust = 0) ->
 		{side: side, location: location} = @getLocationInfo(player)
 		PLAYER_LOCATION[@players.length][player]
 		# 깔끔하게 구현하고 싶지만.. -_-
+		adjustx = adjusty = 0
 		dx = dy = 0
 		if side in ["top", "bottom"]
 			cx = @convertRelativePosition(location, 0).x
 			if side == "top"
 				cy = CARD_HEIGHT / 2
 				dx = -1
+				adjusty = adjust
 			else
 				cy = @getSize().height - CARD_HEIGHT / 2
 				dx = 1
+				adjusty = -adjust
 		else
 			cy = @convertRelativePosition(0, location).y
 			if side == "left"
 				cx = CARD_HEIGHT / 2
 				dy = 1
+				adjustx = adjust
 			else
 				cx = @getSize().width - CARD_HEIGHT / 2
 				dy = -1
+				adjustx = -adjust
 		totalWidth = CARD_WIDTH + (cards - 1) * CARD_OVERLAP
-		fx = cx + dx * (floor(totalWidth / 2) - CARD_WIDTH / 2)
-		fy = cy + dy * (floor(totalWidth / 2) - CARD_WIDTH / 2)
+		fx = cx + dx * (floor(totalWidth / 2) - CARD_WIDTH / 2) + adjustx
+		fy = cy + dy * (floor(totalWidth / 2) - CARD_WIDTH / 2) + adjusty
 		{x: floor(fx - dx * CARD_OVERLAP * index), y: floor(fy - dy * CARD_OVERLAP * index)}
 
 	getProfilePosition: (player) ->
@@ -158,17 +165,18 @@ class PlayingField
 		# 깔끔하게 구현하고 싶지만.. -_-
 		width = if side in ["top", "bottom"] then 254 else 200
 		height = if side in ["top", "bottom"] then 50 else 104
+		computedGap = CARD_HEIGHT + PROFILE_CARD_GAP + COLLECTED_CARD_GAP
 		if side in ["top", "bottom"]
 			return {
 				side: side,
 				x: @convertRelativePosition(location, 0).x - width / 2,
-				y: if side == "top" then CARD_HEIGHT + PROFILE_CARD_GAP else @getSize().height - CARD_HEIGHT - PROFILE_CARD_GAP - height
+				y: if side == "top" then computedGap else @getSize().height - height - computedGap
 			}
 		else
 			return {
 				side: side,
 				y: @convertRelativePosition(0, location).y - height / 2,
-				x: if side == "left" then CARD_HEIGHT + PROFILE_CARD_GAP else @getSize().width - CARD_HEIGHT - PROFILE_CARD_GAP - width
+				x: if side == "left" then computedGap else @getSize().width - width - computedGap
 			}
 
 	clearCards: ->
@@ -377,7 +385,7 @@ class PlayingField
 				collect.push(card)
 			else
 				take.push(card)
-		@playerMessage(winner, "턴 승리", "이 턴을 승리하였습니다!")
+		@playerMessage(winner, "턴 승리", "이 턴을 승리!")
 		@takeCards(winner, take)
 		@collectCards(winner, collect)
 		@playedCards = []
@@ -390,9 +398,13 @@ class PlayingField
 	collectCards: (player, cards) ->
 		for card in cards
 			@collected[player].push(card)
-			pos = @getCollectedPosition(player, @collected[player].length-1)
+		index = 0
+		for card in @collected[player]
+			card.setDirection @getCardDirection player
+			pos = @getCollectedPosition(player, index)
 			card.moveTo(pos.x, pos.y, SPEED_BASE * 5)
-			card.elem.css({"z-index":@collected[player].length})
+			card.elem.css({"z-index":@collected[player].length-index})
+			index += 1
 
 	takeCards: (player, cards, done = ->) ->
 		home = @getHandPosition(player, 1, 0)
