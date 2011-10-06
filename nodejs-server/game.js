@@ -151,6 +151,7 @@
   PlayingField = (function() {
     function PlayingField(elem) {
       this.elem = elem;
+      this.setSortOrder = __bind(this.setSortOrder, this);
       this.cards = [];
       this.players = [];
       this.playedCards = [];
@@ -254,14 +255,21 @@
         y: floor(sz.height * y)
       };
     };
+    PlayingField.prototype.setSortOrder = function(faceOrder) {
+      return this.sortOrder = faceOrder;
+    };
     PlayingField.prototype.sortHands = function(player) {
-      var i, n;
+      var faceOrder, i, n;
+      faceOrder = this.sortOrder;
+      if (faceOrder == null) {
+        faceOrder = "jsdch";
+      }
       if (this.hands[player].length === 0 || this.hands[player][0].face[0] === "b") {
         return;
       }
       this.hands[player].sort(function(a, b) {
         if (a.face[0] !== b.face[0]) {
-          return lexicographic_compare(a.face[0], b.face[0]);
+          return faceOrder.indexOf(a.face[0]) - faceOrder.indexOf(b.face[0]);
         } else {
           return VALUE_ORDER.indexOf(a.face[1]) - VALUE_ORDER.indexOf(b.face[1]);
         }
@@ -787,6 +795,26 @@
         card.elem.addClass("canChoose").mouseover(handlers.onMouseOver).mousedown(handlers.onMouseDown).mouseout(handlers.onMouseOut);
       }
       return null;
+    };
+    PlayingField.prototype.confirmYesNo = function(question, yesName, noName, callback) {
+      var handler;
+      if (callback == null) {
+        callback = function(res) {};
+      }
+      $("#confirm_dialog .title").html(question);
+      $("#confirm_dialog .confirm").text(yesName);
+      $("#confirm_dialog .cancel").text(noName);
+      handler = function(yesno) {
+        $("#confirm_dialog").hide();
+        return callback(yesno);
+      };
+      $("#confirm_dialog .confirm").unbind().click(function() {
+        return handler(true);
+      });
+      $("#confirm_dialog .cancel").unbind().click(function() {
+        return handler(false);
+      });
+      return $("#confirm_dialog").fadeIn(100);
     };
     PlayingField.prototype.prompt = function(question, defaultValue, callback) {
       var handler;

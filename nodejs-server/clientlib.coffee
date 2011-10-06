@@ -193,6 +193,7 @@ now.receiveDealtCards = (cards) ->
 
 now.requestRearrangeHand = (additionalCards) ->
 	now.notfyImTakingAction()
+	window.field.setSortOrder(FACE_ORDER())
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
@@ -310,7 +311,6 @@ now.notifyFriendFirstTrick = ->
 now.requestChooseCard = (currentTurn, option, fromServer = true) ->
 	if fromServer
 		now.notfyImTakingAction()
-	if fromServer
 		playSound "myturn"
 	player = 0
 	handFace = (c.face for c in window.field.hands[player])
@@ -353,29 +353,35 @@ now.requestChooseCard = (currentTurn, option, fromServer = true) ->
 					dontDo = true
 
 				else if currentTurn == 0
-					window.field.prompt "첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", (answer) ->
-						if answer[0] == 'y'
+					window.field.confirmYesNo "첫 턴에 조커는 아무런 효력이 없습니다.<BR/>그래도 내시겠습니까?", "그래도 냅니다.", "몰랐음. 안내요.", (answer) ->
+						if answer
 							now.chooseCard card.face, option
 						else
-							dontDo = true
 							now.requestChooseCard(currentTurn, option, false)
-			else if card.face == rule.getJokerCallCard() and currentTurn != 0
+					dontDo = true
+			else if card.face == rule.getJokerCallCard()
 				# 조커콜 할까요 말까요
 				dontDo = true
-				window.field.prompt "조커콜 하나요? (yes / no)", 'y', (doJokerCall) ->
-					if doJokerCall[0] == 'y'
-						option = rule.ChooseCardOption.JokerCall
-					else
-						option = rule.ChooseCardOption.None
-					now.chooseCard card.face, option
+				if currentTurn == 0
+					window.field.confirmYesNo "첫 턴에는 조커콜을 할 수 없습니다.<BR/>그냥 내시겠습니까?", "낼께요.", "다른 카드를 고르겠습니다.", (answer) ->
+						if answer
+							now.chooseCard card.face, option
+						else
+							now.requestChooseCard(currentTurn, option, false)
+				else
+					window.field.confirmYesNo "조커콜 하나요?", "당연히!", "이번은 참아요.", (doJokerCall) ->
+						if doJokerCall
+							option = rule.ChooseCardOption.JokerCall
+						else
+							option = rule.ChooseCardOption.None
+						now.chooseCard card.face, option
 		else
 			if currentTurn == 0 and card.face == 'jr'
 				dontDo = true
-				window.field.prompt "첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", (answer) ->
-					if answer[0] == 'y'
+				window.field.confirmYesNo "첫 턴에 조커는 아무런 효력이 없습니다.<BR/>그래도 내시겠습니까?", "그래도 냅니다.", "몰랐음. 안내요.", (answer) ->
+					if answer
 						now.chooseCard card.face, option
 					else
-						dontDo = true
 						now.requestChooseCard(currentTurn, option, false)
 
 		if not dontDo
@@ -430,6 +436,7 @@ buildCommitmentString = (face, target) ->
 
 now.notifyJugong = (finalJugongIndex, face, target) ->
 	jugongIndex = finalJugongIndex
+	window.field.setSortOrder(FACE_ORDER())
 	systemMsg "jugong is #{users[jugongIndex].name}"
 	rule.setPromise([face, target])
 	
@@ -465,6 +472,7 @@ now.notifyChangeState = (newState) ->
 		document.title = "새 게임을 시작합니다."
 		commitmentIndex = 0
 		rule.resetGame()
+		window.field.setSortOrder(FACE_ORDER())
 		window.field.setPlayers(
 			{name: users[getIndexFromRelativeIndex(ridx)].name , picture: (if users[getIndexFromRelativeIndex(ridx)].image == "" then "static/guest.png" else users[getIndexFromRelativeIndex(ridx)].image)} for ridx in [0...5]
 		)
@@ -565,7 +573,7 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 		else
 			window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i], i)
 		window.field.repositionCards(i)
-		window.field.sortHands(i)
+		window.field.sortHands(i, FACE_ORDER())
 	
 	if now.state != now.VOTE and now.state != now.WAITING_PLAYER
 		setFriendTitle()
@@ -605,9 +613,10 @@ onAllReady = ->
 			if not allowGuestPlay
 				$("#oneliner").text("플레이하기 위해선 페이스북 로그인이 필요합니다.")
 
-	FB.getLoginStatus fbHandler
-	FB.Event.subscribe("auth.authResponseChange", fbHandler)
-	FB.Event.subscribe("auth.statusChange", fbHandler)
+	if FB?
+		FB.getLoginStatus fbHandler
+		FB.Event.subscribe("auth.authResponseChange", fbHandler)
+		FB.Event.subscribe("auth.statusChange", fbHandler)
 
 	window.field.setPlayerListHandler(->
 		if now.name.substr(0,6) == "player"
