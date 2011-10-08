@@ -147,6 +147,10 @@ exports.isValidChoice = (hand, card, option, currentTurn) ->
 	# TODO RULESET
 	if hand.indexOf(card) == -1
 		return false
+	giruCount = 0
+	for c in hand
+		if c[0] == exports.currentPromise[0]
+			giruCount += 1
 	if exports.currentTrick.length == 0
 		# first, can change option
 		if option != exports.ChooseCardOption.None
@@ -159,9 +163,9 @@ exports.isValidChoice = (hand, card, option, currentTurn) ->
 				return card == 'jr' and currentTurn != 0 and currentTurn != 9
 		else if card == 'jr'
 			# 처음에 내는데 콜이 아닌 경우는 맨첨이나 마지막에 버리는 용도
-			return exports.currentPromise == 0 or currentTurn == 9
+			return currentTurn == 0 or currentTurn == 9
 		else if exports.currentPromise? and card[0] == exports.currentPromise[0] and currentTurn == 0 # 첫턴에 기루 안됨
-			return false
+			return giruCount == 10
 	else
 		if card == exports.getMightyCard()
 			return true

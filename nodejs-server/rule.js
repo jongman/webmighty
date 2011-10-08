@@ -162,8 +162,16 @@ exports.isSameFace = function(card, face) {
   return face === 'n' || card[0] === face;
 };
 exports.isValidChoice = function(hand, card, option, currentTurn) {
+  var c, giruCount, _i, _len;
   if (hand.indexOf(card) === -1) {
     return false;
+  }
+  giruCount = 0;
+  for (_i = 0, _len = hand.length; _i < _len; _i++) {
+    c = hand[_i];
+    if (c[0] === exports.currentPromise[0]) {
+      giruCount += 1;
+    }
   }
   if (exports.currentTrick.length === 0) {
     if (option !== exports.ChooseCardOption.None) {
@@ -173,9 +181,9 @@ exports.isValidChoice = function(hand, card, option, currentTurn) {
         return card === 'jr' && currentTurn !== 0 && currentTurn !== 9;
       }
     } else if (card === 'jr') {
-      return exports.currentPromise === 0 || currentTurn === 9;
+      return currentTurn === 0 || currentTurn === 9;
     } else if ((exports.currentPromise != null) && card[0] === exports.currentPromise[0] && currentTurn === 0) {
-      return false;
+      return giruCount === 10;
     }
   } else {
     if (card === exports.getMightyCard()) {

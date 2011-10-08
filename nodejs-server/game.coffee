@@ -193,12 +193,17 @@ class PlayingField
 		sz = @getSize()
 		{x: floor(sz.width * x), y: floor(sz.height * y)}
 
+	setSortOrder: (faceOrder) =>
+		@sortOrder = faceOrder
+
 	sortHands: (player) ->
+		faceOrder = @sortOrder
+		faceOrder ?= "jsdch"
 		if @hands[player].length == 0 or @hands[player][0].face[0] == "b"
 			return
 		@hands[player].sort((a, b) ->
 			if a.face[0] != b.face[0]
-				lexicographic_compare(a.face[0], b.face[0])
+				faceOrder.indexOf(a.face[0]) - faceOrder.indexOf(b.face[0])
 			else
 				VALUE_ORDER.indexOf(a.face[1]) - VALUE_ORDER.indexOf(b.face[1])
 		)
@@ -558,6 +563,18 @@ class PlayingField
 				.mousedown(handlers.onMouseDown)
 				.mouseout(handlers.onMouseOut)
 		null
+
+	confirmYesNo: (question, yesName, noName, callback=(res) ->) ->
+		$("#confirm_dialog .title").html(question)
+		$("#confirm_dialog .confirm").text(yesName)
+		$("#confirm_dialog .cancel").text(noName)
+
+		handler = (yesno) ->
+			$("#confirm_dialog").hide()
+			callback(yesno)
+		$("#confirm_dialog .confirm").unbind().click(-> handler(true))
+		$("#confirm_dialog .cancel").unbind().click(-> handler(false))
+		$("#confirm_dialog").fadeIn(100)
 
 	prompt: (question, defaultValue = null, callback=(res) ->) ->
 		defaultValue ?= ""

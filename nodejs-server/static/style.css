@@ -387,7 +387,7 @@ a:hover {
 #playing_field #global_message {
 	position: absolute;
 	width: 500px;
-	top: 180px;
+	top: 190px;
 	left: 150px;
 	text-align: center;
 	font-weight: bold;
@@ -550,6 +550,26 @@ a:hover {
 	border: 1px solid #aaa;
 }
 
+#confirm_dialog {
+}
+
+#confirm_dialog .title{
+	margin-top: 13px;
+}
+
+#confirm_dialog ul {
+	list-style: none;
+	padding: 0px;
+}
+
+#confirm_dialog li {
+	margin: 0;
+	margin-left:4px;
+	margin-right:4px;
+	display: inline-block;
+}
+
+
 /* prompt 다이얼로그 */
 #prompt_dialog {
 	width: 300px;
@@ -571,25 +591,25 @@ a:hover {
 	padding: 0px;
 }
 
-#player_list_dialog ul li {
+#player_list_dialog li {
 	text-align: center;
 }
 
 
-#player_list_dialog ul li dl
+#player_list_dialog dl
 {
 	margin: 0;
 	width: 300px;
 }
 
-#player_list_dialog ul li dl dt
+#player_list_dialog dt
 {
 	margin-left: 10px;
 	float: left;
 	overflow: hidden;
 }
 
-#player_list_dialog ul li dl dd
+#player_list_dialog dd
 {
 	margin: 10px;
 	min-height: 40px;
@@ -608,9 +628,6 @@ a:hover {
 	-webkit-border-radius: 4px;
 }
 
-
-#player_list_dialog ul li {
-}
 
 #player_list_dialog ul li.unoccupied {
 	color: #fff;

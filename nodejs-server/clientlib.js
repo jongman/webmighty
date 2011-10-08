@@ -234,6 +234,7 @@
   };
   now.requestRearrangeHand = function(additionalCards) {
     now.notifyImTakingAction();
+    window.field.setSortOrder(FACE_ORDER());
     return window.field.dealAdditionalCards(additionalCards, 0, function() {
       window.field.globalMessage("교체할 3장의 카드를 골라주세요.");
       return window.field.chooseMultipleCards(3, function(chosen) {
@@ -407,8 +408,6 @@
     }
     if (fromServer) {
       now.notifyImTakingAction();
-    }
-    if (fromServer) {
       playSound("myturn");
     }
     player = 0;
@@ -460,34 +459,43 @@
             chooseSuit();
             dontDo = true;
           } else if (currentTurn === 0) {
-            window.field.prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", function(answer) {
-              if (answer[0] === 'y') {
+            window.field.confirmYesNo("첫 턴에 조커는 아무런 효력이 없습니다.<BR/>그래도 내시겠습니까?", "그래도 냅니다.", "몰랐음. 안내요.", function(answer) {
+              if (answer) {
                 return now.chooseCard(card.face, option);
               } else {
-                dontDo = true;
                 return now.requestChooseCard(currentTurn, option, false);
               }
             });
+            dontDo = true;
           }
-        } else if (card.face === rule.getJokerCallCard() && currentTurn !== 0) {
+        } else if (card.face === rule.getJokerCallCard()) {
           dontDo = true;
-          window.field.prompt("조커콜 하나요? (yes / no)", 'y', function(doJokerCall) {
-            if (doJokerCall[0] === 'y') {
-              option = rule.ChooseCardOption.JokerCall;
-            } else {
-              option = rule.ChooseCardOption.None;
-            }
-            return now.chooseCard(card.face, option);
-          });
+          if (currentTurn === 0) {
+            window.field.confirmYesNo("첫 턴에는 조커콜을 할 수 없습니다.<BR/>그냥 내시겠습니까?", "낼께요.", "다른 카드를 고르겠습니다.", function(answer) {
+              if (answer) {
+                return now.chooseCard(card.face, option);
+              } else {
+                return now.requestChooseCard(currentTurn, option, false);
+              }
+            });
+          } else {
+            window.field.confirmYesNo("조커콜 하나요?", "당연히!", "이번은 참아요.", function(doJokerCall) {
+              if (doJokerCall) {
+                option = rule.ChooseCardOption.JokerCall;
+              } else {
+                option = rule.ChooseCardOption.None;
+              }
+              return now.chooseCard(card.face, option);
+            });
+          }
         }
       } else {
         if (currentTurn === 0 && card.face === 'jr') {
           dontDo = true;
-          window.field.prompt("첫턴에 조커는 아무런 효력이 없습니다. 그래도 내시겠습니까? (yes / no)", "n", function(answer) {
-            if (answer[0] === 'y') {
+          window.field.confirmYesNo("첫 턴에 조커는 아무런 효력이 없습니다.<BR/>그래도 내시겠습니까?", "그래도 냅니다.", "몰랐음. 안내요.", function(answer) {
+            if (answer) {
               return now.chooseCard(card.face, option);
             } else {
-              dontDo = true;
               return now.requestChooseCard(currentTurn, option, false);
             }
           });
@@ -551,6 +559,7 @@
   now.notifyJugong = function(finalJugongIndex, face, target) {
     var name, newPromise;
     jugongIndex = finalJugongIndex;
+    window.field.setSortOrder(FACE_ORDER());
     systemMsg("jugong is " + users[jugongIndex].name);
     rule.setPromise([face, target]);
     document.title = buildCommitmentString(face, target);
@@ -593,6 +602,7 @@
       });
       commitmentIndex = 0;
       rule.resetGame();
+      window.field.setSortOrder(FACE_ORDER());
       return window.field.setPlayers((function() {
         var _results;
         _results = [];
@@ -714,7 +724,7 @@
         window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i], i));
       }
       window.field.repositionCards(i);
-      window.field.sortHands(i);
+      window.field.sortHands(i, FACE_ORDER());
     }
     if (now.state !== now.VOTE && now.state !== now.WAITING_PLAYER) {
       return setFriendTitle();
@@ -769,9 +779,11 @@
         }
       }
     };
-    FB.getLoginStatus(fbHandler);
-    FB.Event.subscribe("auth.authResponseChange", fbHandler);
-    FB.Event.subscribe("auth.statusChange", fbHandler);
+    if (typeof FB !== "undefined" && FB !== null) {
+      FB.getLoginStatus(fbHandler);
+      FB.Event.subscribe("auth.authResponseChange", fbHandler);
+      FB.Event.subscribe("auth.statusChange", fbHandler);
+    }
     window.field.setPlayerListHandler(function() {
       if (now.name.substr(0, 6) === "player") {
         return window.field.prompt("What's your name?", now.name, function(n) {
