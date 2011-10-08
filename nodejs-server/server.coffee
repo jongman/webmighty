@@ -196,10 +196,11 @@ nowjs.on 'connect', ->
 		restoreObserver this
 
 everyone.now.chat = (msg) ->
-	everyone.now.receiveChat @now.clientId, @now.name, msg
+	everyone.now.receiveChat @user.clientId, @now.name, msg
 
-everyone.now.notfyImTakingAction = ->
-	everyone.now.notifyInAction indexFromClientId(@now.clientId)
+everyone.now.notifyImTakingAction = ->
+	console.log "notifyImTakingAction " + indexFromClientId(@user.clientId)
+	everyone.now.notifyInAction indexFromClientId(@user.clientId)
 
 enterState = (state) ->
 	# TODO refactor to state pattern
@@ -717,6 +718,8 @@ test = ->
 	assertTrue testValidChoice(['c3'], ['jr', 'c2', 's1'], 's1', rule.ChooseCardOption.JokerCall, 1), "조콜했지만 간지나게 마이티"
 	rule.setPromise ['s', 14]
 	assertFalse testValidChoice(['c3'], ['jr', 'c2', 's1'], 's1', rule.ChooseCardOption.JokerCall, 1), "조콜했을때 마이티 였던 기아를 내는 경우"
+	assertTrue testValidChoice(['s3'], ['s2', 's3', 's1'], 's1', rule.ChooseCardOption.None, 0), "올기 일때 기루 내기"
+	assertFalse testValidChoice(['s3'], ['jr', 's3', 's1'], 's1', rule.ChooseCardOption.JokerCall, 1), "올기 아닐때 기루 내기"
 
 	rule.setPromise ['h', 14]
 	# 첫턴 기루 

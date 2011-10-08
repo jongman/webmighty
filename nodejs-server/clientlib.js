@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, allowGuestPlay, assertEqual, assertTrue, audiochannels, buildCommitmentString, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, allowGuestPlay, assertEqual, assertTrue, audiochannels, buildCommitmentString, buildMinimizedCardHtml, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -77,6 +77,9 @@
     return "jsdch";
   };
   VALUE_ORDER = "23456789tjqk1";
+  buildMinimizedCardHtml = function(face) {
+    return '<span class="smallcard ' + face + '"></span>';
+  };
   getRelativeIndexFromIndex = function(idx) {
     return (idx - myIndex + 5) % 5;
   };
@@ -98,12 +101,18 @@
   channel_max = 10;
   audiochannels = [];
   for (a = 0; 0 <= channel_max ? a < channel_max : a > channel_max; 0 <= channel_max ? a++ : a--) {
+    if ($.browser.msie) {
+      continue;
+    }
     audiochannels[a] = [];
     audiochannels[a]['channel'] = new Audio();
     audiochannels[a]['finished'] = -1;
   }
   playSound = function(soundName) {
     var a, elem, thistime, _results;
+    if ($.browser.msie) {
+      return;
+    }
     thistime = new Date();
     elem = $("#sounds ." + soundName).get(0);
     if (elem.muted) {
@@ -124,6 +133,7 @@
   lastSuit = null;
   doCommitment = function() {
     var canDealMiss, card, currentScore, defaultSuit, defaultValue, minNoGiru, minOthers, score, scores, _i, _len, _ref, _ref2, _ref3, _ref4;
+    now.notifyImTakingAction();
     playSound("myturn");
     systemMsg("공약 내세우기");
     if (rule.currentPromise != null) {
@@ -223,6 +233,7 @@
     });
   };
   now.requestRearrangeHand = function(additionalCards) {
+    now.notifyImTakingAction();
     return window.field.dealAdditionalCards(additionalCards, 0, function() {
       window.field.globalMessage("교체할 3장의 카드를 골라주세요.");
       return window.field.chooseMultipleCards(3, function(chosen) {
@@ -342,13 +353,25 @@
     var cardName;
     if (rule.friendOption === rule.FriendOption.ByCard) {
       cardName = renderFaceName(rule.friendCard);
-      return document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + cardName + '프렌드';
+      document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + cardName + '프렌드';
+      return window.field.setStatusBar(function(card) {
+        return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])) + " " + cardName + " 프렌드", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+      });
     } else if (rule.friendOption === rule.FriendOption.NoFriend) {
-      return document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '프렌드 없음';
+      document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '프렌드 없음';
+      return window.field.setStatusBar(function(card) {
+        return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])) + " 프렌드 없음", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+      });
     } else if (rule.friendOption === rule.FriendOption.FirstTrick) {
-      return document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '초구 프렌드';
+      document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '초구 프렌드';
+      return window.field.setStatusBar(function(card) {
+        return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])) + " 초구 프렌드", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+      });
     } else {
-      return document.title = buildCommitmentString.apply(null, rule.currentPromise);
+      document.title = buildCommitmentString.apply(null, rule.currentPromise);
+      return window.field.setStatusBar(function(card) {
+        return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])), "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+      });
     }
   };
   now.notifyFriendByCard = function(card) {
@@ -381,6 +404,9 @@
     var c, filter, handFace, player;
     if (fromServer == null) {
       fromServer = true;
+    }
+    if (fromServer) {
+      now.notifyImTakingAction();
     }
     if (fromServer) {
       playSound("myturn");
@@ -532,14 +558,20 @@
       window.field.setPlayerType(getRelativeIndexFromIndex(jugongIndex), "주공");
       window.field.playerMessage(getRelativeIndexFromIndex(jugongIndex), "당선", buildCommitmentString(face, target));
       if (isJugong()) {
-        return window.field.globalMessage("당선 축하드립니다!");
+        window.field.globalMessage("당선 축하드립니다!");
       } else {
         name = users[jugongIndex].name;
-        return window.field.globalMessage("" + name + " 님이 당선되었습니다!");
+        window.field.globalMessage("" + name + " 님이 당선되었습니다!");
       }
+      return window.field.setStatusBar(function(card) {
+        return ["" + users[jugongIndex].name + " 당선! 공약 " + (card(face, target)), "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+      });
     } else if (now.state === now.REARRANGE_HAND) {
       newPromise = buildCommitmentString(face, target);
-      return window.field.globalMessage("공약이 변경되었습니다: " + newPromise);
+      window.field.globalMessage("공약이 변경되었습니다: " + newPromise);
+      return window.field.setStatusBar(function(card) {
+        return ["공약 변경 " + (card(face, target)), "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+      });
     }
   };
   now.resetRule = function() {
@@ -556,7 +588,9 @@
       window.field.showPlayerList();
     }
     if (newState === now.VOTE) {
-      document.title = "새 게임을 시작합니다.";
+      window.field.setStatusBar(function(card) {
+        return ["새 게임을 시작합니다.", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+      });
       commitmentIndex = 0;
       rule.resetGame();
       return window.field.setPlayers((function() {
@@ -603,10 +637,14 @@
   };
   now.notifyVote = function(index, face, target) {
     rule.setPromise([face, target]);
+    window.field.setStatusBar(function(card) {
+      return ["유력후보: " + users[index].name + " 공약 " + (card(face, target)), "당선 시 마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+    });
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "공약", buildCommitmentString(face, target));
   };
   now.notifyDealMiss = function(index, hand) {
-    return window.field.playerMessage(getRelativeIndexFromIndex(index), "딜미스");
+    window.field.clearPlayerMessages();
+    return window.field.playerMessage(getRelativeIndexFromIndex(index), "딜미스!");
   };
   now.notifyPass = function(index) {
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "패스");
@@ -685,13 +723,33 @@
   now.resetField = function() {
     return window.field.clearCards();
   };
+  now.notifyInAction = function(index) {
+    return window.field.displayPlayerInAction(getRelativeIndexFromIndex(index));
+  };
   now.showName = function() {
     return systemMsg("i am " + this.now.name);
   };
   readyCount = 0;
   onAllReady = function() {
-    var fbHandler;
+    var b, fbHandler, fi, si, _i, _j, _len, _len2, _ref, _ref2;
     now.fbUserID = null;
+    b = "";
+    b += buildMinimizedCardHtml('jr');
+    b += buildMinimizedCardHtml("invalid");
+    _ref = "sdhc";
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      fi = _ref[_i];
+      _ref2 = "23456789tjqk1";
+      for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
+        si = _ref2[_j];
+        b += buildMinimizedCardHtml(fi + si);
+      }
+      b += "<BR>";
+    }
+    systemMsg(b);
+    window.field.setStatusBar(function(card) {
+      return ["웹마이티에 오신 것을 환영합니다!", "마이티 " + (card("s1")) + " 조커콜 " + (card("c3"))];
+    });
     fbHandler = function(response) {
       $("#oneliner").text("");
       if (response.status === "connected" && (response.authResponse != null)) {

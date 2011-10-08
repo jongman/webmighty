@@ -436,6 +436,14 @@
       }
       return $("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500);
     };
+    PlayingField.prototype.clearPlayerMessages = function() {
+      var player, _results;
+      _results = [];
+      for (player = 0; player < 5; player++) {
+        _results.push(playerMessage(i, "", ""));
+      }
+      return _results;
+    };
     PlayingField.prototype.playerMessage = function(player, type, message) {
       var elem;
       if (message == null) {
@@ -517,6 +525,15 @@
       x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS;
       y = center.y - Math.sin(angle) * PLAYED_CARD_RADIUS;
       return card.moveTo(x, y, SPEED_BASE * 5);
+    };
+    PlayingField.prototype.displayPlayerInAction = function(index) {
+      var player, _i, _len, _ref;
+      _ref = this.players;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        player = _ref[_i];
+        player.profile_elem.removeClass('in_action');
+      }
+      return this.players[index].profile_elem.addClass('in_action');
     };
     PlayingField.prototype.endTurn = function(winner, collectCards) {
       var card, collect, take, _i, _len, _ref;
@@ -818,6 +835,29 @@
       $("#prompt_dialog .confirm").unbind("click").click(handler);
       $("#prompt_dialog").fadeIn(100);
       return $("#prompt_dialog .value").focus();
+    };
+    PlayingField.prototype.setStatusBar = function(htmlTxt) {
+      var buildMinimizedCardHtml, l, r, _ref;
+      buildMinimizedCardHtml = function(face, content) {
+        if (content == null) {
+          content = "";
+        }
+        return '<span class="smallcard ' + face + '">' + content + '</span>';
+      };
+      if (typeof htmlTxt === "function") {
+        _ref = htmlTxt(buildMinimizedCardHtml), l = _ref[0], r = _ref[1];
+        if (l == null) {
+          l = "";
+        }
+        if (r == null) {
+          r = "";
+        }
+        $("#statusbar .left").html(l);
+        return $("#statusbar .right").html(r);
+      } else {
+        $("#statusbar .left").html(htmlTxt);
+        return $("#statusbar .right").html("");
+      }
     };
     PlayingField.prototype.choosePromise = function(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, callback) {
       var finish, getSuit, minValue, selectedSuit, selectedValue, setSuit, setValue, showSuit, showValue;

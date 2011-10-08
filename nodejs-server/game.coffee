@@ -320,6 +320,10 @@ class PlayingField
 		$("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500)
 
 
+	clearPlayerMessages: ->
+		for player in [0...5]
+			playerMessage i, "", ""
+
 	playerMessage: (player, type, message = "") ->
 		elem = @players[player].profile_elem
 		elem.find("dd")
@@ -376,6 +380,11 @@ class PlayingField
 		x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS
 		y = center.y - Math.sin(angle) * PLAYED_CARD_RADIUS
 		card.moveTo(x, y, SPEED_BASE * 5)
+
+	displayPlayerInAction: (index) ->
+		for player in @players
+			player.profile_elem.removeClass('in_action')
+		@players[index].profile_elem.addClass('in_action')
 
 	endTurn: (winner, collectCards=false) ->
 		take = []
@@ -573,6 +582,20 @@ class PlayingField
 		$("#prompt_dialog").fadeIn(100)
 		$("#prompt_dialog .value").focus()
 		
+	setStatusBar: (htmlTxt)->
+		buildMinimizedCardHtml = (face, content) ->
+			content ?= ""
+			'<span class="smallcard ' + face + '">'+content+'</span>'
+		if (typeof(htmlTxt) == "function")
+			[l, r] = htmlTxt(buildMinimizedCardHtml)
+			l ?= ""
+			r ?= ""
+			$("#statusbar .left").html(l)
+			$("#statusbar .right").html(r)
+		else
+			$("#statusbar .left").html(htmlTxt)
+			$("#statusbar .right").html("")
+
 	choosePromise: (minNoGiru, minOthers, canDealMiss, defaultSuit=" ", defaultValue=0, callback=(res) ->) ->
 		# 요 두 값을 정해야 됨..
 		selectedSuit = defaultSuit

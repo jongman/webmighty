@@ -342,6 +342,32 @@ a:hover {
 	color: #2E43AE;
 }
 
+#statusbar {
+	padding-left:10px;
+	font-size:15px;
+	font-weight:bold;
+	position: relative;
+	width: 800px;
+	height: 35px;
+	margin: 20px;
+	overflow: hidden;
+	position: relative;
+	background-color: rgba(196, 196, 196, 0.6);
+	border: 1px solid #666;
+	box-shadow: 0 0 8px #333;
+}
+
+#statusbar .left {
+	float:left;
+	height: 35px;
+	line-height: 35px;
+}
+#statusbar .right {
+	float:right;
+	height: 35px;
+	line-height: 35px;
+}
+
 #playing_field {
 	position: relative;
 	width: 800px;
@@ -352,6 +378,10 @@ a:hover {
 	background-color: rgba(196, 196, 196, 0.6);
 	border: 1px solid #666;
 	box-shadow: 0 0 8px #333;
+}
+
+.ie8 body #playing_field {
+	background-color: #999999;
 }
 
 #playing_field #global_message {
@@ -366,6 +396,105 @@ a:hover {
 	text-shadow: 1px 1px 6px #fff;
 }
 
+.smallcard {
+	line-height:100%;
+	display:inline;
+	padding: 2px;
+	width:35px;
+	height:20px;
+	text-align:center;
+	margin: 4px;
+	background-color: rgba(255, 255, 255, 0.9);
+	font-size:14px;
+	font-weight:bold;
+	border-radius: 2px;
+	-moz-border-radius: 2px;
+	-webkit-border-radius: 2px;
+	box-shadow: 0px 0px 8px #444;
+	-moz-box-shadow: 0px 0px 8px #444;
+	-webkit-box-shadow: 0px 0px 8px #444;
+}
+
+.smallcard.aligned {
+	display:inline-block;
+}
+
+.smallcard.d, .smallcard.h, .smallcard.c, .smallcard.s, .smallcard.n {
+	background-color: transparent;
+	display:inline;
+	width:auto;
+	height:auto;
+	font-size:inherit;
+	border-radius: 0px;
+	-moz-border-radius: 0px;
+	-webkit-border-radius: 0px;
+	box-shadow: 0px 0px 0px #444;
+	-moz-box-shadow: 0px 0px 0px #444;
+	-webkit-box-shadow: 0px 0px 0px #444;
+	}
+
+.smallcard:first-letter { font-size:17px; }
+
+.smallcard.jr:before { content: "Joker"; color:darkorange;font-size:12px;}
+.smallcard.n:before { content: "노기"; }
+.smallcard.s:before { content: "\002660"; }
+.smallcard.s1:before { content: "\002660\000020A"; }
+.smallcard.s2:before { content: "\002660\0000202"; }
+.smallcard.s3:before { content: "\002660\0000203"; }
+.smallcard.s4:before { content: "\002660\0000204"; }
+.smallcard.s5:before { content: "\002660\0000205"; }
+.smallcard.s6:before { content: "\002660\0000206"; }
+.smallcard.s7:before { content: "\002660\0000207"; }
+.smallcard.s8:before { content: "\002660\0000208"; }
+.smallcard.s9:before { content: "\002660\0000209"; }
+.smallcard.st:before { content: "\002660\00002010"; }
+.smallcard.sj:before { content: "\002660\000020J"; }
+.smallcard.sq:before { content: "\002660\000020Q"; }
+.smallcard.sk:before { content: "\002660\000020K"; }
+.smallcard.c:before { content: "\002663"; }
+.smallcard.c1:before { content: "\002663\000020A"; }
+.smallcard.c2:before { content: "\002663\0000202"; }
+.smallcard.c3:before { content: "\002663\0000203"; }
+.smallcard.c4:before { content: "\002663\0000204"; }
+.smallcard.c5:before { content: "\002663\0000205"; }
+.smallcard.c6:before { content: "\002663\0000206"; }
+.smallcard.c7:before { content: "\002663\0000207"; }
+.smallcard.c8:before { content: "\002663\0000208"; }
+.smallcard.c9:before { content: "\002663\0000209"; }
+.smallcard.ct:before { content: "\002663\00002010"; }
+.smallcard.cj:before { content: "\002663\000020J"; }
+.smallcard.cq:before { content: "\002663\000020Q"; }
+.smallcard.ck:before { content: "\002663\000020K"; }
+.smallcard.h:before { content: "\002665"; color:red; }
+.smallcard.h1:before { content: "\002665\000020A"; color:red; }
+.smallcard.h2:before { content: "\002665\0000202"; color:red; }
+.smallcard.h3:before { content: "\002665\0000203"; color:red;}
+.smallcard.h4:before { content: "\002665\0000204"; color:red;}
+.smallcard.h5:before { content: "\002665\0000205"; color:red;}
+.smallcard.h6:before { content: "\002665\0000206"; color:red;}
+.smallcard.h7:before { content: "\002665\0000207"; color:red;}
+.smallcard.h8:before { content: "\002665\0000208"; color:red;}
+.smallcard.h9:before { content: "\002665\0000209"; color:red;}
+.smallcard.ht:before { content: "\002665\00002010"; color:red;}
+.smallcard.hj:before { content: "\002665\000020J"; color:red;}
+.smallcard.hq:before { content: "\002665\000020Q"; color:red;}
+.smallcard.hk:before { content: "\002665\000020K"; color:red;}
+.smallcard.d:before { content: "\002666"; color:red; }
+.smallcard.d1:before { content: "\002666\000020A"; color:red; }
+.smallcard.d2:before { content: "\002666\0000202"; color:red; }
+.smallcard.d3:before { content: "\002666\0000203"; color:red;}
+.smallcard.d4:before { content: "\002666\0000204"; color:red;}
+.smallcard.d5:before { content: "\002666\0000205"; color:red;}
+.smallcard.d6:before { content: "\002666\0000206"; color:red;}
+.smallcard.d7:before { content: "\002666\0000207"; color:red;}
+.smallcard.d8:before { content: "\002666\0000208"; color:red;}
+.smallcard.d9:before { content: "\002666\0000209"; color:red;}
+.smallcard.dt:before { content: "\002666\00002010"; color:red;}
+.smallcard.dj:before { content: "\002666\000020J"; color:red;}
+.smallcard.dq:before { content: "\002666\000020Q"; color:red;}
+.smallcard.dk:before { content: "\002666\000020K"; color:red;}
+.smallcard.invalid:before { content: "\002716"; color:red;}
+
 #dialog {
 	position: absolute;
 	height: 200px;
@@ -376,6 +505,10 @@ a:hover {
 	z-index: 99;
 }
 
+.ie8 #dialog > div {
+	background-color: #aaaaaa;
+	border: 1px solid black;
+}
 #dialog > div {
 	margin: 0px auto;
 	background-color: rgba(196, 196, 196, 0.9);
@@ -623,6 +756,14 @@ a:hover {
 
 #playing_field .profile dt {
 	overflow: hidden;
+}
+
+#playing_field .profile.in_action dd {
+	border: 2px solid #FE9;
+
+	box-shadow: 0px 0px 8px #fee;
+	-moz-box-shadow: 0px 0px 8px #fee;
+	-webkit-box-shadow: 0px 0px 8px #fee;
 }
 
 #playing_field .profile dd {

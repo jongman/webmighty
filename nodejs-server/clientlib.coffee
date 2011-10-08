@@ -58,6 +58,9 @@ FACE_ORDER = (giruda_ = null) ->
 
 VALUE_ORDER = "23456789tjqk1"
 
+buildMinimizedCardHtml = (face) ->
+	'<span class="smallcard ' + face + '"></span>'
+
 getRelativeIndexFromIndex = (idx) ->
 	return (idx - myIndex + 5) % 5
 
@@ -76,11 +79,15 @@ isJugong = (index=null) ->
 channel_max = 10
 audiochannels = []
 for a in [0...channel_max]
+	if $.browser.msie
+		continue
 	audiochannels[a] = []
 	audiochannels[a]['channel'] = new Audio()
 	audiochannels[a]['finished'] = -1
 
 playSound = (soundName) ->
+	if $.browser.msie
+		return
 	thistime = new Date()
 	elem = $("#sounds ." + soundName).get(0)
 	if elem.muted
@@ -95,7 +102,7 @@ playSound = (soundName) ->
 
 lastSuit = null
 doCommitment = ->
-	now.notfyImTakingAction()
+	now.notifyImTakingAction()
 	playSound "myturn"
 	systemMsg "공약 내세우기"
 
@@ -192,7 +199,7 @@ now.receiveDealtCards = (cards) ->
 # 주공 당선 후 손 정리
 
 now.requestRearrangeHand = (additionalCards) ->
-	now.notfyImTakingAction()
+	now.notifyImTakingAction()
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
@@ -283,12 +290,20 @@ setFriendTitle = ->
 	if rule.friendOption == rule.FriendOption.ByCard
 		cardName = renderFaceName rule.friendCard
 		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + cardName + '프렌드'
+		window.field.setStatusBar (card)->
+			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0],rule.currentPromise[1])} #{cardName} 프렌드", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 	else if rule.friendOption == rule.FriendOption.NoFriend
 		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '프렌드 없음'
+		window.field.setStatusBar (card)->
+			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0], rule.currentPromise[1])} 프렌드 없음", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 	else if rule.friendOption == rule.FriendOption.FirstTrick
 		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '초구 프렌드'
+		window.field.setStatusBar (card)->
+			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0], rule.currentPromise[1])} 초구 프렌드", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 	else
 		document.title = buildCommitmentString(rule.currentPromise...)
+		window.field.setStatusBar (card)->
+			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0], rule.currentPromise[1])}", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 
 now.notifyFriendByCard = (card) ->
 	cardName = renderFaceName card
@@ -309,7 +324,7 @@ now.notifyFriendFirstTrick = ->
 
 now.requestChooseCard = (currentTurn, option, fromServer = true) ->
 	if fromServer
-		now.notfyImTakingAction()
+		now.notifyImTakingAction()
 	if fromServer
 		playSound "myturn"
 	player = 0
@@ -444,11 +459,15 @@ now.notifyJugong = (finalJugongIndex, face, target) ->
 		else
 			name = users[jugongIndex].name
 			window.field.globalMessage "#{name} 님이 당선되었습니다!"
+		window.field.setStatusBar (card)->
+			["#{users[jugongIndex].name} 당선! 공약 #{card(face,target)}", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 
 	else if now.state == now.REARRANGE_HAND
 		# 주공이 포기하고 무늬 바꾼거
 		newPromise = buildCommitmentString face, target
 		window.field.globalMessage "공약이 변경되었습니다: #{newPromise}"
+		window.field.setStatusBar (card)->
+			["공약 변경 #{card(face,target)}", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 
 now.resetRule = ->
 	rule.resetGame()
@@ -462,7 +481,8 @@ now.notifyChangeState = (newState) ->
 		window.field.showPlayerList()
 		#$("#logwin").find("button").unbind().removeAttr("disabled")
 	if newState == now.VOTE
-		document.title = "새 게임을 시작합니다."
+		window.field.setStatusBar (card)->
+			["새 게임을 시작합니다.", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 		commitmentIndex = 0
 		rule.resetGame()
 		window.field.setPlayers(
@@ -501,10 +521,13 @@ now.notifyMsg = (msg) ->
 
 now.notifyVote = (index, face, target) ->
 	rule.setPromise([face, target])
+	window.field.setStatusBar (card)->
+		["유력후보: #{users[index].name} 공약 #{card(face,target)}", "당선 시 마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 	window.field.playerMessage((getRelativeIndexFromIndex index), "공약", buildCommitmentString(face, target))
 
 now.notifyDealMiss = (index, hand) ->
-	window.field.playerMessage((getRelativeIndexFromIndex index), "딜미스")
+	window.field.clearPlayerMessages()
+	window.field.playerMessage((getRelativeIndexFromIndex index), "딜미스!")
 	# TODO show dealmiss hand
 
 now.notifyPass = (index) ->
@@ -578,6 +601,7 @@ now.resetField = ->
 
 now.notifyInAction = (index) ->
 	# TODO display player[index] is currently taking action
+	window.field.displayPlayerInAction getRelativeIndexFromIndex(index)
 
 now.showName = ->
 	systemMsg "i am #{@now.name}"
@@ -586,6 +610,19 @@ now.showName = ->
 readyCount = 0
 onAllReady = ->
 	now.fbUserID = null
+
+	b = ""
+	b += buildMinimizedCardHtml 'jr'
+	b += buildMinimizedCardHtml "invalid"
+	for fi in "sdhc"
+		for si in "23456789tjqk1"
+			b += buildMinimizedCardHtml(fi+si)
+		b += "<BR>"
+	systemMsg b
+
+	# example of statusbar function
+	window.field.setStatusBar (card)->
+		["웹마이티에 오신 것을 환영합니다!","마이티 #{card("s1")} 조커콜 #{card("c3")}"]
 
 	fbHandler = (response)->
 		$("#oneliner").text("")
