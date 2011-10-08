@@ -445,9 +445,9 @@
       return $("#global_message").hide().clearQueue().html(message).fadeIn(500).delay(fadeOutAfter).fadeOut(500);
     };
     PlayingField.prototype.clearPlayerMessages = function() {
-      var player, _results;
+      var i, _results;
       _results = [];
-      for (player = 0; player < 5; player++) {
+      for (i = 0; i < 5; i++) {
         _results.push(playerMessage(i, "", ""));
       }
       return _results;
@@ -494,7 +494,14 @@
       return _results;
     };
     PlayingField.prototype.setPlayerType = function(player, typeName) {
-      return this.players[player].profile_elem.find(".type").html(typeName).addClass(typeName);
+      var elem;
+      this.players[player].profile_elem.find(".type").html(typeName).addClass(typeName);
+      elem = this.players[player].profile_elem;
+      if (typeName.indexOf("주공") !== -1 || typeName.indexOf("프렌드") !== -1) {
+        return elem.addClass('ruler');
+      } else {
+        return elem.removeClass('ruler');
+      }
     };
     PlayingField.prototype.playCard = function(player, card, render_as) {
       var c, face, _i, _len, _ref;

@@ -326,7 +326,7 @@ class PlayingField
 
 
 	clearPlayerMessages: ->
-		for player in [0...5]
+		for i in [0...5]
 			playerMessage i, "", ""
 
 	playerMessage: (player, type, message = "") ->
@@ -357,6 +357,11 @@ class PlayingField
 
 	setPlayerType: (player, typeName) ->
 		@players[player].profile_elem.find(".type").html(typeName).addClass(typeName)
+		elem = @players[player].profile_elem
+		if typeName.indexOf("주공") != -1 or typeName.indexOf("프렌드") != -1
+			elem.addClass('ruler')
+		else
+			elem.removeClass('ruler')
 
 	playCard: (player, card, render_as=null) ->
 		if typeof(card) == "string"

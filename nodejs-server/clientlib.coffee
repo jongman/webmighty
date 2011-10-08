@@ -109,14 +109,14 @@ doCommitment = ->
 	if rule.currentPromise?
 		minNoGiru = minOthers = rule.currentPromise[1]+1
 	else
-		minNoGiru = 13
-		minOthers = 14
+		minNoGiru = rule.minVoteNoGiru
+		minOthers = rule.minVoteOthers
 
 	canDealMiss = rule.checkDealMiss (card.face for card in window.field.hands[0])
 	if lastSuit?
 		defaultSuit = lastSuit
 	else
-		scores = 
+		scores =
 			h: 0
 			s: 0
 			d: 0

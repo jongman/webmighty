@@ -351,7 +351,6 @@ a:hover {
 	height: 35px;
 	margin: 20px;
 	overflow: hidden;
-	position: relative;
 	background-color: rgba(196, 196, 196, 0.6);
 	border: 1px solid #666;
 	box-shadow: 0 0 8px #333;
@@ -751,6 +750,11 @@ a:hover {
 	color: rgb(255, 235, 235);
 	font-weight: bold;
 	text-shadow: 0px 0px 2px #fff;
+}
+
+#playing_field .profile.ruler a {
+	/*border: 2px outset #dcc;*/
+	color: #26f;
 }
 
 #playing_field dl {

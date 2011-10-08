@@ -8,6 +8,10 @@ var __indexOf = Array.prototype.indexOf || function(item) {
 if (!(typeof exports !== "undefined" && exports !== null)) {
   exports = this['rule'] = {};
 }
+exports.minVoteNoGiru = 12;
+exports.minVoteOthers = 13;
+exports.alternativeJokerCallCard = 'h3';
+exports.alternativeMightyCard = 'd1';
 exports.VALUE_ORDER = "23456789tjqk1";
 exports.Victory = {
   WinByNoticedRun: 1,
@@ -138,13 +142,13 @@ exports.resetPromise = function() {
 };
 exports.getMightyCard = function() {
   if ((exports.currentPromise != null) && exports.currentPromise[0] === 's') {
-    return 'd1';
+    return exports.alternativeMightyCard;
   }
   return 's1';
 };
 exports.getJokerCallCard = function() {
   if ((exports.currentPromise != null) && exports.currentPromise[0] === 'c') {
-    return 's3';
+    return exports.alternativeJokerCallCard;
   }
   return 'c3';
 };

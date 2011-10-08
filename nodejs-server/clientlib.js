@@ -139,8 +139,8 @@
     if (rule.currentPromise != null) {
       minNoGiru = minOthers = rule.currentPromise[1] + 1;
     } else {
-      minNoGiru = 13;
-      minOthers = 14;
+      minNoGiru = rule.minVoteNoGiru;
+      minOthers = rule.minVoteOthers;
     }
     canDealMiss = rule.checkDealMiss((function() {
       var _i, _len, _ref, _results;

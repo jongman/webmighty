@@ -372,6 +372,7 @@ allPass = ->
 	return passes.length == votes.length
 
 allPassExceptOne = ->
+	console.log votes
 	jugongCount = 0
 	for i in [0...votes.length]
 		if votes[i][1] == 20 # run
@@ -406,7 +407,7 @@ everyone.now.commitmentAnnounce = (face, target) ->
 	if everyone.now.state != everyone.now.VOTE
 		return
 	idx = indexFromClientId @user.clientId
-	if (face == 'n' and target >= 13 or target >= 14) and (not rule.currentPromise? or rule.currentPromise[1] < target)
+	if (face == 'n' and target >= rule.minVoteNoGiru or target >= rule.minVoteOthers) and (not rule.currentPromise? or rule.currentPromise[1] < target)
 		votes[idx] = [face, target]
 		rule.setPromise [face, target, idx]
 		everyone.now.notifyVote idx, face, target

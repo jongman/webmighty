@@ -1,6 +1,15 @@
 if not exports?
 	exports = this['rule'] = {}
 
+################################################################################
+# configurable variables
+################################################################################
+
+exports.minVoteNoGiru = 12
+exports.minVoteOthers = 13
+exports.alternativeJokerCallCard = 'h3'
+exports.alternativeMightyCard = 'd1'
+
 exports.VALUE_ORDER = "23456789tjqk1"
 
 # 승패는 주공 기준
@@ -125,12 +134,12 @@ exports.resetPromise = ->
 
 exports.getMightyCard = ->
 	if exports.currentPromise? and exports.currentPromise[0] == 's'
-		return 'd1'
+		return exports.alternativeMightyCard
 	return 's1'
 
 exports.getJokerCallCard = ->
 	if exports.currentPromise? and exports.currentPromise[0] == 'c'
-		return 's3'
+		return exports.alternativeJokerCallCard
 		#return 'd3'
 	return 'c3'
 
