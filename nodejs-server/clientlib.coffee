@@ -488,6 +488,7 @@ now.notifyChangeState = (newState) ->
 		window.field.showPlayerList()
 		#$("#logwin").find("button").unbind().removeAttr("disabled")
 	if newState == now.VOTE
+		lastSuit = null
 		window.field.setStatusBar (card)->
 			["새 게임을 시작합니다.", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 		commitmentIndex = 0

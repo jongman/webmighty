@@ -754,7 +754,8 @@ a:hover {
 
 #playing_field .profile.ruler a {
 	/*border: 2px outset #dcc;*/
-	color: #26f;
+	/*color: #26f;*/
+	color: cyan;
 }
 
 #playing_field dl {
