@@ -327,7 +327,7 @@ class PlayingField
 
 	clearPlayerMessages: ->
 		for i in [0...5]
-			playerMessage i, "", ""
+			@playerMessage i, "", ""
 
 	playerMessage: (player, type, message = "") ->
 		elem = @players[player].profile_elem
@@ -385,6 +385,7 @@ class PlayingField
 		@moveToPlayedPosition(player, card)
 
 	moveToPlayedPosition: (player, card)->
+		console.log player, card
 		angle = @getLocationInfo(player).angle
 		center = @convertRelativePosition(0.5, 0.5)
 		x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS
@@ -470,6 +471,30 @@ class PlayingField
 			elem.find(".name").html("")
 			elem.find(".type").text("빈 자리")
 			elem.find(".message_content").text("")
+
+	chooseSuit: (giru, done=->) ->
+		finish = (suit) =>
+			$("#choose_suit_dialog").hide()
+			done(suit)
+		$("#choose_suit_dialog .g")
+			.unbind("click")
+			.click(-> finish(giru))
+		$("#choose_suit_dialog .c")
+			.unbind("click")
+			.click(-> finish('c'))
+		$("#choose_suit_dialog .d")
+			.unbind("click")
+			.click(-> finish('d'))
+		$("#choose_suit_dialog .s")
+			.unbind("click")
+			.click(-> finish('s'))
+		$("#choose_suit_dialog .h")
+			.unbind("click")
+			.click(-> finish('h'))
+		$("#choose_suit_dialog .cancel")
+			.unbind("click")
+			.click(-> finish())
+		$("#choose_suit_dialog").fadeIn(100)
 
 	chooseCard: (done=->) ->
 		player = 0
@@ -607,7 +632,7 @@ class PlayingField
 	setStatusBar: (htmlTxt)->
 		buildMinimizedCardHtml = (face, content) ->
 			content ?= ""
-			'<span class="smallcard ' + face + '">'+content+'</span>'
+			'<span class="smallcard inline ' + face + '">'+content+'</span>'
 		if (typeof(htmlTxt) == "function")
 			[l, r] = htmlTxt(buildMinimizedCardHtml)
 			l ?= ""

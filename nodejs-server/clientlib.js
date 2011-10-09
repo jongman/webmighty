@@ -235,6 +235,7 @@
   now.requestRearrangeHand = function(additionalCards) {
     now.notifyImTakingAction();
     window.field.setSortOrder(FACE_ORDER());
+    window.field.sortHands(0);
     return window.field.dealAdditionalCards(additionalCards, 0, function() {
       window.field.globalMessage("교체할 3장의 카드를 골라주세요.");
       return window.field.chooseMultipleCards(3, function(chosen) {
@@ -345,6 +346,9 @@
     return "" + suit + " " + value;
   };
   friendHandler = function(index) {
+    if (index === jugongIndex) {
+      return;
+    }
     window.field.setPlayerType(getRelativeIndexFromIndex(index), "프렌드");
     window.field.removeCollectedCards(getRelativeIndexFromIndex(index));
     return systemMsg("friend is " + users[index].name);
@@ -354,22 +358,18 @@
     var cardName;
     if (rule.friendOption === rule.FriendOption.ByCard) {
       cardName = renderFaceName(rule.friendCard);
-      document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + cardName + '프렌드';
       return window.field.setStatusBar(function(card) {
-        return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])) + " " + cardName + " 프렌드", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
+        return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])) + " " + cardName + " 프렌드 =" + (card(rule.friendCard)), "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
       });
     } else if (rule.friendOption === rule.FriendOption.NoFriend) {
-      document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '프렌드 없음';
       return window.field.setStatusBar(function(card) {
         return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])) + " 프렌드 없음", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
       });
     } else if (rule.friendOption === rule.FriendOption.FirstTrick) {
-      document.title = buildCommitmentString.apply(null, rule.currentPromise) + ', ' + '초구 프렌드';
       return window.field.setStatusBar(function(card) {
         return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])) + " 초구 프렌드", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
       });
     } else {
-      document.title = buildCommitmentString.apply(null, rule.currentPromise);
       return window.field.setStatusBar(function(card) {
         return ["주공 " + users[jugongIndex].name + " 공약 " + (card(rule.currentPromise[0], rule.currentPromise[1])), "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
       });
@@ -428,35 +428,28 @@
       return rule.isValidChoice(handFace, card.face, option, currentTurn);
     };
     return window.field.chooseFilteredCard(filter, function(card) {
-      var chooseSuit, dontDo;
+      var dontDo;
       dontDo = false;
       if (rule.currentTrick.length === 0) {
         if (card.face === 'jr') {
           if (currentTurn !== 0 && currentTurn !== 9) {
-            chooseSuit = null;
-            chooseSuit = function() {
-              return window.field.prompt("무늬를 선택해주세요(s/d/c/h/g:기루)", null, function(suit) {
-                option = null;
-                if (suit[0] === 'g') {
-                  suit = rule.currentPromise[0];
-                }
-                if (suit[0] === 's') {
-                  option = rule.ChooseCardOption.SCome;
-                } else if (suit[0] === 'd') {
-                  option = rule.ChooseCardOption.DCome;
-                } else if (suit[0] === 'c') {
-                  option = rule.ChooseCardOption.CCome;
-                } else if (suit[0] === 'h') {
-                  option = rule.ChooseCardOption.HCome;
-                }
-                if (option != null) {
-                  return now.chooseCard(card.face, option);
-                } else {
-                  return chooseSuit();
-                }
-              });
-            };
-            chooseSuit();
+            window.field.chooseSuit(rule.currentPromise[0], function(suit) {
+              if (!(suit != null)) {
+                now.requestChooseCard(currentTurn, option, false);
+                return;
+              }
+              option = rule.ChooseCardOption.None;
+              if (suit[0] === 's') {
+                option = rule.ChooseCardOption.SCome;
+              } else if (suit[0] === 'd') {
+                option = rule.ChooseCardOption.DCome;
+              } else if (suit[0] === 'c') {
+                option = rule.ChooseCardOption.CCome;
+              } else if (suit[0] === 'h') {
+                option = rule.ChooseCardOption.HCome;
+              }
+              return now.chooseCard(card.face, option);
+            });
             dontDo = true;
           } else if (currentTurn === 0) {
             window.field.confirmYesNo("첫 턴에 조커는 아무런 효력이 없습니다.<BR/>그래도 내시겠습니까?", "그래도 냅니다.", "몰랐음. 안내요.", function(answer) {
@@ -540,7 +533,8 @@
   };
   now.takeTrick = function(currentTurn, winnerIndex) {
     window.field.endTurn(getRelativeIndexFromIndex(winnerIndex), !(isJugong(winnerIndex) || rule.isFriend(winnerIndex) && rule.isFriendKnown()));
-    return rule.resetTrick(winnerIndex);
+    rule.resetTrick(winnerIndex);
+    return window.field.clearPlayerMessages();
   };
   NetworkUser = (function() {
     function NetworkUser(name, index, image) {
@@ -560,6 +554,7 @@
     var name, newPromise;
     jugongIndex = finalJugongIndex;
     window.field.setSortOrder(FACE_ORDER());
+    window.field.sortHands(0);
     systemMsg("jugong is " + users[jugongIndex].name);
     rule.setPromise([face, target]);
     document.title = buildCommitmentString(face, target);
@@ -597,6 +592,7 @@
       window.field.showPlayerList();
     }
     if (newState === now.VOTE) {
+      lastSuit = null;
       window.field.setStatusBar(function(card) {
         return ["새 게임을 시작합니다.", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
       });
@@ -618,6 +614,7 @@
   };
   now.notifyPlayers = function(infos) {
     var i, image, index, name;
+    console.log("notifyPlayers");
     users = {};
     window.field.clearPlayerList();
     for (i = 0; i < 5; i++) {
@@ -687,6 +684,8 @@
   };
   now.notifyObserver = function(encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) {
     var card, hand, i, ridx, _ref, _ref2;
+    console.log('notifyObserver');
+    console.log(cards);
     myIndex = 0;
     now.resetField();
     jugongIndex = jugongIndex_;
@@ -717,6 +716,7 @@
       window.field.moveToPlayedPosition(i + currentTrickStartIndex, card);
     }
     window.field.hands = [];
+    window.field.setSortOrder(FACE_ORDER());
     for (i = 0; i < 5; i++) {
       hand = window.field.createCardsFromFace(cards[i], i);
       window.field.hands.push(hand);
@@ -724,7 +724,7 @@
         window.field.collectCards(i, window.field.createCardsFromFace(collectedCards[i], i));
       }
       window.field.repositionCards(i);
-      window.field.sortHands(i, FACE_ORDER());
+      window.field.sortHands(i);
     }
     if (now.state !== now.VOTE && now.state !== now.WAITING_PLAYER) {
       return setFriendTitle();
@@ -741,7 +741,7 @@
   };
   readyCount = 0;
   onAllReady = function() {
-    var b, fbHandler, fi, si, _i, _j, _len, _len2, _ref, _ref2;
+    var b, fbHandler, fi, si, _i, _j, _k, _l, _len, _len2, _len3, _len4, _len5, _len6, _m, _n, _ref, _ref2, _ref3, _ref4, _ref5, _ref6;
     now.fbUserID = null;
     b = "";
     b += buildMinimizedCardHtml('jr');
@@ -753,6 +753,30 @@
       for (_j = 0, _len2 = _ref2.length; _j < _len2; _j++) {
         si = _ref2[_j];
         b += buildMinimizedCardHtml(fi + si);
+      }
+      b += "<BR>";
+    }
+    b += buildMinimizedCardHtml('jr dark');
+    b += buildMinimizedCardHtml("invalid dark");
+    _ref3 = "sdhc";
+    for (_k = 0, _len3 = _ref3.length; _k < _len3; _k++) {
+      fi = _ref3[_k];
+      _ref4 = "23456789tjqk1";
+      for (_l = 0, _len4 = _ref4.length; _l < _len4; _l++) {
+        si = _ref4[_l];
+        b += buildMinimizedCardHtml(fi + si + " dark");
+      }
+      b += "<BR>";
+    }
+    b += buildMinimizedCardHtml('jr inline');
+    b += buildMinimizedCardHtml("invalid inline");
+    _ref5 = "sdhc";
+    for (_m = 0, _len5 = _ref5.length; _m < _len5; _m++) {
+      fi = _ref5[_m];
+      _ref6 = "23456789tjqk1";
+      for (_n = 0, _len6 = _ref6.length; _n < _len6; _n++) {
+        si = _ref6[_n];
+        b += buildMinimizedCardHtml(fi + si + " inline");
       }
       b += "<BR>";
     }
@@ -815,6 +839,13 @@
     });
   };
   $(document).ready(function() {
+    $("button.toggle_player_list").unbind("click").click(function() {
+      if ($("#player_list_dialog").css("display") === "none") {
+        return $("#player_list_dialog").show();
+      } else {
+        return $("#player_list_dialog").hide();
+      }
+    });
     $("button.prompt").unbind("click").click(function() {
       return playSound("playcard");
     });

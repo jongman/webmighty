@@ -343,7 +343,6 @@ a:hover {
 }
 
 #statusbar {
-	padding-left:10px;
 	font-size:15px;
 	font-weight:bold;
 	position: relative;
@@ -357,6 +356,7 @@ a:hover {
 }
 
 #statusbar .left {
+	margin-left:10px;
 	float:left;
 	height: 35px;
 	line-height: 35px;
@@ -396,11 +396,12 @@ a:hover {
 }
 
 .smallcard {
-	line-height:100%;
-	display:inline;
+	display:inline-block;
 	padding: 2px;
 	width:35px;
 	height:20px;
+	line-height:20px;
+	vertical-align:bottom;
 	text-align:center;
 	margin: 4px;
 	background-color: rgba(255, 255, 255, 0.9);
@@ -414,13 +415,19 @@ a:hover {
 	-webkit-box-shadow: 0px 0px 8px #444;
 }
 
-.smallcard.aligned {
-	display:inline-block;
+.smallcard.dark {
+	background-color: rgba(140, 140, 140, 0.9);
+}
+
+.smallcard.inline {
+	display:inline;
+	vertical-align:baseline;
 }
 
 .smallcard.d, .smallcard.h, .smallcard.c, .smallcard.s, .smallcard.n {
 	background-color: transparent;
 	display:inline;
+	vertical-align:baseline;
 	width:auto;
 	height:auto;
 	font-size:inherit;
@@ -632,6 +639,46 @@ a:hover {
 	color: #fff;
 }
 
+/* 무늬 고르기 */
+#choose_suit_dialog {
+	padding:10px;
+}
+
+#choose_suit_dialog li {
+	margin: 10px
+}
+
+#choose_suit_dialog button {
+	vertical-align:bottom;
+}
+
+#choose_suit_dialog button.g
+{
+	padding: 0px;
+	height: 24px;
+	line-height: 24px;
+}
+
+#choose_suit_dialog button.suit
+{
+	font-size: 20px;
+	padding: 0;
+	width: 24px;
+	height: 24px;
+	line-height: 24px;
+}
+
+#choose_suit_dialog ul{
+	list-style: none;
+	padding: 0;
+}
+
+#choose_suit_dialog button.d,
+#choose_suit_dialog button.h
+{
+	color: red;
+}
+
 /* 공약 다이얼로그 */
 #choose_promise_dialog {
 	width: 300px;
@@ -683,6 +730,7 @@ a:hover {
 	padding: 0;
 	width: 24px;
 	height: 24px;
+	line-height: 24px;
 }
 
 #choose_promise_dialog li.selected li {

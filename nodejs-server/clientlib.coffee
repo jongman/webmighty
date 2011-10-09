@@ -201,6 +201,7 @@ now.receiveDealtCards = (cards) ->
 now.requestRearrangeHand = (additionalCards) ->
 	now.notifyImTakingAction()
 	window.field.setSortOrder(FACE_ORDER())
+	window.field.sortHands(0)
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
@@ -281,6 +282,8 @@ renderFaceName = (face) ->
 	return "#{suit} #{value}"
 
 friendHandler = (index) ->
+	if index == jugongIndex
+		return
 	window.field.setPlayerType getRelativeIndexFromIndex(index), "프렌드"
 	window.field.removeCollectedCards getRelativeIndexFromIndex(index)
 	systemMsg "friend is " + users[index].name
@@ -290,19 +293,15 @@ rule.setFriendHandler friendHandler
 setFriendTitle = ->
 	if rule.friendOption == rule.FriendOption.ByCard
 		cardName = renderFaceName rule.friendCard
-		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + cardName + '프렌드'
 		window.field.setStatusBar (card)->
-			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0],rule.currentPromise[1])} #{cardName} 프렌드", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
+			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0],rule.currentPromise[1])} #{cardName} 프렌드 =#{card(rule.friendCard)}", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 	else if rule.friendOption == rule.FriendOption.NoFriend
-		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '프렌드 없음'
 		window.field.setStatusBar (card)->
 			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0], rule.currentPromise[1])} 프렌드 없음", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 	else if rule.friendOption == rule.FriendOption.FirstTrick
-		document.title = buildCommitmentString(rule.currentPromise...) + ', ' + '초구 프렌드'
 		window.field.setStatusBar (card)->
 			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0], rule.currentPromise[1])} 초구 프렌드", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 	else
-		document.title = buildCommitmentString(rule.currentPromise...)
 		window.field.setStatusBar (card)->
 			["주공 #{users[jugongIndex].name} 공약 #{card(rule.currentPromise[0], rule.currentPromise[1])}", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 
@@ -343,28 +342,23 @@ now.requestChooseCard = (currentTurn, option, fromServer = true) ->
 				if currentTurn != 0 and currentTurn != 9
 					# 조커 선때 무늬 고르기
 					# 클로져 만들려고 일단 변수 선언
-					chooseSuit = null
-					chooseSuit = ->
-						window.field.prompt "무늬를 선택해주세요(s/d/c/h/g:기루)", null, (suit) ->
-							option = null
-							if suit[0] == 'g'
-								suit = rule.currentPromise[0]
+					window.field.chooseSuit rule.currentPromise[0], (suit) ->
 
-							if suit[0] == 's'
-								option = rule.ChooseCardOption.SCome
-							else if suit[0] == 'd'
-								option = rule.ChooseCardOption.DCome
-							else if suit[0] == 'c'
-								option = rule.ChooseCardOption.CCome
-							else if suit[0] == 'h'
-								option = rule.ChooseCardOption.HCome
+						if not suit?
+							now.requestChooseCard(currentTurn, option, false)
+							return
 
-							if option?
-								now.chooseCard card.face, option
-							else
-								chooseSuit()
+						option = rule.ChooseCardOption.None
+						if suit[0] == 's'
+							option = rule.ChooseCardOption.SCome
+						else if suit[0] == 'd'
+							option = rule.ChooseCardOption.DCome
+						else if suit[0] == 'c'
+							option = rule.ChooseCardOption.CCome
+						else if suit[0] == 'h'
+							option = rule.ChooseCardOption.HCome
+						now.chooseCard card.face, option
 
-					chooseSuit()
 					dontDo = true
 
 				else if currentTurn == 0
@@ -436,6 +430,7 @@ now.notifyPlayCard = (index, card, option) ->
 now.takeTrick = (currentTurn, winnerIndex) ->
 	window.field.endTurn((getRelativeIndexFromIndex winnerIndex), not (isJugong(winnerIndex) or rule.isFriend(winnerIndex) and rule.isFriendKnown()))
 	rule.resetTrick(winnerIndex)
+	window.field.clearPlayerMessages()
 
 ################################################################################
 # Notify
@@ -452,6 +447,7 @@ buildCommitmentString = (face, target) ->
 now.notifyJugong = (finalJugongIndex, face, target) ->
 	jugongIndex = finalJugongIndex
 	window.field.setSortOrder(FACE_ORDER())
+	window.field.sortHands(0)
 	systemMsg "jugong is #{users[jugongIndex].name}"
 	rule.setPromise([face, target])
 	
@@ -504,6 +500,7 @@ now.notifyChangeState = (newState) ->
 		#users = {}
 
 now.notifyPlayers = (infos) ->
+	console.log "notifyPlayers"
 	users = {}
 	window.field.clearPlayerList()
 	for i in [0...5]
@@ -566,6 +563,8 @@ now.notifyReady = (clientId, index, playerInfos) ->
 	window.field.showPlayerList()
 
 now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex, jugongIndex_) ->
+	console.log 'notifyObserver'
+	console.log cards
 	myIndex = 0
 	now.resetField()
 	jugongIndex = jugongIndex_
@@ -589,6 +588,7 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 		window.field.moveToPlayedPosition(i+currentTrickStartIndex, card)
 
 	window.field.hands = []
+	window.field.setSortOrder FACE_ORDER()
 	for i in [0...5]
 		hand = window.field.createCardsFromFace cards[i], i
 
@@ -597,7 +597,7 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 		else
 			window.field.collectCards i, (window.field.createCardsFromFace collectedCards[i], i)
 		window.field.repositionCards(i)
-		window.field.sortHands(i, FACE_ORDER())
+		window.field.sortHands(i)
 	
 	if now.state != now.VOTE and now.state != now.WAITING_PLAYER
 		setFriendTitle()
@@ -626,6 +626,19 @@ onAllReady = ->
 	for fi in "sdhc"
 		for si in "23456789tjqk1"
 			b += buildMinimizedCardHtml(fi+si)
+		b += "<BR>"
+	b += buildMinimizedCardHtml 'jr dark'
+	b += buildMinimizedCardHtml "invalid dark"
+	for fi in "sdhc"
+		for si in "23456789tjqk1"
+			b += buildMinimizedCardHtml(fi+si + " dark")
+		b += "<BR>"
+
+	b += buildMinimizedCardHtml 'jr inline'
+	b += buildMinimizedCardHtml "invalid inline"
+	for fi in "sdhc"
+		for si in "23456789tjqk1"
+			b += buildMinimizedCardHtml(fi+si + " inline")
 		b += "<BR>"
 	systemMsg b
 
@@ -684,6 +697,12 @@ onAllReady = ->
 	)
 
 $(document).ready ->
+	$("button.toggle_player_list").unbind("click").click(->
+		if $("#player_list_dialog").css("display") == "none"
+			$("#player_list_dialog").show()
+		else
+			$("#player_list_dialog").hide()
+	)
 	$("button.prompt").unbind("click").click(->
 		playSound "playcard"
 	)

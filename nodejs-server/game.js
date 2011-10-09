@@ -448,7 +448,7 @@
       var i, _results;
       _results = [];
       for (i = 0; i < 5; i++) {
-        _results.push(playerMessage(i, "", ""));
+        _results.push(this.playerMessage(i, "", ""));
       }
       return _results;
     };
@@ -535,6 +535,7 @@
     };
     PlayingField.prototype.moveToPlayedPosition = function(player, card) {
       var angle, center, x, y;
+      console.log(player, card);
       angle = this.getLocationInfo(player).angle;
       center = this.convertRelativePosition(0.5, 0.5);
       x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS;
@@ -668,6 +669,35 @@
         elem.find(".type").text("빈 자리");
         return elem.find(".message_content").text("");
       }
+    };
+    PlayingField.prototype.chooseSuit = function(giru, done) {
+      var finish;
+      if (done == null) {
+        done = function() {};
+      }
+      finish = __bind(function(suit) {
+        $("#choose_suit_dialog").hide();
+        return done(suit);
+      }, this);
+      $("#choose_suit_dialog .g").unbind("click").click(function() {
+        return finish(giru);
+      });
+      $("#choose_suit_dialog .c").unbind("click").click(function() {
+        return finish('c');
+      });
+      $("#choose_suit_dialog .d").unbind("click").click(function() {
+        return finish('d');
+      });
+      $("#choose_suit_dialog .s").unbind("click").click(function() {
+        return finish('s');
+      });
+      $("#choose_suit_dialog .h").unbind("click").click(function() {
+        return finish('h');
+      });
+      $("#choose_suit_dialog .cancel").unbind("click").click(function() {
+        return finish();
+      });
+      return $("#choose_suit_dialog").fadeIn(100);
     };
     PlayingField.prototype.chooseCard = function(done) {
       var baseY, card, finish, player, _i, _len, _ref, _results;
@@ -877,7 +907,7 @@
         if (content == null) {
           content = "";
         }
-        return '<span class="smallcard ' + face + '">' + content + '</span>';
+        return '<span class="smallcard inline ' + face + '">' + content + '</span>';
       };
       if (typeof htmlTxt === "function") {
         _ref = htmlTxt(buildMinimizedCardHtml), l = _ref[0], r = _ref[1];

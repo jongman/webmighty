@@ -117,9 +117,24 @@
 				<input class="value" type="text" size="30">
 				<button class="confirm">입력</button>
 			</div>
+			<div id="choose_suit_dialog" style="display:none;">
+				<div class="title">
+					조커로 부를 무늬를 골라주세요
+				</div>
+				<ul>
+					<li>
+						<button class="g">기루</button>
+						<button class="s suit">&spades;</button>
+						<button class="d suit">&diams;</button>
+						<button class="c suit">&clubs;</button>
+						<button class="h suit">&hearts;</button>
+					</li>
+				</ul>
+				<button class="cancel">취소</button>
+			</div>
 			<div id="choose_promise_dialog" style="display: none;">
 				<div class="title">
-					공약을 정해 주세요
+					공약을 정해주세요
 				</div>
 				<ul class="promise">
 					<li class="selected">
@@ -185,7 +200,7 @@
 	</div>
 	<div id="dev">
 		<button class="choose_promise">공약 정하기</button>
-		<button class="choose_promise_previous">공약 정하기 (하트 17 에서 시작)</button>
+		<button class="toggle_player_list">UI test</button>
 		<button class="prompt">prompt test</button>
 	</div>
 	<div id="logwin">
