@@ -203,7 +203,7 @@ class PlayingField
 			return
 		@hands[player].sort((a, b) ->
 			if a.face[0] != b.face[0]
-				faceOrder.indexOf(a.face[0]) - faceOrder.indexOf(b.face[0])
+				- (faceOrder.indexOf(a.face[0]) - faceOrder.indexOf(b.face[0]))
 			else
 				VALUE_ORDER.indexOf(a.face[1]) - VALUE_ORDER.indexOf(b.face[1])
 		)
@@ -629,6 +629,26 @@ class PlayingField
 		$("#prompt_dialog").fadeIn(100)
 		$("#prompt_dialog .value").focus()
 		
+	scrollChatToEnd: ->
+		$("#chatbox .content")
+			.scrollTop($("#chatbox .content").prop("scrollHeight"))
+
+	addChatMessage: (name, msg)->
+		$("#chatbox .content")
+			.append(name+": " + msg + "<BR>")
+		@scrollChatToEnd()
+
+	setChatHandler: (handler)->
+		$("#chatbox .value")
+			.unbind("keypress")
+			.keypress((e) ->
+				if e.keyCode == 13
+					ret = $("#chatbox .value").val()
+					$("#chatbox .value").val("")
+					if ret == ""
+						return
+					handler(ret)
+		)
 	setStatusBar: (htmlTxt)->
 		buildMinimizedCardHtml = (face, content) ->
 			content ?= ""
@@ -745,6 +765,18 @@ $(document).ready(->
 			$("#sounds .toggle").text("mute")
 			$("#sounds").find("audio").prop({muted: false})
 	)
+
+	$("#chatbox .toggle_size").unbind().click(->
+		if $("#chatbox").width() == 400
+			$("#chatbox").width(200)
+			$("#chatbox .toggle_size").text('>')
+			window.field.scrollChatToEnd()
+		else
+			$("#chatbox").width(400)
+			$("#chatbox .toggle_size").text('<')
+			window.field.scrollChatToEnd()
+	)
+
 	#$("button.prompt").click(->
 		#window.field.prompt("프롬프트 테스트", "기본값", (r) -> alert r))
 	#$("button.choose_promise").click(->

@@ -269,7 +269,7 @@
       }
       this.hands[player].sort(function(a, b) {
         if (a.face[0] !== b.face[0]) {
-          return faceOrder.indexOf(a.face[0]) - faceOrder.indexOf(b.face[0]);
+          return -(faceOrder.indexOf(a.face[0]) - faceOrder.indexOf(b.face[0]));
         } else {
           return VALUE_ORDER.indexOf(a.face[1]) - VALUE_ORDER.indexOf(b.face[1]);
         }
@@ -901,6 +901,22 @@
       $("#prompt_dialog").fadeIn(100);
       return $("#prompt_dialog .value").focus();
     };
+    PlayingField.prototype.addChatMessage = function(name, msg) {
+      return $("#chatbox .content").append(name + ": " + msg + "<BR>").scrollTop($("#chatbox .content").prop("scrollHeight"));
+    };
+    PlayingField.prototype.setChatHandler = function(handler) {
+      return $("#chatbox .value").unbind("keypress").keypress(function(e) {
+        var ret;
+        if (e.keyCode === 13) {
+          ret = $("#chatbox .value").val();
+          $("#chatbox .value").val("");
+          if (ret === "") {
+            return;
+          }
+          return handler(ret);
+        }
+      });
+    };
     PlayingField.prototype.setStatusBar = function(htmlTxt) {
       var buildMinimizedCardHtml, l, r, _ref;
       buildMinimizedCardHtml = function(face, content) {
@@ -1038,6 +1054,15 @@
         return $("#sounds").find("audio").prop({
           muted: false
         });
+      }
+    });
+    $("#chatbox .toggle_size").unbind().click(function() {
+      if ($("#chatbox").width() === 400) {
+        $("#chatbox").width(200);
+        return $("#chatbox .toggle_size").text('>');
+      } else {
+        $("#chatbox").width(400);
+        return $("#chatbox .toggle_size").text('<');
       }
     });
     if (window.LIBGAME != null) {

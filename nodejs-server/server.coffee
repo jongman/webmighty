@@ -76,7 +76,7 @@ rg = nowjs.getGroup "room-1"
 everyone.now.room = 1
 
 everyone.now.distributeMessage = (message) ->
-	  everyone.now.receiveMessage @now.name, message
+	everyone.now.receiveMessage @user.clientId, indexFromClientId(@user.clientId), @now.name, message
 
 everyone.now.WAITING_PLAYER = 1
 everyone.now.VOTE = 2
@@ -194,9 +194,6 @@ nowjs.on 'connect', ->
 		@now.notifyPlayers getPlayerInfos()
 	else
 		restoreObserver this
-
-everyone.now.chat = (msg) ->
-	everyone.now.receiveChat @user.clientId, @now.name, msg
 
 everyone.now.notifyImTakingAction = ->
 	console.log "notifyImTakingAction " + indexFromClientId(@user.clientId)
@@ -453,6 +450,9 @@ everyone.now.commitmentDealMiss = ->
 ################################################################################
 everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 	if (indexFromClientId @user.clientId) != jugongIndex
+		return
+	if cardsToRemove.length != 3
+		@now.requestRearrangeHand cards[50...53] 
 		return
 
 	replaceIndex = 50

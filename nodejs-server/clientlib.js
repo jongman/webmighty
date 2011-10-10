@@ -739,10 +739,49 @@
   now.showName = function() {
     return systemMsg("i am " + this.now.name);
   };
+  now.receiveMessage = function(clientId, index, name, msg) {
+    var c;
+    c = "";
+    if (clientId === now.core.clientId) {
+      c = "me";
+    }
+    if (index >= 0 && index < 5) {
+      if (c !== "") {
+        c += " ";
+      }
+      c += "player";
+    }
+    if (index >= 0 && index < 5 && ((jugongIndex != null) && index === jugongIndex || (rule.friendIndex != null) && index === rule.friendIndex)) {
+      console.log(index);
+      console.log(jugongIndex);
+      console.log(rule.friendIndex);
+      if (c !== "") {
+        c += " ";
+      }
+      c += "ruler";
+    }
+    if (c !== "") {
+      name = "<span class=\"" + c + "\">" + name + "</span>";
+    }
+    return window.field.addChatMessage(name, msg);
+  };
   readyCount = 0;
   onAllReady = function() {
     var b, fbHandler, fi, si, _i, _j, _k, _l, _len, _len2, _len3, _len4, _len5, _len6, _m, _n, _ref, _ref2, _ref3, _ref4, _ref5, _ref6;
     now.fbUserID = null;
+    window.field.setChatHandler(function(s) {
+      if (now.name.substr(0, 6) === "player") {
+        return window.field.prompt("What's your name?", now.name, function(n) {
+          if (n === "") {
+            return;
+          }
+          now.name = n;
+          return now.distributeMessage(s);
+        });
+      } else {
+        return now.distributeMessage(s);
+      }
+    });
     b = "";
     b += buildMinimizedCardHtml('jr');
     b += buildMinimizedCardHtml("invalid");

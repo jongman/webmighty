@@ -615,10 +615,40 @@ now.notifyInAction = (index) ->
 now.showName = ->
 	systemMsg "i am #{@now.name}"
 
-# (TEST only) set ready when page load
+now.receiveMessage = (clientId, index, name, msg)->
+	c = ""
+	if clientId == now.core.clientId
+		c = "me"
+	if index >= 0 and index < 5
+		if c != ""
+			c += " "
+		c += "player"
+	if index >= 0 and index < 5 and (jugongIndex? and index == jugongIndex or rule.friendIndex? and index == rule.friendIndex)
+		console.log index
+		console.log jugongIndex
+		console.log rule.friendIndex
+		if c != ""
+			c += " "
+		c += "ruler"
+	if c != ""
+		name = "<span class=\"#{c}\">#{name}</span>"
+	window.field.addChatMessage name, msg
+
 readyCount = 0
+
 onAllReady = ->
 	now.fbUserID = null
+
+	window.field.setChatHandler (s)->
+		if now.name.substr(0,6) == "player"
+			window.field.prompt("What's your name?", now.name, (n)->
+				if n == ""
+					return
+				now.name = n
+				now.distributeMessage(s)
+			)
+		else
+			now.distributeMessage(s)
 
 	b = ""
 	b += buildMinimizedCardHtml 'jr'
