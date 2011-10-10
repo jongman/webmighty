@@ -751,8 +751,8 @@ a:hover {
 	margin-top: 8px;
 }
 
-#choose_promise_dialog button#d,
-#choose_promise_dialog button#h
+#choose_promise_dialog button.d,
+#choose_promise_dialog button.h
 {
 	color: red;
 }
@@ -774,7 +774,7 @@ a:hover {
 	text-align: center;
 }
 
-#dialog #choose_promise_dialog ul.promise button {
+#choose_promise_dialog ul.promise button {
 	font-size: 20px;
 	padding: 0;
 	width: 24px;

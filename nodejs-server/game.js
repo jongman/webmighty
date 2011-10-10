@@ -1,5 +1,5 @@
 (function() {
-  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, COLLECTED_CARD_GAP, Card, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
+  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, COLLECTED_CARD_GAP, Card, ChangePromiseHelper, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -37,6 +37,33 @@
         side: "right",
         location: 0.6,
         angle: PI * (3 / 2 - 8 / 5)
+      }
+    ],
+    6: [
+      {
+        side: "bottom",
+        location: 0.75,
+        angle: PI * (1 + 1 / 3)
+      }, {
+        side: "bottom",
+        location: 0.25,
+        angle: PI * (1 + 2 / 3)
+      }, {
+        side: "left",
+        location: 0.6,
+        angle: PI * 2.
+      }, {
+        side: "top",
+        location: 0.25,
+        angle: PI * (2 + 1 / 3)
+      }, {
+        side: "top",
+        location: 0.75,
+        angle: PI * (2 + 1 / 3)
+      }, {
+        side: "right",
+        location: 0.6,
+        angle: PI * 1.
       }
     ]
   };
@@ -147,6 +174,77 @@
       return null;
     };
     return Card;
+  })();
+  ChangePromiseHelper = (function() {
+    function ChangePromiseHelper(suit, value, minTarget, elem, afterInit) {
+      var self;
+      this.minTarget = minTarget;
+      this.elem = elem;
+      if (afterInit == null) {
+        afterInit = function() {};
+      }
+      this.selectedSuit = suit;
+      this.selectedValue = value;
+      this.minValue = value;
+      this.updateSelected();
+      this.elem.find(".plus_promise_button").unbind("click").click(__bind(function() {
+        return this.setValue(Math.min(20, this.selectedValue + 1));
+      }, this));
+      this.elem.find(".minus_promise_button").unbind("click").click(__bind(function() {
+        return this.setValue(Math.max(this.minValue, this.selectedValue - 1));
+      }, this));
+      this.elem.find(".value_select_buttons button").attr("disabled", "");
+      self = this;
+      this.elem.find(".select_suit button").unbind("mouseover").unbind("mouseout").unbind("click").mouseover(function() {
+        self.showSuit(self.getSuit(this));
+        return self.showValue(self.minTarget[self.getSuit(this)]);
+      }).mouseout(__bind(function() {
+        this.showSuit(this.selectedSuit);
+        return this.showValue(this.selectedValue);
+      }, this)).click(function() {
+        self.elem.find(".select_suit button.selected").removeClass("selected");
+        $(this).addClass("selected");
+        self.setSuit(self.getSuit(this));
+        return self.setValue(self.minValue);
+      });
+      this.setSuit(this.selectedSuit);
+      this.setValue(this.selectedValue);
+      console.log(this);
+      afterInit();
+    }
+    ChangePromiseHelper.prototype.updateSelected = function() {
+      this.elem.find(".select_suit button").removeClass("selected");
+      return this.elem.find(".select_suit button." + this.selectedSuit).addClass("selected");
+    };
+    ChangePromiseHelper.prototype.showSuit = function(suit) {
+      return this.elem.find(".selected .select_suit").html(SUIT_NAMES[suit]);
+    };
+    ChangePromiseHelper.prototype.setSuit = function(suit) {
+      this.selectedSuit = suit;
+      this.minValue = this.minTarget[this.selectedSuit];
+      return this.showSuit(suit);
+    };
+    ChangePromiseHelper.prototype.showValue = function(val) {
+      return this.elem.find(".selected .select_promise").html(val === 0 ? "" : val);
+    };
+    ChangePromiseHelper.prototype.setValue = function(val) {
+      this.selectedValue = val;
+      this.showValue(val);
+      if (this.minTarget[this.selectedSuit] < this.selectedValue) {
+        this.elem.find(".minus_promise_button").removeAttr("disabled");
+      } else {
+        this.elem.find(".minus_promise_button").attr("disabled", "");
+      }
+      if (this.selectedValue < 20) {
+        return this.elem.find(".plus_promise_button").removeAttr("disabled");
+      } else {
+        return this.elem.find(".plus_promise_button").attr("disabled", "");
+      }
+    };
+    ChangePromiseHelper.prototype.getSuit = function(button) {
+      return $(button).attr("suit");
+    };
+    return ChangePromiseHelper;
   })();
   PlayingField = (function() {
     function PlayingField(elem) {
@@ -774,7 +872,7 @@
       return _results;
     };
     PlayingField.prototype.chooseMultipleCards = function(choose, suit, target, minTarget, done) {
-      var baseY, card, finished, getHandlers, getSuit, handlers, minValue, multiple, originalSuit, originalValue, player, selectedSuit, selectedValue, setSuit, setValue, showSuit, showValue, _i, _len, _ref;
+      var baseY, card, finished, getHandlers, handlers, helper, multiple, originalSuit, originalValue, player, _i, _len, _ref;
       if (done == null) {
         done = function() {};
       }
@@ -787,7 +885,6 @@
       });
       multiple.find(".choose_count").html(choose);
       multiple.fadeIn(500);
-      minValue = target;
       if (!(minTarget != null)) {
         if (suit === 'n') {
           minTarget = {
@@ -808,33 +905,7 @@
           minTarget[suit] = target;
         }
       }
-      selectedSuit = suit;
-      selectedValue = target;
-      showSuit = function(suit) {
-        return multiple.find(".selected .select_suit").html(SUIT_NAMES[suit]);
-      };
-      setSuit = function(suit) {
-        selectedSuit = suit;
-        minValue = minTarget[selectedSuit];
-        return showSuit(suit);
-      };
-      showValue = function(val) {
-        return multiple.find(".selected .select_promise").html(val === 0 ? "" : val);
-      };
-      setValue = function(val) {
-        selectedValue = val;
-        showValue(val);
-        if (minValue < selectedValue) {
-          multiple.find(".minus_promise_button").removeAttr("disabled");
-        } else {
-          multiple.find(".minus_promise_button").attr("disabled", "");
-        }
-        if (selectedValue < 20) {
-          return multiple.find(".plus_promise_button").removeAttr("disabled");
-        } else {
-          return multiple.find(".plus_promise_button").attr("disabled", "");
-        }
-      };
+      helper = new ChangePromiseHelper(suit, target, minTarget, $("#choose_multiple"));
       finished = __bind(function() {
         var card, _i, _len, _ref;
         if (this.chosen.length !== choose) {
@@ -847,42 +918,15 @@
           card = _ref[_i];
           card.elem.removeClass("canChoose").unbind();
         }
-        return done(this.chosen, selectedSuit, selectedValue);
+        return done(this.chosen, helper.selectedSuit, helper.selectedValue);
       }, this);
-      getSuit = function(button) {
-        return $(button).attr("suit");
-      };
-      multiple.find(".plus_promise_button").unbind("click").click(function() {
-        return setValue(Math.min(20, selectedValue + 1));
-      });
-      multiple.find(".minus_promise_button").unbind("click").click(function() {
-        return setValue(Math.max(minValue, selectedValue - 1));
-      });
-      multiple.find(".select_suit button").unbind("mouseover").unbind("mouseout").unbind("click").mouseover(function() {
-        showSuit(getSuit(this));
-        return showValue(minTarget[getSuit(this)]);
-      }).mouseout(function() {
-        showSuit(selectedSuit);
-        return showValue(selectedValue);
-      }).click(function() {
-        multiple.find(".select_suit button.selected").removeClass("selected");
-        $(this).addClass("selected");
-        setSuit(getSuit(this));
-        return setValue(minValue);
-      });
-      multiple.find(".value_select_buttons button").attr("disabled", "");
-      setSuit(selectedSuit);
-      setValue(selectedValue);
-      originalSuit = selectedSuit;
-      originalValue = selectedValue;
+      originalSuit = suit;
+      originalValue = target;
       multiple.find(".reset_promise").unbind().click(function() {
-        setSuit(originalSuit);
-        setValue(originalValue);
-        multiple.find(".select_suit button").removeClass("selected");
-        return multiple.find(".select_suit button." + selectedSuit).addClass("selected");
+        helper.setSuit(originalSuit);
+        helper.setValue(originalValue);
+        return helper.updateSelected();
       });
-      multiple.find(".select_suit button").removeClass("selected");
-      multiple.find(".select_suit button." + selectedSuit).addClass("selected");
       getHandlers = __bind(function(card) {
         var deraise, raise, raised;
         raised = false;
@@ -1035,7 +1079,7 @@
       }
     };
     PlayingField.prototype.choosePromise = function(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, callback) {
-      var finish, getSuit, minValue, selectedSuit, selectedValue, setSuit, setValue, showSuit, showValue;
+      var finish, helper, minTarget;
       if (defaultSuit == null) {
         defaultSuit = " ";
       }
@@ -1045,63 +1089,25 @@
       if (callback == null) {
         callback = function(res) {};
       }
-      selectedSuit = defaultSuit;
-      selectedValue = defaultValue;
-      minValue = 13;
-      showSuit = function(suit) {
-        return $("#selected_suit").html(SUIT_NAMES[suit]);
+      minTarget = {
+        n: minNoGiru,
+        s: minOthers,
+        d: minOthers,
+        c: minOthers,
+        h: minOthers
       };
-      setSuit = function(suit) {
-        selectedSuit = suit;
-        minValue = selectedSuit === "n" ? minNoGiru : minOthers;
-        return showSuit(suit);
-      };
-      showValue = function(val) {
-        return $("#selected_value").html(val === 0 ? "" : val);
-      };
-      setValue = function(val) {
-        selectedValue = val;
-        showValue(val);
-        if (minValue < selectedValue) {
-          $("#minus_promise_button").removeAttr("disabled");
-        } else {
-          $("#minus_promise_button").attr("disabled", "");
-        }
-        if (selectedValue < 20) {
-          $("#plus_promise_button").removeAttr("disabled");
-        } else {
-          $("#plus_promise_button").attr("disabled", "");
-        }
+      helper = new ChangePromiseHelper(defaultSuit, defaultValue, minTarget, $("#choose_promise_dialog"), function() {
         return $("#choose_promise_dialog .confirm").removeAttr("disabled");
-      };
-      getSuit = function(button) {
-        return $(button).attr("id");
-      };
+      });
       finish = function(res) {
         $("#choose_promise_dialog").hide();
         return callback(res);
       };
-      $("#plus_promise_button").unbind("click").click(function() {
-        return setValue(Math.min(20, selectedValue + 1));
-      });
-      $("#minus_promise_button").unbind("click").click(function() {
-        return setValue(Math.max(minValue, selectedValue - 1));
-      });
-      $("#suit_select_buttons button").unbind("mouseover").unbind("mouseout").unbind("click").mouseover(function() {
-        return showSuit(getSuit(this));
-      }).mouseout(function() {
-        return showSuit(selectedSuit);
-      }).click(function() {
-        $("#suit_select_buttons button.selected").removeClass("selected");
-        $(this).addClass("selected");
-        setSuit(getSuit(this));
-        return setValue(minValue);
-      });
       $("#promise_confirm_button").unbind("click").click(function() {
         return finish({
           "result": "confirm",
-          "suit": selectedSuit,
-          "value": selectedValue
+          "suit": helper.selectedSuit,
+          "value": helper.selectedValue
         });
       });
       $("#promise_pass_button").unbind("click").click(function() {
@@ -1114,17 +1120,12 @@
           "result": "dealmiss"
         });
       });
-      $("#value_select_buttons button").attr("disabled", "");
       $("#choose_promise_dialog .confirm").attr("disabled", "");
       if (canDealMiss) {
         $("#promise_dealmiss_button").show();
       } else {
         $("#promise_dealmiss_button").hide();
       }
-      console.log("showSuit..", selectedSuit);
-      setSuit(selectedSuit);
-      setValue(selectedValue);
-      $("#suit_select_buttons button").removeClass("selected");
       return $("#choose_promise_dialog").fadeIn(100);
     };
     return PlayingField;

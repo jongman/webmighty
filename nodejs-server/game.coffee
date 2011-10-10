@@ -9,13 +9,21 @@ SPEED_BASE = 50
 PI = Math.PI
 PLAYED_CARD_RADIUS = 60
 COLLECTED_CARD_GAP = 20
-PLAYER_LOCATION =
+PLAYER_LOCATION = 
 	5: [
 		{ side: "bottom", location: 0.5, angle: PI * (3 / 2)}
 		{ side: "left", location: 0.6, angle: PI * (3 / 2 - 2 / 5) }
 		{ side: "top", location: 0.25, angle: PI * (3 / 2 - 4 / 5) }
 		{ side: "top", location: 0.75, angle: PI * (3 / 2 - 6 / 5) }
 		{ side: "right", location: 0.6, angle: PI * (3 / 2 - 8 / 5) }
+	]
+	6: [
+		{ side: "bottom", location: 0.75, angle: PI * (1+1 / 3)}
+		{ side: "bottom", location: 0.25, angle: PI * (1+2 / 3)}
+		{ side: "left", location: 0.6, angle: PI * (2) }
+		{ side: "top", location: 0.25, angle: PI * (2 + 1 / 3) }
+		{ side: "top", location: 0.75, angle: PI * (2 + 1 / 3) }
+		{ side: "right", location: 0.6, angle: PI * (1) }
 	]
 DISAPPEAR_DIRECTION =
 	left: [-CARD_HEIGHT, 0]
@@ -108,6 +116,80 @@ class Card
 	remove: ->
 		@elem.remove()
 		null
+
+class ChangePromiseHelper
+	constructor: (suit, value, @minTarget, @elem, afterInit = -> )->
+		@selectedSuit = suit
+		@selectedValue = value
+		@minValue = value
+
+		# 현재 선택된 무늬 밑 숫자 표시
+		@updateSelected()
+
+		# + - 기능
+		@elem.find(".plus_promise_button").unbind("click").click(=> @setValue(Math.min(20, @selectedValue+1)))
+		@elem.find(".minus_promise_button").unbind("click").click(=> @setValue(Math.max(@minValue, @selectedValue-1)))
+
+		# 처음엔 disable
+		@elem.find(".value_select_buttons button").attr("disabled", "")
+
+		self = this
+		# 기루 무늬 고르기 버튼
+		@elem.find(".select_suit button")
+			.unbind("mouseover")
+			.unbind("mouseout")
+			.unbind("click")
+			.mouseover(->
+				self.showSuit self.getSuit this
+				self.showValue self.minTarget[self.getSuit this])
+			.mouseout(=>
+				@showSuit(@selectedSuit)
+				@showValue(@selectedValue))
+			.click(->
+						self.elem.find(".select_suit button.selected").removeClass("selected")
+						$(this).addClass("selected")
+						self.setSuit self.getSuit this
+
+						# 숫자는 해당 무늬의 최소 숫자로
+						self.setValue(self.minValue)
+			)
+
+		# 값 설정
+		@setSuit(@selectedSuit)
+		@setValue(@selectedValue)
+		console.log this
+		afterInit()
+
+
+	updateSelected: ->
+		@elem.find(".select_suit button").removeClass("selected")
+		@elem.find(".select_suit button." + @selectedSuit).addClass("selected")
+
+	showSuit: (suit) ->
+		@elem.find(".selected .select_suit").html(SUIT_NAMES[suit])
+
+	setSuit: (suit) ->
+		@selectedSuit = suit
+		@minValue = @minTarget[@selectedSuit]
+		@showSuit(suit)
+
+	showValue: (val) -> 
+		@elem.find(".selected .select_promise").html(if val == 0 then "" else val)
+
+	setValue: (val) ->
+		@selectedValue = val
+		@showValue(val)
+		if @minTarget[@selectedSuit] < @selectedValue
+			@elem.find(".minus_promise_button").removeAttr("disabled")
+		else
+			@elem.find(".minus_promise_button").attr("disabled", "")
+		if @selectedValue < 20
+			@elem.find(".plus_promise_button").removeAttr("disabled")
+		else
+			@elem.find(".plus_promise_button").attr("disabled", "")
+
+	getSuit: (button) ->
+		$(button).attr("suit")
 
 class PlayingField
 	constructor: (@elem) ->
@@ -542,8 +624,7 @@ class PlayingField
 		multiple.find(".choose_count").html(choose)
 		multiple.fadeIn(500)
 
-		# 공약 변경 부분 구현 시작
-		minValue = target
+		# 테스트를 위한 기본값
 		if not minTarget?
 			if suit == 'n'
 				minTarget = {
@@ -562,28 +643,8 @@ class PlayingField
 					h: Math.min(target+2, 20)
 				}
 				minTarget[suit] = target
-		selectedSuit = suit
-		selectedValue = target
 
-		showSuit = (suit) ->
-			multiple.find(".selected .select_suit").html(SUIT_NAMES[suit])
-		setSuit = (suit) ->
-			selectedSuit = suit
-			minValue = minTarget[selectedSuit]
-			showSuit(suit)
-
-		showValue = (val) -> multiple.find(".selected .select_promise").html(if val == 0 then "" else val)
-		setValue = (val) ->
-			selectedValue = val
-			showValue(val)
-			if minValue < selectedValue
-				multiple.find(".minus_promise_button").removeAttr("disabled")
-			else
-				multiple.find(".minus_promise_button").attr("disabled", "")
-			if selectedValue < 20
-				multiple.find(".plus_promise_button").removeAttr("disabled")
-			else
-				multiple.find(".plus_promise_button").attr("disabled", "")
+		helper = new ChangePromiseHelper(suit, target, minTarget, $("#choose_multiple"))
 
 		finished = () =>
 			if @chosen.length != choose
@@ -594,44 +655,14 @@ class PlayingField
 				card.elem
 					.removeClass("canChoose")
 					.unbind()
-			done(@chosen, selectedSuit, selectedValue)
+			done(@chosen, helper.selectedSuit, helper.selectedValue)
 
-		getSuit = (button) -> $(button).attr("suit")
-		multiple.find(".plus_promise_button").unbind("click").click(-> setValue(Math.min(20, selectedValue+1)))
-		multiple.find(".minus_promise_button").unbind("click").click(-> setValue(Math.max(minValue, selectedValue-1)))
-		multiple.find(".select_suit button")
-			.unbind("mouseover")
-			.unbind("mouseout")
-			.unbind("click")
-			.mouseover(->
-				showSuit getSuit this
-				showValue minTarget[getSuit this])
-			.mouseout(->
-				showSuit(selectedSuit)
-				showValue(selectedValue))
-			.click(->
-						multiple.find(".select_suit button.selected").removeClass("selected")
-						$(this).addClass("selected")
-						setSuit getSuit this
-
-						# 숫자는 해당 무늬의 최소 숫자로
-						setValue(minValue)
-			)
-		multiple.find(".value_select_buttons button").attr("disabled", "")
-		setSuit(selectedSuit)
-		setValue(selectedValue)
-
-		originalSuit = selectedSuit
-		originalValue = selectedValue
+		originalSuit = suit
+		originalValue = target
 		multiple.find(".reset_promise").unbind().click(->
-			setSuit(originalSuit)
-			setValue(originalValue)
-			multiple.find(".select_suit button").removeClass("selected")
-			multiple.find(".select_suit button." + selectedSuit).addClass("selected"))
-		multiple.find(".select_suit button").removeClass("selected")
-		multiple.find(".select_suit button." + selectedSuit).addClass("selected")
-
-		# 공약 변경 부분 구현 끝
+			helper.setSuit(originalSuit)
+			helper.setValue(originalValue)
+			helper.updateSelected())
 
 		# 카드 선택 부분 구현
 
@@ -753,59 +784,24 @@ class PlayingField
 			$("#statusbar .right").html("")
 
 	choosePromise: (minNoGiru, minOthers, canDealMiss, defaultSuit=" ", defaultValue=0, callback=(res) ->) ->
-		# 요 두 값을 정해야 됨..
-		selectedSuit = defaultSuit
-		selectedValue = defaultValue
+		minTarget =
+			n: minNoGiru
+			s: minOthers
+			d: minOthers
+			c: minOthers
+			h: minOthers
+		
+		helper = new ChangePromiseHelper(defaultSuit, defaultValue, minTarget, $("#choose_promise_dialog"), ->
+			$("#choose_promise_dialog .confirm").removeAttr("disabled"))
 
-		minValue = 13
-
-		# 유틸리티 함수들
-		showSuit = (suit) ->
-			$("#selected_suit").html(SUIT_NAMES[suit])
-		setSuit = (suit) ->
-			selectedSuit = suit
-			minValue = if selectedSuit == "n" then minNoGiru else minOthers
-			showSuit(suit)
-
-		showValue = (val) -> $("#selected_value").html(if val == 0 then "" else val)
-		setValue = (val) ->
-			selectedValue = val
-			showValue(val)
-			if minValue < selectedValue
-				$("#minus_promise_button").removeAttr("disabled")
-			else
-				$("#minus_promise_button").attr("disabled", "")
-			if selectedValue < 20
-				$("#plus_promise_button").removeAttr("disabled")
-			else
-				$("#plus_promise_button").attr("disabled", "")
-			$("#choose_promise_dialog .confirm").removeAttr("disabled")
-		getSuit = (button) -> $(button).attr("id")
 		finish = (res) ->
 			$("#choose_promise_dialog").hide()
 			callback(res)
 
 		# 핸들러
-		$("#plus_promise_button").unbind("click").click(-> setValue(Math.min(20, selectedValue+1)))
-		$("#minus_promise_button").unbind("click").click(-> setValue(Math.max(minValue, selectedValue-1)))
-		$("#suit_select_buttons button")
-			.unbind("mouseover")
-			.unbind("mouseout")
-			.unbind("click")
-			.mouseover(-> showSuit getSuit this)
-			.mouseout(-> showSuit(selectedSuit))
-			.click(->
-						$("#suit_select_buttons button.selected").removeClass("selected")
-						$(this).addClass("selected")
-						setSuit getSuit this
-
-						# 숫자는 해당 무늬의 최소 숫자로
-						setValue(minValue)
-						
-			)
 		$("#promise_confirm_button")
 			.unbind("click")
-			.click(-> finish({"result": "confirm", "suit": selectedSuit, "value": selectedValue}))
+			.click(-> finish({"result": "confirm", "suit": helper.selectedSuit, "value": helper.selectedValue}))
 		$("#promise_pass_button")
 			.unbind("click")
 			.click(-> finish({"result": "pass"}))
@@ -814,20 +810,12 @@ class PlayingField
 			.click(-> finish({"result": "dealmiss"}))
 
 
-		# 폼 초기화
-		$("#value_select_buttons button").attr("disabled", "")
 		$("#choose_promise_dialog .confirm").attr("disabled", "")
 
 		if canDealMiss
 			$("#promise_dealmiss_button").show()
 		else
 			$("#promise_dealmiss_button").hide()
-
-		console.log("showSuit..", selectedSuit)
-		
-		setSuit(selectedSuit)
-		setValue(selectedValue)
-		$("#suit_select_buttons button").removeClass("selected")
 
 		# 준비 끝!
 		$("#choose_promise_dialog").fadeIn(100)
