@@ -238,7 +238,7 @@
     window.field.sortHands(0);
     return window.field.dealAdditionalCards(additionalCards, 0, function() {
       window.field.globalMessage("교체할 3장의 카드를 골라주세요.");
-      return window.field.chooseMultipleCards(3, function(chosen) {
+      return window.field.chooseMultipleCards(3, rule.currentPromise[0], rule.currentPromise[1], rule.getChangePromiseMinTargetTable(rule.currentPromise[0], rule.currentPromise[1]), function(chosen, newFace, newTarget) {
         var card;
         now.rearrangeHand((function() {
           var _i, _len, _results;
@@ -248,7 +248,7 @@
             _results.push(card.face);
           }
           return _results;
-        })(), rule.currentPromise[0], rule.currentPromise[1]);
+        })(), newFace, newTarget);
         return window.field.takeCards(0, chosen, function() {
           var card, _i, _len;
           for (_i = 0, _len = chosen.length; _i < _len; _i++) {
@@ -557,7 +557,6 @@
     window.field.sortHands(0);
     systemMsg("jugong is " + users[jugongIndex].name);
     rule.setPromise([face, target]);
-    document.title = buildCommitmentString(face, target);
     if (now.state === now.VOTE) {
       window.field.setPlayerType(getRelativeIndexFromIndex(jugongIndex), "주공");
       window.field.playerMessage(getRelativeIndexFromIndex(jugongIndex), "당선", buildCommitmentString(face, target));
@@ -638,9 +637,8 @@
   };
   now.notifyMsg = function(msg) {
     if (window.field != null) {
-      window.field.globalMessage(msg);
+      return window.field.globalMessage(msg);
     }
-    return document.title = msg;
   };
   now.notifyVote = function(index, face, target) {
     rule.setPromise([face, target]);

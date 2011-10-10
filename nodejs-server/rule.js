@@ -130,6 +130,28 @@ exports.getCurrentTrickFace = function(currentTrickOption) {
   }
   return exports.currentTrick[0][0];
 };
+exports.getChangePromiseMinTargetTable = function(suit, target) {
+  if (suit === 'n') {
+    return {
+      n: target,
+      s: Math.min(target + 1, 20),
+      d: Math.min(target + 1, 20),
+      c: Math.min(target + 1, 20),
+      h: Math.min(target + 1, 20)
+    };
+  } else {
+    return {
+      n: Math.min(target + 1, 20),
+      s: Math.min(target + 2, 20),
+      d: Math.min(target + 2, 20),
+      c: Math.min(target + 2, 20),
+      h: Math.min(target + 2, 20)
+    };
+  }
+};
+exports.canChangePromise = function(beforeFace, beforeTarget, afterFace, afterTarget) {
+  return exports.getChangePromiseMinTargetTable(beforeFace, beforeTarget)[afterFace] <= afterTarget;
+};
 exports.currentPromise = null;
 exports.setPromise = function(promise) {
   exports.currentPromise = promise;

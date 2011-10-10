@@ -205,10 +205,10 @@ now.requestRearrangeHand = (additionalCards) ->
 	window.field.dealAdditionalCards(additionalCards, 0, ->
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
-			window.field.chooseMultipleCards(3,
-				(chosen) ->
+			window.field.chooseMultipleCards(3, rule.currentPromise[0], rule.currentPromise[1], rule.getChangePromiseMinTargetTable(rule.currentPromise[0], rule.currentPromise[1])
+				(chosen, newFace, newTarget) ->
 					# 현재는 이전 공약 그대로
-					now.rearrangeHand (card.face for card in chosen), rule.currentPromise[0], rule.currentPromise[1]
+					now.rearrangeHand (card.face for card in chosen), newFace, newTarget
 					window.field.takeCards(0, chosen,
 						->
 							window.field.hands[0].remove(card) for card in chosen
@@ -444,6 +444,7 @@ buildCommitmentString = (face, target) ->
 	suit = SUIT_NAMES[face]
 	return "#{suit} #{target}"
 
+#주공 당선 또는 공약변경시 온다
 now.notifyJugong = (finalJugongIndex, face, target) ->
 	jugongIndex = finalJugongIndex
 	window.field.setSortOrder(FACE_ORDER())
@@ -451,8 +452,6 @@ now.notifyJugong = (finalJugongIndex, face, target) ->
 	systemMsg "jugong is #{users[jugongIndex].name}"
 	rule.setPromise([face, target])
 	
-	document.title = buildCommitmentString(face, target)
-
 	if now.state == now.VOTE
 		window.field.setPlayerType (getRelativeIndexFromIndex jugongIndex), "주공"
 		window.field.playerMessage (getRelativeIndexFromIndex jugongIndex), "당선", buildCommitmentString(face, target)
@@ -523,7 +522,6 @@ now.notifyPlayers = (infos) ->
 now.notifyMsg = (msg) ->
 	if window.field?
 		window.field.globalMessage msg
-	document.title = msg
 
 now.notifyVote = (index, face, target) ->
 	rule.setPromise([face, target])

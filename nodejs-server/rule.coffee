@@ -121,6 +121,28 @@ exports.getCurrentTrickFace = (currentTrickOption) ->
 # Promise
 ################################################################################
 
+exports.getChangePromiseMinTargetTable = (suit, target) ->
+	if suit == 'n'
+		{
+			n: target
+			s: Math.min(target+1, 20)
+			d: Math.min(target+1, 20)
+			c: Math.min(target+1, 20)
+			h: Math.min(target+1, 20)
+		}
+	else
+		{
+			n: Math.min(target+1, 20)
+			s: Math.min(target+2, 20)
+			d: Math.min(target+2, 20)
+			c: Math.min(target+2, 20)
+			h: Math.min(target+2, 20)
+		}
+	
+exports.canChangePromise = (beforeFace, beforeTarget, afterFace, afterTarget) ->
+	exports.getChangePromiseMinTargetTable(beforeFace, beforeTarget)[afterFace] <= afterTarget
+
+
 exports.currentPromise = null
 
 exports.setPromise = (promise) ->

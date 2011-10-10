@@ -476,7 +476,7 @@ everyone.now.rearrangeHand = (cardsToRemove, newFace, newTarget) ->
 		rg.exclude(user).now.notifyRearrangeHandDone cardsToRemove
 
 	#TODO RULESET
-	if newFace != rule.currentPromise[0] and newTarget <= 20 and (newTarget >= rule.currentPromise[1]+2 or newTarget == 20 or (newFace == 'n' or rule.currentPromise[0] == 'n') and newTarget >= rule.currentPromise[1] + 1)
+	if rule.canChangePromise(rule.currentPromise[0], rule.currentPromise[1], newFace, newTarget)
 		rule.setPromise [newFace, newTarget, jugongIndex]
 		everyone.now.notifyJugong jugongIndex, rule.currentPromise[0], rule.currentPromise[1]
 	changeState everyone.now.CHOOSE_FRIEND

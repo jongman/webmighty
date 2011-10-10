@@ -531,21 +531,109 @@ class PlayingField
 						.mouseout(-> $(this).animate({top: baseY + "px"}, SPEED_BASE))
 						.mousedown(-> finish(card))
 
-	chooseMultipleCards: (choose, done=->) ->
+	chooseMultipleCards: (choose, suit, target, minTarget, done=->) ->
 		player = 0
 		baseY = @getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2
 		@chosen = []
-		multiple = @elem.find(".choose_multiple")
+		multiple = $("#choose_multiple")
+		$("#choose_multiple .open_change_promise").unbind().click(->
+			multiple.addClass("enable_change_promise")
+		)
 		multiple.find(".choose_count").html(choose)
 		multiple.fadeIn(500)
 
+		# 공약 변경 부분 구현 시작
+		minValue = target
+		if not minTarget?
+			if suit == 'n'
+				minTarget = {
+					n: target
+					s: Math.min(target+1, 20)
+					d: Math.min(target+1, 20)
+					c: Math.min(target+1, 20)
+					h: Math.min(target+1, 20)
+				}
+			else
+				minTarget = {
+					n: Math.min(target+1, 20)
+					s: Math.min(target+2, 20)
+					d: Math.min(target+2, 20)
+					c: Math.min(target+2, 20)
+					h: Math.min(target+2, 20)
+				}
+				minTarget[suit] = target
+		selectedSuit = suit
+		selectedValue = target
+
+		showSuit = (suit) ->
+			multiple.find(".selected .select_suit").html(SUIT_NAMES[suit])
+		setSuit = (suit) ->
+			selectedSuit = suit
+			minValue = minTarget[selectedSuit]
+			showSuit(suit)
+
+		showValue = (val) -> multiple.find(".selected .select_promise").html(if val == 0 then "" else val)
+		setValue = (val) ->
+			selectedValue = val
+			showValue(val)
+			if minValue < selectedValue
+				multiple.find(".minus_promise_button").removeAttr("disabled")
+			else
+				multiple.find(".minus_promise_button").attr("disabled", "")
+			if selectedValue < 20
+				multiple.find(".plus_promise_button").removeAttr("disabled")
+			else
+				multiple.find(".plus_promise_button").attr("disabled", "")
+
 		finished = () =>
+			if @chosen.length != choose
+				return
 			multiple.fadeOut(500)
+			multiple.removeClass("enable_change_promise")
 			for card in @hands[player]
 				card.elem
 					.removeClass("canChoose")
 					.unbind()
-			done(@chosen)
+			done(@chosen, selectedSuit, selectedValue)
+
+		getSuit = (button) -> $(button).attr("suit")
+		multiple.find(".plus_promise_button").unbind("click").click(-> setValue(Math.min(20, selectedValue+1)))
+		multiple.find(".minus_promise_button").unbind("click").click(-> setValue(Math.max(minValue, selectedValue-1)))
+		multiple.find(".select_suit button")
+			.unbind("mouseover")
+			.unbind("mouseout")
+			.unbind("click")
+			.mouseover(->
+				showSuit getSuit this
+				showValue minTarget[getSuit this])
+			.mouseout(->
+				showSuit(selectedSuit)
+				showValue(selectedValue))
+			.click(->
+						multiple.find(".select_suit button.selected").removeClass("selected")
+						$(this).addClass("selected")
+						setSuit getSuit this
+
+						# 숫자는 해당 무늬의 최소 숫자로
+						setValue(minValue)
+			)
+		multiple.find(".value_select_buttons button").attr("disabled", "")
+		setSuit(selectedSuit)
+		setValue(selectedValue)
+
+		originalSuit = selectedSuit
+		originalValue = selectedValue
+		multiple.find(".reset_promise").unbind().click(->
+			setSuit(originalSuit)
+			setValue(originalValue)
+			multiple.find(".select_suit button").removeClass("selected")
+			multiple.find(".select_suit button." + selectedSuit).addClass("selected"))
+		multiple.find(".select_suit button").removeClass("selected")
+		multiple.find(".select_suit button." + selectedSuit).addClass("selected")
+
+		# 공약 변경 부분 구현 끝
+
+		# 카드 선택 부분 구현
 
 		getHandlers = (card) =>
 			raised = false
@@ -573,12 +661,12 @@ class PlayingField
 						card.elem.removeClass("chosen")
 						deraise()
 					if @chosen.length == choose
-						multiple.find("button")
+						multiple.find("button.confirm")
 							.removeAttr("disabled")
 							.unbind()
 							.click(finished)
 					else
-						multiple.find("button").attr("disabled", "")
+						multiple.find("button.confirm").attr("disabled", "")
 
 				onMouseOut: =>
 					if card not in @chosen
@@ -586,6 +674,7 @@ class PlayingField
 			}
 
 		for card in @hands[player]
+			console.log card
 			handlers = getHandlers(card)
 			card.elem
 				.addClass("canChoose")
@@ -672,7 +761,6 @@ class PlayingField
 
 		# 유틸리티 함수들
 		showSuit = (suit) ->
-			console.log "showSuit #{suit} #{SUIT_NAMES[suit]}"
 			$("#selected_suit").html(SUIT_NAMES[suit])
 		setSuit = (suit) ->
 			selectedSuit = suit
@@ -766,6 +854,7 @@ $(document).ready(->
 			$("#sounds").find("audio").prop({muted: false})
 	)
 
+
 	$("#chatbox .toggle_size").unbind().click(->
 		if $("#chatbox").width() == 400
 			$("#chatbox").width(200)
@@ -785,6 +874,21 @@ $(document).ready(->
 		#window.field.choosePromise(17, 17, true, "h", 17, (res) -> console.log(res)))
 	if window.LIBGAME?
 		return
+
+
+#	chooseMultiple 테스트 코드
+#	window.field.setPlayers([
+#		{name: "JongMan Koo", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"}
+#		{name: "Wonha Ryu", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/41489_100000758278961_2887_q.jpg"}
+#		{name: "Jinho Kim", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/161338_100000247121062_7309182_q.jpg"}
+#		{name: "DoKyoung Lee", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/273911_100001947905915_2944452_q.jpg"}
+#		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
+#	])
+#	window.field.deal TEST_CARDS, 1, ->
+#		window.field.chooseMultipleCards(3, 'n', 15, null, ->)
+
+
+
 	window.field.setPlayers([
 		{name: "JongMan Koo", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"}
 		{name: "Wonha Ryu", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/41489_100000758278961_2887_q.jpg"}
@@ -839,7 +943,7 @@ $(document).ready(->
 				window.field.dealAdditionalCards(["sq", "jr", "hk"], 0,
 				->
 					window.field.globalMessage("JongMan Koo님이 당을 재정비하고 있습니다.")
-					window.field.chooseMultipleCards(3,
+					window.field.chooseMultipleCards(3, 's', 16,
 						(chosen) ->
 							window.field.takeCards(0, chosen,
 								->

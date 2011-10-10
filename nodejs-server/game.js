@@ -773,27 +773,116 @@
       }
       return _results;
     };
-    PlayingField.prototype.chooseMultipleCards = function(choose, done) {
-      var baseY, card, finished, getHandlers, handlers, multiple, player, _i, _len, _ref;
+    PlayingField.prototype.chooseMultipleCards = function(choose, suit, target, minTarget, done) {
+      var baseY, card, finished, getHandlers, getSuit, handlers, minValue, multiple, originalSuit, originalValue, player, selectedSuit, selectedValue, setSuit, setValue, showSuit, showValue, _i, _len, _ref;
       if (done == null) {
         done = function() {};
       }
       player = 0;
       baseY = this.getHandPosition(player, 1, 0).y - CARD_HEIGHT / 2;
       this.chosen = [];
-      multiple = this.elem.find(".choose_multiple");
+      multiple = $("#choose_multiple");
+      $("#choose_multiple .open_change_promise").unbind().click(function() {
+        return multiple.addClass("enable_change_promise");
+      });
       multiple.find(".choose_count").html(choose);
       multiple.fadeIn(500);
+      minValue = target;
+      if (!(minTarget != null)) {
+        if (suit === 'n') {
+          minTarget = {
+            n: target,
+            s: Math.min(target + 1, 20),
+            d: Math.min(target + 1, 20),
+            c: Math.min(target + 1, 20),
+            h: Math.min(target + 1, 20)
+          };
+        } else {
+          minTarget = {
+            n: Math.min(target + 1, 20),
+            s: Math.min(target + 2, 20),
+            d: Math.min(target + 2, 20),
+            c: Math.min(target + 2, 20),
+            h: Math.min(target + 2, 20)
+          };
+          minTarget[suit] = target;
+        }
+      }
+      selectedSuit = suit;
+      selectedValue = target;
+      showSuit = function(suit) {
+        return multiple.find(".selected .select_suit").html(SUIT_NAMES[suit]);
+      };
+      setSuit = function(suit) {
+        selectedSuit = suit;
+        minValue = minTarget[selectedSuit];
+        return showSuit(suit);
+      };
+      showValue = function(val) {
+        return multiple.find(".selected .select_promise").html(val === 0 ? "" : val);
+      };
+      setValue = function(val) {
+        selectedValue = val;
+        showValue(val);
+        if (minValue < selectedValue) {
+          multiple.find(".minus_promise_button").removeAttr("disabled");
+        } else {
+          multiple.find(".minus_promise_button").attr("disabled", "");
+        }
+        if (selectedValue < 20) {
+          return multiple.find(".plus_promise_button").removeAttr("disabled");
+        } else {
+          return multiple.find(".plus_promise_button").attr("disabled", "");
+        }
+      };
       finished = __bind(function() {
         var card, _i, _len, _ref;
+        if (this.chosen.length !== choose) {
+          return;
+        }
         multiple.fadeOut(500);
+        multiple.removeClass("enable_change_promise");
         _ref = this.hands[player];
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           card = _ref[_i];
           card.elem.removeClass("canChoose").unbind();
         }
-        return done(this.chosen);
+        return done(this.chosen, selectedSuit, selectedValue);
       }, this);
+      getSuit = function(button) {
+        return $(button).attr("suit");
+      };
+      multiple.find(".plus_promise_button").unbind("click").click(function() {
+        return setValue(Math.min(20, selectedValue + 1));
+      });
+      multiple.find(".minus_promise_button").unbind("click").click(function() {
+        return setValue(Math.max(minValue, selectedValue - 1));
+      });
+      multiple.find(".select_suit button").unbind("mouseover").unbind("mouseout").unbind("click").mouseover(function() {
+        showSuit(getSuit(this));
+        return showValue(minTarget[getSuit(this)]);
+      }).mouseout(function() {
+        showSuit(selectedSuit);
+        return showValue(selectedValue);
+      }).click(function() {
+        multiple.find(".select_suit button.selected").removeClass("selected");
+        $(this).addClass("selected");
+        setSuit(getSuit(this));
+        return setValue(minValue);
+      });
+      multiple.find(".value_select_buttons button").attr("disabled", "");
+      setSuit(selectedSuit);
+      setValue(selectedValue);
+      originalSuit = selectedSuit;
+      originalValue = selectedValue;
+      multiple.find(".reset_promise").unbind().click(function() {
+        setSuit(originalSuit);
+        setValue(originalValue);
+        multiple.find(".select_suit button").removeClass("selected");
+        return multiple.find(".select_suit button." + selectedSuit).addClass("selected");
+      });
+      multiple.find(".select_suit button").removeClass("selected");
+      multiple.find(".select_suit button." + selectedSuit).addClass("selected");
       getHandlers = __bind(function(card) {
         var deraise, raise, raised;
         raised = false;
@@ -830,9 +919,9 @@
               deraise();
             }
             if (this.chosen.length === choose) {
-              return multiple.find("button").removeAttr("disabled").unbind().click(finished);
+              return multiple.find("button.confirm").removeAttr("disabled").unbind().click(finished);
             } else {
-              return multiple.find("button").attr("disabled", "");
+              return multiple.find("button.confirm").attr("disabled", "");
             }
           }, this),
           onMouseOut: __bind(function() {
@@ -845,6 +934,7 @@
       _ref = this.hands[player];
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         card = _ref[_i];
+        console.log(card);
         handlers = getHandlers(card);
         card.elem.addClass("canChoose").mouseover(handlers.onMouseOver).mousedown(handlers.onMouseDown).mouseout(handlers.onMouseOut);
       }
@@ -901,8 +991,12 @@
       $("#prompt_dialog").fadeIn(100);
       return $("#prompt_dialog .value").focus();
     };
+    PlayingField.prototype.scrollChatToEnd = function() {
+      return $("#chatbox .content").scrollTop($("#chatbox .content").prop("scrollHeight"));
+    };
     PlayingField.prototype.addChatMessage = function(name, msg) {
-      return $("#chatbox .content").append(name + ": " + msg + "<BR>").scrollTop($("#chatbox .content").prop("scrollHeight"));
+      $("#chatbox .content").append(name + ": " + msg + "<BR>");
+      return this.scrollChatToEnd();
     };
     PlayingField.prototype.setChatHandler = function(handler) {
       return $("#chatbox .value").unbind("keypress").keypress(function(e) {
@@ -955,7 +1049,6 @@
       selectedValue = defaultValue;
       minValue = 13;
       showSuit = function(suit) {
-        console.log("showSuit " + suit + " " + SUIT_NAMES[suit]);
         return $("#selected_suit").html(SUIT_NAMES[suit]);
       };
       setSuit = function(suit) {
@@ -1059,10 +1152,12 @@
     $("#chatbox .toggle_size").unbind().click(function() {
       if ($("#chatbox").width() === 400) {
         $("#chatbox").width(200);
-        return $("#chatbox .toggle_size").text('>');
+        $("#chatbox .toggle_size").text('>');
+        return window.field.scrollChatToEnd();
       } else {
         $("#chatbox").width(400);
-        return $("#chatbox .toggle_size").text('<');
+        $("#chatbox .toggle_size").text('<');
+        return window.field.scrollChatToEnd();
       }
     });
     if (window.LIBGAME != null) {
@@ -1123,7 +1218,7 @@
         				)
         				*/        return window.field.dealAdditionalCards(["sq", "jr", "hk"], 0, function() {
           window.field.globalMessage("JongMan Koo님이 당을 재정비하고 있습니다.");
-          return window.field.chooseMultipleCards(3, function(chosen) {
+          return window.field.chooseMultipleCards(3, 's', 16, function(chosen) {
             return window.field.takeCards(0, chosen, function() {
               var card, _i, _len;
               for (_i = 0, _len = chosen.length; _i < _len; _i++) {
