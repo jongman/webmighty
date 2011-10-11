@@ -928,6 +928,15 @@ $(document).ready(->
 			window.field.scrollChatToEnd()
 	)
 
+	$("#chatbox .toggle_member_list").unbind().click(->
+		$("#chatbox .member_list").toggle()
+		if $("#chatbox .content").hasClass("reduced")
+			$("#chatbox .content").removeClass("reduced")
+		else
+			$("#chatbox .content").addClass("reduced")
+		window.field.scrollChatToEnd()
+	)
+
 	#$("button.prompt").click(->
 		#window.field.prompt("프롬프트 테스트", "기본값", (r) -> alert r))
 	#$("button.choose_promise").click(->

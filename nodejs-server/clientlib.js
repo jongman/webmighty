@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, allowGuestPlay, assertEqual, assertTrue, audiochannels, buildCommitmentString, buildMinimizedCardHtml, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, allowGuestPlay, assertEqual, assertTrue, audiochannels, buildCommitmentString, buildMinimizedCardHtml, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getClassForChatUser, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -737,13 +737,7 @@
       return window.field.showPlayerList();
     }
   };
-  now.notifyInAction = function(index) {
-    return window.field.displayPlayerInAction(getRelativeIndexFromIndex(index));
-  };
-  now.showName = function() {
-    return systemMsg("i am " + this.now.name);
-  };
-  now.receiveMessage = function(clientId, index, name, msg) {
+  getClassForChatUser = function(clientId, index) {
     var c;
     c = "";
     if (clientId === now.core.clientId) {
@@ -756,18 +750,38 @@
       c += "player";
     }
     if (index >= 0 && index < 5 && ((jugongIndex != null) && index === jugongIndex || (rule.friendIndex != null) && index === rule.friendIndex)) {
-      console.log(index);
-      console.log(jugongIndex);
-      console.log(rule.friendIndex);
       if (c !== "") {
         c += " ";
       }
       c += "ruler";
     }
+    return c;
+  };
+  now.notifyUserList = function(userList) {
+    var d, name, _i, _len;
+    d = "<ul>";
+    for (_i = 0, _len = userList.length; _i < _len; _i++) {
+      name = userList[_i];
+      name = $("#chatbox .escaper").text(name).html();
+      d += "<li>" + name + "</li>";
+    }
+    d += "</ul>";
+    $("#chatbox .member_list").html(d);
+    return $("#chatbox .toggle_member_list").text("(" + userList.length + ")");
+  };
+  now.receiveMessage = function(clientId, index, name, msg) {
+    var c;
+    c = getClassForChatUser(clientId, index);
     if (c !== "") {
       name = "<span class=\"" + c + "\">" + name + "</span>";
     }
     return window.field.addChatMessage(name, msg);
+  };
+  now.notifyInAction = function(index) {
+    return window.field.displayPlayerInAction(getRelativeIndexFromIndex(index));
+  };
+  now.showName = function() {
+    return systemMsg("i am " + this.now.name);
   };
   readyCount = 0;
   onAllReady = function() {
@@ -779,7 +793,10 @@
           if (n === "") {
             return;
           }
-          now.name = n;
+          if (now.name !== n) {
+            now.name = n;
+            now.notifyChangeName();
+          }
           return now.distributeMessage(s);
         });
       } else {
@@ -797,6 +814,7 @@
         return FB.api('/me', function(user) {
           if (user != null) {
             now.name = user.name;
+            now.notifyChangeName();
             return now.fbUserID = user.id;
           }
         });
@@ -819,7 +837,10 @@
           if (n === "") {
             return;
           }
-          now.name = n;
+          if (now.name !== n) {
+            now.name = n;
+            now.notifyChangeName();
+          }
           return now.readyGame();
         });
       } else {
@@ -835,7 +856,10 @@
           if (n === "") {
             return;
           }
-          now.name = n;
+          if (now.name !== n) {
+            now.name = n;
+            now.notifyChangeName();
+          }
           return now.readyGame();
         });
       } else {

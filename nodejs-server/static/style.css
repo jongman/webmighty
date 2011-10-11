@@ -399,6 +399,27 @@ a:hover {
 	word-wrap:break-word;
 	line-height:1.1em;
 }
+#chatbox .content.reduced {
+	height:482px;
+	overflow-y:auto;
+	word-wrap:break-word;
+	line-height:1.1em;
+}
+#chatbox .toggle_member_list {
+	position: absolute;
+	top:0px;
+	right:0px;
+	font-size:10px;
+	font-weight:bold;
+}
+#chatbox .member_list {
+	display:none;
+	font-size:13px;
+	border:1px;
+	right:0px;
+	height:100px;
+	overflow-y:auto;
+}
 #chatbox .toggle_size {
 	position: absolute;
 	top:40%;

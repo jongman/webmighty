@@ -611,14 +611,7 @@ now.resetField = ->
 # Miscellaneous
 ################################################################################
 
-now.notifyInAction = (index) ->
-	# TODO display player[index] is currently taking action
-	window.field.displayPlayerInAction getRelativeIndexFromIndex(index)
-
-now.showName = ->
-	systemMsg "i am #{@now.name}"
-
-now.receiveMessage = (clientId, index, name, msg)->
+getClassForChatUser = (clientId, index) ->
 	c = ""
 	if clientId == now.core.clientId
 		c = "me"
@@ -627,15 +620,32 @@ now.receiveMessage = (clientId, index, name, msg)->
 			c += " "
 		c += "player"
 	if index >= 0 and index < 5 and (jugongIndex? and index == jugongIndex or rule.friendIndex? and index == rule.friendIndex)
-		console.log index
-		console.log jugongIndex
-		console.log rule.friendIndex
 		if c != ""
 			c += " "
 		c += "ruler"
+	return c
+
+now.notifyUserList = (userList) ->
+	d = "<ul>"
+	for name in userList
+		name = $("#chatbox .escaper").text(name).html()
+		d += "<li>#{name}</li>"
+	d += "</ul>"
+	$("#chatbox .member_list").html(d)
+	$("#chatbox .toggle_member_list").text("(#{userList.length})")
+
+now.receiveMessage = (clientId, index, name, msg)->
+	c = getClassForChatUser clientId, index
 	if c != ""
 		name = "<span class=\"#{c}\">#{name}</span>"
 	window.field.addChatMessage name, msg
+
+now.notifyInAction = (index) ->
+	# TODO display player[index] is currently taking action
+	window.field.displayPlayerInAction getRelativeIndexFromIndex(index)
+
+now.showName = ->
+	systemMsg "i am #{@now.name}"
 
 readyCount = 0
 
@@ -647,7 +657,9 @@ onAllReady = ->
 			window.field.prompt("What's your name?", now.name, (n)->
 				if n == ""
 					return
-				now.name = n
+				if now.name != n
+					now.name = n
+					now.notifyChangeName()
 				now.distributeMessage(s)
 			)
 		else
@@ -689,6 +701,7 @@ onAllReady = ->
 					#image = document.getElementById('image');
 					#image.src = 'http://graph.facebook.com/' + user.id + '/picture';
 					now.name = user.name
+					now.notifyChangeName()
 					now.fbUserID = user.id
 			)
 		else
@@ -707,7 +720,9 @@ onAllReady = ->
 			window.field.prompt("What's your name?", now.name, (n)->
 				if n == ""
 					return
-				now.name = n
+				if now.name != n
+					now.name = n
+					now.notifyChangeName()
 				now.readyGame()
 			)
 		else
@@ -722,7 +737,9 @@ onAllReady = ->
 			window.field.prompt("What's your name?", now.name, (n)->
 				if n == ""
 					return
-				now.name = n
+				if now.name != n
+					now.name = n
+					now.notifyChangeName()
 				now.readyGame()
 			)
 		else

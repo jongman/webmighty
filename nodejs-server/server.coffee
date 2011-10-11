@@ -131,6 +131,25 @@ waitForReconnectingTimer = {}
 
 disconnectedPlayers = {}
 
+sendUserList = ->
+	userList = []
+	count = 0
+	rg.getUsers((users) ->
+		for user in users
+			nowjs.getClient user, ->
+				userList.push @now.name
+	)
+	rg.now.notifyUserList userList
+
+everyone.now.notifyChangeName = ->
+	sendUserList()
+
+rg.on 'join', ->
+	sendUserList()
+
+rg.on 'leave', ->
+	sendUserList()
+
 pg.on 'leave', ->
 	if @now.playerIndex?
 		disconnectedUser = this

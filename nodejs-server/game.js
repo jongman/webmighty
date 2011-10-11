@@ -1236,6 +1236,15 @@
         return window.field.scrollChatToEnd();
       }
     });
+    $("#chatbox .toggle_member_list").unbind().click(function() {
+      $("#chatbox .member_list").toggle();
+      if ($("#chatbox .content").hasClass("reduced")) {
+        $("#chatbox .content").removeClass("reduced");
+      } else {
+        $("#chatbox .content").addClass("reduced");
+      }
+      return window.field.scrollChatToEnd();
+    });
     if (window.LIBGAME != null) {
       return;
     }
