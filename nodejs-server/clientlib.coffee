@@ -102,8 +102,6 @@ playSound = (soundName) ->
 
 lastSuit = null
 doCommitment = ->
-	now.notifyImTakingAction()
-	playSound "myturn"
 	systemMsg "공약 내세우기"
 
 	if rule.currentPromise?
@@ -162,16 +160,18 @@ doCommitment = ->
 	)
 
 commitmentIndex = 0
-checkForCommitment = ->
-	commitmentIndex += 1
-	if commitmentIndex >= 2
+checkForCommitment = (idx)->
+	commitmentIndex |= idx 
+	if commitmentIndex == 3
 		setTimeout(
 			->
 				doCommitment()
 			, 300)
 
 now.requestCommitment = ->
-	checkForCommitment()
+	checkForCommitment(2)
+	now.notifyImTakingAction()
+	playSound "myturn"
 
 now.notifyCards = (allCards) ->
 	# observer method
@@ -185,6 +185,7 @@ now.notifyCards = (allCards) ->
 	window.field.deal(cards, 1, ->)
 
 now.receiveDealtCards = (cards) ->
+	window.field.clearPlayerMessages()
 	commitmentIndex = 0
 	CARDS = [
 		cards
@@ -194,7 +195,7 @@ now.receiveDealtCards = (cards) ->
 		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]]
 	window.field.globalMessage("선거가 시작됩니다!")
 	window.field.deal CARDS, 1, -> 
-		checkForCommitment()
+		checkForCommitment(1)
 
 # 주공 당선 후 손 정리
 
@@ -447,10 +448,10 @@ buildCommitmentString = (face, target) ->
 #주공 당선 또는 공약변경시 온다
 now.notifyJugong = (finalJugongIndex, face, target) ->
 	jugongIndex = finalJugongIndex
-	window.field.setSortOrder(FACE_ORDER())
-	window.field.sortHands(0)
 	systemMsg "jugong is #{users[jugongIndex].name}"
 	rule.setPromise([face, target])
+	window.field.setSortOrder(FACE_ORDER())
+	window.field.sortHands(0)
 	
 	if now.state == now.VOTE
 		window.field.setPlayerType (getRelativeIndexFromIndex jugongIndex), "주공"
@@ -533,6 +534,7 @@ now.notifyDealMiss = (index, hand) ->
 	window.field.clearPlayerMessages()
 	window.field.playerMessage((getRelativeIndexFromIndex index), "딜미스!")
 	# TODO show dealmiss hand
+	window.field.showDealMissHand(hand, users[index].name)
 
 now.notifyPass = (index) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "패스")
@@ -602,6 +604,9 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 
 now.resetField = ->
 	window.field.clearCards()
+	window.field.clearDialogs()
+	if now.state == now.WAITING_PLAYER
+		window.field.showPlayerList()
 ################################################################################
 # Miscellaneous
 ################################################################################
@@ -648,27 +653,27 @@ onAllReady = ->
 		else
 			now.distributeMessage(s)
 
-	b = ""
-	b += buildMinimizedCardHtml 'jr'
-	b += buildMinimizedCardHtml "invalid"
-	for fi in "sdhc"
-		for si in "23456789tjqk1"
-			b += buildMinimizedCardHtml(fi+si)
-		b += "<BR>"
-	b += buildMinimizedCardHtml 'jr dark'
-	b += buildMinimizedCardHtml "invalid dark"
-	for fi in "sdhc"
-		for si in "23456789tjqk1"
-			b += buildMinimizedCardHtml(fi+si + " dark")
-		b += "<BR>"
+	#b = ""
+	#b += buildMinimizedCardHtml 'jr'
+	#b += buildMinimizedCardHtml "invalid"
+	#for fi in "sdhc"
+		#for si in "23456789tjqk1"
+			#b += buildMinimizedCardHtml(fi+si)
+		#b += "<BR>"
+	#b += buildMinimizedCardHtml 'jr dark'
+	#b += buildMinimizedCardHtml "invalid dark"
+	#for fi in "sdhc"
+		#for si in "23456789tjqk1"
+			#b += buildMinimizedCardHtml(fi+si + " dark")
+		#b += "<BR>"
 
-	b += buildMinimizedCardHtml 'jr inline'
-	b += buildMinimizedCardHtml "invalid inline"
-	for fi in "sdhc"
-		for si in "23456789tjqk1"
-			b += buildMinimizedCardHtml(fi+si + " inline")
-		b += "<BR>"
-	systemMsg b
+	#b += buildMinimizedCardHtml 'jr inline'
+	#b += buildMinimizedCardHtml "invalid inline"
+	#for fi in "sdhc"
+		#for si in "23456789tjqk1"
+			#b += buildMinimizedCardHtml(fi+si + " inline")
+		#b += "<BR>"
+	#systemMsg b
 
 	# example of statusbar function
 	window.field.setStatusBar (card)->

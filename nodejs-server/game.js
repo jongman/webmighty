@@ -1,5 +1,5 @@
 (function() {
-  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, COLLECTED_CARD_GAP, Card, ChangePromiseHelper, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
+  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, COLLECTED_CARD_GAP, Card, ChangePromiseHelper, DEFAULT_SPEED_BASE, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, TEST_CARDS6, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -11,6 +11,7 @@
   CARD_WIDTH = 71;
   CARD_HEIGHT = 96;
   CARD_OVERLAP = 20;
+  DEFAULT_SPEED_BASE = 50;
   SPEED_BASE = 50;
   PI = Math.PI;
   PLAYED_CARD_RADIUS = 60;
@@ -42,15 +43,15 @@
     6: [
       {
         side: "bottom",
-        location: 0.75,
+        location: 0.7,
         angle: PI * (1 + 1 / 3)
       }, {
         side: "bottom",
-        location: 0.25,
+        location: 0.3,
         angle: PI * (1 + 2 / 3)
       }, {
         side: "left",
-        location: 0.6,
+        location: 0.5,
         angle: PI * 2.
       }, {
         side: "top",
@@ -62,7 +63,7 @@
         angle: PI * (2 + 1 / 3)
       }, {
         side: "right",
-        location: 0.6,
+        location: 0.5,
         angle: PI * 1.
       }
     ]
@@ -133,7 +134,7 @@
       this.playing_field = playing_field;
       this.face = face;
       this.direction = direction;
-      this.elem = $("#card_template").clone().addClass(this.face).addClass(this.direction).appendTo(this.playing_field.elem);
+      this.elem = $(".card_template").clone().removeClass("card_template").addClass(this.face).addClass(this.direction).appendTo(this.playing_field.elem);
       size = this.getSize();
       this.elem.css("left", (x - floor(size.width / 2)) + "px").css("top", (y - floor(size.height / 2)) + "px");
       this.playing_field.addCard(this);
@@ -329,6 +330,9 @@
           x: side === "left" ? computedGap : this.getSize().width - width - computedGap
         };
       }
+    };
+    PlayingField.prototype.clearDialogs = function() {
+      return $("#dialog > div").hide();
     };
     PlayingField.prototype.clearCards = function() {
       while (this.cards.length > 0) {
@@ -577,7 +581,7 @@
       _results = [];
       for (i = 0, _ref2 = this.players.length; 0 <= _ref2 ? i < _ref2 : i > _ref2; 0 <= _ref2 ? i++ : i--) {
         _ref3 = this.getProfilePosition(i), side = _ref3.side, y = _ref3.y, x = _ref3.x;
-        elem = $("#profile_template").clone().addClass(side).appendTo(this.elem);
+        elem = $(".profile_template").clone().removeClass("profile_template").addClass(side).appendTo(this.elem);
         elem.find(".picture").attr({
           src: this.players[i].picture
         });
@@ -713,14 +717,11 @@
         cards[i].elem.animate({
           top: cy,
           left: cx
-        }, SPEED_BASE * 5).fadeOut(0);
+        }, SPEED_BASE * 5).fadeOut(0, function() {
+          return cards[i].remove();
+        });
       }
       return setTimeout(__bind(function() {
-        var card, _i, _len;
-        for (_i = 0, _len = cards.length; _i < _len; _i++) {
-          card = cards[_i];
-          card.remove();
-        }
         return done();
       }, this), SPEED_BASE * 5);
     };
@@ -1004,6 +1005,61 @@
       });
       return $("#confirm_dialog").fadeIn(100);
     };
+    PlayingField.prototype.showDealMissHand = function(hand, name) {
+      var DealmissField, c, card, dealmissField, faceOrder, p, _i, _len, _results;
+      if (name == null) {
+        name = "김딜미";
+      }
+      $("#dealmiss_dialog .you").text(name);
+      faceOrder = "jsdch";
+      hand.sort(function(a, b) {
+        if (a[0] !== b[0]) {
+          return -(faceOrder.indexOf(a[0]) - faceOrder.indexOf(b[0]));
+        } else {
+          return VALUE_ORDER.indexOf(a[1]) - VALUE_ORDER.indexOf(b[1]);
+        }
+      });
+      DealmissField = (function() {
+        function DealmissField(elem) {
+          this.elem = elem;
+          this.cards = [];
+        }
+        DealmissField.prototype.addCard = function(card) {
+          this.cards.push(card);
+          return card.elem.css("z-index", this.cards.length + 100).delay(50 * this.cards.length + 100).fadeIn(100);
+        };
+        DealmissField.prototype.clear = function() {
+          var card, _i, _len, _ref;
+          _ref = this.cards;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            card = _ref[_i];
+            card.remove();
+          }
+          return this.cards = [];
+        };
+        return DealmissField;
+      })();
+      dealmissField = new DealmissField($("#dealmiss_dialog .cards"));
+      $("#dealmiss_dialog .close").unbind().click(function() {
+        $("#dealmiss_dialog").hide().clearQueue();
+        return dealmissField.clear();
+      });
+      $("#dealmiss_dialog").fadeIn(100).delay(3000).fadeOut(100, function() {
+        return dealmissField.clear();
+      });
+      p = {
+        left: 0,
+        top: 0
+      };
+      _results = [];
+      for (_i = 0, _len = hand.length; _i < _len; _i++) {
+        c = hand[_i];
+        console.log(c);
+        card = new Card(dealmissField, c, "vertical", p.left + CARD_WIDTH / 2, p.top + CARD_HEIGHT / 2);
+        _results.push(p.left += CARD_OVERLAP);
+      }
+      return _results;
+    };
     PlayingField.prototype.prompt = function(question, defaultValue, callback) {
       var handler;
       if (defaultValue == null) {
@@ -1039,6 +1095,7 @@
       return $("#chatbox .content").scrollTop($("#chatbox .content").prop("scrollHeight"));
     };
     PlayingField.prototype.addChatMessage = function(name, msg) {
+      msg = $("#chatbox .escaper").text(msg).html();
       $("#chatbox .content").append(name + ": " + msg + "<BR>");
       return this.scrollChatToEnd();
     };
@@ -1054,6 +1111,12 @@
           return handler(ret);
         }
       });
+    };
+    PlayingField.prototype.setAnimationOn = function() {
+      return SPEED_BASE = DEFAULT_SPEED_BASE;
+    };
+    PlayingField.prototype.setAnimationOff = function() {
+      return SPEED_BASE = 0;
     };
     PlayingField.prototype.setStatusBar = function(htmlTxt) {
       var buildMinimizedCardHtml, l, r, _ref;
@@ -1132,22 +1195,34 @@
   })();
   field = null;
   TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]];
+  TEST_CARDS6 = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3"], ["back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back"]];
   $(document).ready(function() {
     var GAP;
     window.field = new PlayingField($("#playing_field"));
-    $("#sounds .toggle").click(function() {
+    $("#option_buttons .toggle_sound").click(function() {
       var v;
-      v = $("#sounds .toggle").text();
+      v = $("#option_buttons .toggle_sound").text();
       if (v === "mute") {
-        $("#sounds .toggle").text("unmute");
-        return $("#sounds").find("audio").prop({
+        $("#option_buttons .toggle_sound").text("unmute");
+        return $("#option_buttons").find("audio").prop({
           muted: true
         });
       } else {
-        $("#sounds .toggle").text("mute");
-        return $("#sounds").find("audio").prop({
+        $("#option_buttons .toggle_sound").text("mute");
+        return $("#option_buttons").find("audio").prop({
           muted: false
         });
+      }
+    });
+    $("#option_buttons .toggle_animation").click(function() {
+      var v;
+      v = $("#option_buttons .toggle_animation").text();
+      if (v === "animation off") {
+        window.field.setAnimationOff();
+        return $("#option_buttons .toggle_animation").text("animation on");
+      } else {
+        window.field.setAnimationOn();
+        return $("#option_buttons .toggle_animation").text("animation off");
       }
     });
     $("#chatbox .toggle_size").unbind().click(function() {
@@ -1169,6 +1244,9 @@
         name: "JongMan Koo",
         picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"
       }, {
+        name: "JongMan2 Koo",
+        picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"
+      }, {
         name: "Wonha Ryu",
         picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/41489_100000758278961_2887_q.jpg"
       }, {
@@ -1183,9 +1261,8 @@
       }
     ]);
     window.field.globalMessage("새 게임을 시작합니다");
-    SPEED_BASE = 50;
     GAP = SPEED_BASE * 20;
-    return window.field.deal(TEST_CARDS, 1, function() {
+    return window.field.deal(TEST_CARDS6, 1, function() {
       window.field.globalMessage("선거가 시작됩니다!");
       setTimeout(function() {
         return window.field.playerMessage(1, "패스");

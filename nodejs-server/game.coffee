@@ -5,11 +5,12 @@ PROFILE_CARD_GAP = 15
 CARD_WIDTH = 71
 CARD_HEIGHT = 96
 CARD_OVERLAP = 20
+DEFAULT_SPEED_BASE = 50
 SPEED_BASE = 50
 PI = Math.PI
 PLAYED_CARD_RADIUS = 60
 COLLECTED_CARD_GAP = 20
-PLAYER_LOCATION = 
+PLAYER_LOCATION =
 	5: [
 		{ side: "bottom", location: 0.5, angle: PI * (3 / 2)}
 		{ side: "left", location: 0.6, angle: PI * (3 / 2 - 2 / 5) }
@@ -18,12 +19,12 @@ PLAYER_LOCATION =
 		{ side: "right", location: 0.6, angle: PI * (3 / 2 - 8 / 5) }
 	]
 	6: [
-		{ side: "bottom", location: 0.75, angle: PI * (1+1 / 3)}
-		{ side: "bottom", location: 0.25, angle: PI * (1+2 / 3)}
-		{ side: "left", location: 0.6, angle: PI * (2) }
+		{ side: "bottom", location: 0.7, angle: PI * (1+1 / 3)}
+		{ side: "bottom", location: 0.3, angle: PI * (1+2 / 3)}
+		{ side: "left", location: 0.5, angle: PI * (2) }
 		{ side: "top", location: 0.25, angle: PI * (2 + 1 / 3) }
 		{ side: "top", location: 0.75, angle: PI * (2 + 1 / 3) }
-		{ side: "right", location: 0.6, angle: PI * (1) }
+		{ side: "right", location: 0.5, angle: PI * (1) }
 	]
 DISAPPEAR_DIRECTION =
 	left: [-CARD_HEIGHT, 0]
@@ -81,8 +82,9 @@ isScoreCard = (face) ->
 class Card
 	constructor: (@playing_field, @face, @direction, x, y) ->
 		# 카드 엘레멘트 생성
-		@elem = $("#card_template")
+		@elem = $(".card_template")
 			.clone()
+			.removeClass("card_template")
 			.addClass(@face)
 			.addClass(@direction)
 			.appendTo(@playing_field.elem)
@@ -173,7 +175,7 @@ class ChangePromiseHelper
 		@minValue = @minTarget[@selectedSuit]
 		@showSuit(suit)
 
-	showValue: (val) -> 
+	showValue: (val) ->
 		@elem.find(".selected .select_promise").html(if val == 0 then "" else val)
 
 	setValue: (val) ->
@@ -260,6 +262,9 @@ class PlayingField
 				y: @convertRelativePosition(0, location).y - height / 2,
 				x: if side == "left" then computedGap else @getSize().width - width - computedGap
 			}
+
+	clearDialogs: ->
+		$("#dialog > div").hide()
 
 	clearCards: ->
 		@cards.pop().remove() while @cards.length > 0
@@ -427,8 +432,9 @@ class PlayingField
 		@players = players
 		for i in [0...@players.length]
 			{side: side, y: y, x: x} = @getProfilePosition(i)
-			elem = $("#profile_template")
+			elem = $(".profile_template")
 				.clone()
+				.removeClass("profile_template")
 				.addClass(side)
 				.appendTo(@elem)
 			elem.find(".picture").attr({src: @players[i].picture})
@@ -517,10 +523,10 @@ class PlayingField
 		for i in [0...cards.length]
 			cards[i].elem
 				.animate({top: cy, left: cx}, SPEED_BASE * 5)
-				.fadeOut(0)
+				.fadeOut(0, -> cards[i].remove())
 		setTimeout(
 			=>
-				card.remove() for card in cards
+				#card.remove() for card in cards
 				done()
 			, SPEED_BASE * 5)
 
@@ -726,6 +732,50 @@ class PlayingField
 		$("#confirm_dialog .cancel").unbind().click(-> handler(false))
 		$("#confirm_dialog").fadeIn(100)
 
+	showDealMissHand: (hand, name="김딜미") ->
+		$("#dealmiss_dialog .you").text(name)
+		faceOrder = "jsdch"
+		hand.sort((a, b) ->
+			if a[0] != b[0]
+				- (faceOrder.indexOf(a[0]) - faceOrder.indexOf(b[0]))
+			else
+				VALUE_ORDER.indexOf(a[1]) - VALUE_ORDER.indexOf(b[1])
+		)
+
+		class DealmissField
+			constructor: (@elem)->
+				@cards = []
+			addCard: (card)->
+				@cards.push(card)
+				card.elem
+					.css("z-index", @cards.length+100)
+					.delay(50*@cards.length+100)
+					.fadeIn(100)
+			clear: ->
+				card.remove() for card in @cards
+				@cards = []
+
+		dealmissField = new DealmissField($("#dealmiss_dialog .cards"))
+
+		$("#dealmiss_dialog .close").unbind().click(->
+			$("#dealmiss_dialog").hide().clearQueue()
+			dealmissField.clear()
+		)
+		$("#dealmiss_dialog")
+			.fadeIn(100)
+			.delay(3000).fadeOut(100, ->
+				dealmissField.clear()
+			)
+
+		p = {
+			left: 0
+			top: 0
+		}
+		for c in hand
+			console.log c
+			card = new Card(dealmissField, c, "vertical", p.left + CARD_WIDTH/2, p.top + CARD_HEIGHT/2)
+			p.left += CARD_OVERLAP
+
 	prompt: (question, defaultValue = null, callback=(res) ->) ->
 		defaultValue ?= ""
 		$("#prompt_dialog .title").text(question)
@@ -754,6 +804,7 @@ class PlayingField
 			.scrollTop($("#chatbox .content").prop("scrollHeight"))
 
 	addChatMessage: (name, msg)->
+		msg = $("#chatbox .escaper").text(msg).html()
 		$("#chatbox .content")
 			.append(name+": " + msg + "<BR>")
 		@scrollChatToEnd()
@@ -769,6 +820,13 @@ class PlayingField
 						return
 					handler(ret)
 		)
+
+	setAnimationOn: ->
+		SPEED_BASE = DEFAULT_SPEED_BASE
+
+	setAnimationOff: ->
+		SPEED_BASE = 0
+
 	setStatusBar: (htmlTxt)->
 		buildMinimizedCardHtml = (face, content) ->
 			content ?= ""
@@ -828,18 +886,34 @@ TEST_CARDS = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", "s4", "c3"],
  		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"],
  		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"],
 		 ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]]
+TEST_CARDS6 = [["s1", "h2", "ht", "h1", "h4", "sk", "s2", "s3", ],
+		 ["back", "back", "back", "back", "back", "back", "back", "back"],
+ 		 ["back", "back", "back", "back", "back", "back", "back", "back"],
+ 		 ["back", "back", "back", "back", "back", "back", "back", "back"],
+ 		 ["back", "back", "back", "back", "back", "back", "back", "back"],
+		 ["back", "back", "back", "back", "back", "back", "back", "back"]]
 
 $(document).ready(->
 	window.field = new PlayingField $ "#playing_field"
 
-	$("#sounds .toggle").click(->
-		v = $("#sounds .toggle").text()
+	$("#option_buttons .toggle_sound").click(->
+		v = $("#option_buttons .toggle_sound").text()
 		if v == "mute"
-			$("#sounds .toggle").text("unmute")
-			$("#sounds").find("audio").prop({muted: true})
+			$("#option_buttons .toggle_sound").text("unmute")
+			$("#option_buttons").find("audio").prop({muted: true})
 		else
-			$("#sounds .toggle").text("mute")
-			$("#sounds").find("audio").prop({muted: false})
+			$("#option_buttons .toggle_sound").text("mute")
+			$("#option_buttons").find("audio").prop({muted: false})
+	)
+
+	$("#option_buttons .toggle_animation").click(->
+		v = $("#option_buttons .toggle_animation").text()
+		if v == "animation off"
+			window.field.setAnimationOff()
+			$("#option_buttons .toggle_animation").text("animation on")
+		else
+			window.field.setAnimationOn()
+			$("#option_buttons .toggle_animation").text("animation off")
 	)
 
 
@@ -860,6 +934,9 @@ $(document).ready(->
 		#window.field.choosePromise(13, 14, true, " ", 0, (res) -> console.log(res)))
 	#$("button.choose_promise_previous").click(->
 		#window.field.choosePromise(17, 17, true, "h", 17, (res) -> console.log(res)))
+
+	# 딜미스 보여주기
+	#window.field.showDealMissHand ["s1","s2","s3","s4","jr","s5","s6","s8",'s9','d9']
 	if window.LIBGAME?
 		return
 
@@ -879,15 +956,15 @@ $(document).ready(->
 
 	window.field.setPlayers([
 		{name: "JongMan Koo", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"}
+		{name: "JongMan2 Koo", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"}
 		{name: "Wonha Ryu", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/41489_100000758278961_2887_q.jpg"}
 		{name: "Jinho Kim", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/161338_100000247121062_7309182_q.jpg"}
 		{name: "DoKyoung Lee", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/273911_100001947905915_2944452_q.jpg"}
 		{name: "Hyun-hwan Jung", picture: "http://profile.ak.fbcdn.net/hprofile-ak-snc4/202947_100002443708928_4531642_q.jpg"}
 	])
 	window.field.globalMessage("새 게임을 시작합니다")
-	SPEED_BASE = 50
 	GAP = SPEED_BASE * 20
-	window.field.deal TEST_CARDS, 1, ->
+	window.field.deal TEST_CARDS6, 1, ->
 		window.field.globalMessage("선거가 시작됩니다!")
 		setTimeout(
 			->

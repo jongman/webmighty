@@ -29,10 +29,19 @@
 		<div class="content"></div>
 		<input class="value" type="text" size="1000"></input>
 		<button class="toggle_size">&gt;</button>
+		<div class="escaper" style="display:none"></div>
 	</div>
 	<div id="playing_field">
 		<div id="global_message"></div>
 		<div id="dialog">
+			<div id="dealmiss_dialog" style="display: none">
+				<div class="title">
+					<span class="you">너</span> 님의 눈물 없인 볼 수 없는 핸드..
+				</div>
+				<div class="cards">
+				</div>
+				<button class="close">닫자</button>
+			</div>
 			<div id="player_list_dialog" style="display: none">
 				<div class="title">
 					플레이어를 기다리는 중입니다.
@@ -204,8 +213,8 @@
 				</div>
 			</div>
 		</div>
-		<div class="card" id="card_template" style="position: absolute; top: 0px; left: 0px; display: none;"></div>
-		<div class="profile" id="profile_template" style="display: none;">
+		<div class="card card_template" style="position: absolute; top: 0px; left: 0px; display: none;"></div>
+		<div class="profile profile_template" style="display: none;">
 			<dl>
 				<dt><img alt="player image" class="picture" src="http://profile.ak.fbcdn.net/hprofile-ak-snc4/49218_593417379_9696_q.jpg"/></dt>
 				<dd>
@@ -229,7 +238,10 @@
 		<audio class="lose" src="static/sound/lose.wav" preload></audio>
 		<audio class="gan" src="static/sound/gan.wav" preload></audio>
 		<audio class="clap" src="static/sound/clap.wav" preload></audio>
-		<button class="toggle">mute</button>
+	</div>
+	<div id="option_buttons">
+		<button class="toggle_sound">mute</button>
+		<button class="toggle_animation">animation off</button>
 	</div>
 	<div id="dev">
 		<button class="choose_promise">공약 정하기</button>

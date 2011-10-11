@@ -605,6 +605,17 @@ a:hover {
 	border: 1px solid #aaa;
 }
 
+/* 딜미스시 패 보여주는 창 */
+#dealmiss_dialog {
+}
+
+#dealmiss_dialog .cards {
+	width: 251px;
+	height: 96px;
+	margin:auto;
+	position:relative;
+}
+
 #confirm_dialog {
 }
 

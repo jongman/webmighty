@@ -256,11 +256,11 @@ dealCard = ->
 			cards.push(face + num)
 
 	console.log 'shuffling'
-	for idx in [0...52]
-		changeIndex = Math.floor(Math.random() * (52 - idx)) + idx + 1
-		t = cards[idx]
-		cards[idx] = cards[changeIndex]
-		cards[changeIndex] = t
+	#for idx in [0...52]
+		#changeIndex = Math.floor(Math.random() * (52 - idx)) + idx + 1
+		#t = cards[idx]
+		#cards[idx] = cards[changeIndex]
+		#cards[changeIndex] = t
 
 	console.log players
 	idx = 0
@@ -326,9 +326,9 @@ everyone.now.readyGame = ->
 					console.log "DEALING"
 					everyone.now.notifyPlayers getPlayerInfos()
 					changeState everyone.now.VOTE
-			# don't implement 6 player for now
-			#else if everyone.now.readyCount == 6
-				#changeState(everyone.now.VOTE)
+				# don't implement 6 player for now
+				#else if readyCount == 6
+					#changeState(everyone.now.VOTE)
 
 setReady = (key, clientId, name, image, fbUserID) ->
 	index = players.length
@@ -537,7 +537,7 @@ everyone.now.chooseCard = (card, option) ->
 			lastTurnWinner = (lastTurnWinner + rule.determineTurnWinner(currentTrickOption, currentTurn))%5
 			for card in rule.currentTrick
 				if card[1] in "tjqk1"
-					scores[lastTurnWinner] += 1 
+					scores[lastTurnWinner] += 1
 					collectedCards[lastTurnWinner].push(card)
 
 			setTimeout(->
