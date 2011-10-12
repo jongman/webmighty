@@ -243,7 +243,7 @@
       }
     };
     ChangePromiseHelper.prototype.getSuit = function(button) {
-      return $(button).attr("suit");
+      return $(button).attr("data-suit");
     };
     return ChangePromiseHelper;
   })();
@@ -255,6 +255,7 @@
       this.players = [];
       this.playedCards = [];
       this.collected = [];
+      this.cardStack = [];
     }
     PlayingField.prototype.getLocationInfo = function(player) {
       return PLAYER_LOCATION[this.players.length][player];
@@ -526,7 +527,8 @@
         }, this), idx * SPEED_BASE * 5);
       }, this);
       for (idx = 0; 0 <= n ? idx < n : idx > n; 0 <= n ? idx++ : idx--) {
-        if (this.cardStack.length === 0) {
+        if (!(this.cardStack != null) || this.cardStack.length === 0) {
+          this.cardStack = [];
           card = new Card(this, face, "vertical", center.x, center.y);
           card.elem.fadeIn(0);
           this.cardStack.push(card);
@@ -637,7 +639,6 @@
     };
     PlayingField.prototype.moveToPlayedPosition = function(player, card) {
       var angle, center, x, y;
-      console.log(player, card);
       angle = this.getLocationInfo(player).angle;
       center = this.convertRelativePosition(0.5, 0.5);
       x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS;
@@ -705,7 +706,7 @@
       return _results;
     };
     PlayingField.prototype.takeCards = function(player, cards, done) {
-      var cx, cy, dx, dy, home, i, _ref, _ref2;
+      var cx, cy, dx, dy, e, home, i, _ref, _ref2;
       if (done == null) {
         done = function() {};
       }
@@ -714,11 +715,12 @@
       cx = home.x + dx;
       cy = home.y + dy;
       for (i = 0, _ref2 = cards.length; 0 <= _ref2 ? i < _ref2 : i > _ref2; 0 <= _ref2 ? i++ : i--) {
+        e = cards[i].elem;
         cards[i].elem.animate({
           top: cy,
           left: cx
         }, SPEED_BASE * 5).fadeOut(0, function() {
-          return cards[i].remove();
+          return e.remove();
         });
       }
       return setTimeout(__bind(function() {
@@ -1044,7 +1046,7 @@
         $("#dealmiss_dialog").hide().clearQueue();
         return dealmissField.clear();
       });
-      $("#dealmiss_dialog").fadeIn(100).delay(3000).fadeOut(100, function() {
+      $("#dealmiss_dialog").fadeIn(100).delay(5000).fadeOut(100, function() {
         return dealmissField.clear();
       });
       p = {
@@ -1054,7 +1056,6 @@
       _results = [];
       for (_i = 0, _len = hand.length; _i < _len; _i++) {
         c = hand[_i];
-        console.log(c);
         card = new Card(dealmissField, c, "vertical", p.left + CARD_WIDTH / 2, p.top + CARD_HEIGHT / 2);
         _results.push(p.left += CARD_OVERLAP);
       }

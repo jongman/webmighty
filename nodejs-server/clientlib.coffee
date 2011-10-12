@@ -185,6 +185,7 @@ now.notifyCards = (allCards) ->
 	window.field.deal(cards, 1, ->)
 
 now.receiveDealtCards = (cards) ->
+	lastSuit = null
 	window.field.clearPlayerMessages()
 	commitmentIndex = 0
 	CARDS = [
@@ -484,7 +485,6 @@ now.notifyChangeState = (newState) ->
 		window.field.showPlayerList()
 		#$("#logwin").find("button").unbind().removeAttr("disabled")
 	if newState == now.VOTE
-		lastSuit = null
 		window.field.setStatusBar (card)->
 			["새 게임을 시작합니다.", "마이티 #{card(rule.getMightyCard())} 조커콜 #{card(rule.getJokerCallCard())}"]
 		commitmentIndex = 0
@@ -585,7 +585,7 @@ now.notifyObserver = (encodedRule, cards, collectedCards, currentTrickStartIndex
 
 	for i in [0...window.field.playedCards.length]
 		card = window.field.playedCards[i]
-		window.field.moveToPlayedPosition(i+currentTrickStartIndex, card)
+		window.field.moveToPlayedPosition((i+currentTrickStartIndex) % 5, card)
 
 	window.field.hands = []
 	window.field.setSortOrder FACE_ORDER()
@@ -786,3 +786,4 @@ getLocalizedString = (lang, word) ->
 	else
 		console.log "not localizable word #{word} for language #{lang}"
 		return word
+

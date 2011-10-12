@@ -275,11 +275,11 @@ dealCard = ->
 			cards.push(face + num)
 
 	console.log 'shuffling'
-	#for idx in [0...52]
-		#changeIndex = Math.floor(Math.random() * (52 - idx)) + idx + 1
-		#t = cards[idx]
-		#cards[idx] = cards[changeIndex]
-		#cards[changeIndex] = t
+	for idx in [0...52]
+		changeIndex = Math.floor(Math.random() * (52 - idx)) + idx + 1
+		t = cards[idx]
+		cards[idx] = cards[changeIndex]
+		cards[changeIndex] = t
 
 	console.log players
 	idx = 0

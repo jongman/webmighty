@@ -191,7 +191,7 @@ class ChangePromiseHelper
 			@elem.find(".plus_promise_button").attr("disabled", "")
 
 	getSuit: (button) ->
-		$(button).attr("suit")
+		$(button).attr("data-suit")
 
 class PlayingField
 	constructor: (@elem) ->
@@ -199,6 +199,7 @@ class PlayingField
 		@players = []
 		@playedCards = []
 		@collected = []
+		@cardStack = []
 
 	getLocationInfo: (player) ->
 		 PLAYER_LOCATION[@players.length][player]
@@ -386,7 +387,8 @@ class PlayingField
 		# 6마 고려하면 무의미한 assert
 		#assert(n == @cardStack.length, "남은 카드 장 수와 추가로 지급하기로 한 카드 수가 다릅니다.")
 		for idx in [0...n]
-			if @cardStack.length == 0
+			if not @cardStack? or @cardStack.length == 0
+				@cardStack = []
 				card = new Card(this, face, "vertical", center.x, center.y)
 				card.elem.fadeIn(0)
 				@cardStack.push(card)
@@ -473,7 +475,6 @@ class PlayingField
 		@moveToPlayedPosition(player, card)
 
 	moveToPlayedPosition: (player, card)->
-		console.log player, card
 		angle = @getLocationInfo(player).angle
 		center = @convertRelativePosition(0.5, 0.5)
 		x = center.x + Math.cos(angle) * PLAYED_CARD_RADIUS
@@ -521,9 +522,10 @@ class PlayingField
 		cy = home.y + dy
 
 		for i in [0...cards.length]
+			e = cards[i].elem
 			cards[i].elem
 				.animate({top: cy, left: cx}, SPEED_BASE * 5)
-				.fadeOut(0, -> cards[i].remove())
+				.fadeOut(0, -> e.remove())
 		setTimeout(
 			=>
 				#card.remove() for card in cards
@@ -763,7 +765,7 @@ class PlayingField
 		)
 		$("#dealmiss_dialog")
 			.fadeIn(100)
-			.delay(3000).fadeOut(100, ->
+			.delay(5000).fadeOut(100, ->
 				dealmissField.clear()
 			)
 
@@ -772,7 +774,6 @@ class PlayingField
 			top: 0
 		}
 		for c in hand
-			console.log c
 			card = new Card(dealmissField, c, "vertical", p.left + CARD_WIDTH/2, p.top + CARD_HEIGHT/2)
 			p.left += CARD_OVERLAP
 

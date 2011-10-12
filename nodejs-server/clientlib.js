@@ -225,6 +225,7 @@
   };
   now.receiveDealtCards = function(cards) {
     var CARDS;
+    lastSuit = null;
     window.field.clearPlayerMessages();
     commitmentIndex = 0;
     CARDS = [cards, ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"], ["back", "back", "back", "back", "back", "back", "back", "back", "back", "back"]];
@@ -592,7 +593,6 @@
       window.field.showPlayerList();
     }
     if (newState === now.VOTE) {
-      lastSuit = null;
       window.field.setStatusBar(function(card) {
         return ["새 게임을 시작합니다.", "마이티 " + (card(rule.getMightyCard())) + " 조커콜 " + (card(rule.getJokerCallCard()))];
       });
@@ -713,7 +713,7 @@
     }
     for (i = 0, _ref2 = window.field.playedCards.length; 0 <= _ref2 ? i < _ref2 : i > _ref2; 0 <= _ref2 ? i++ : i--) {
       card = window.field.playedCards[i];
-      window.field.moveToPlayedPosition(i + currentTrickStartIndex, card);
+      window.field.moveToPlayedPosition((i + currentTrickStartIndex) % 5, card);
     }
     window.field.hands = [];
     window.field.setSortOrder(FACE_ORDER());
