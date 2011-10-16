@@ -5,7 +5,7 @@ dbcfg = require('./db.cfg')
 
 # currently using redis; can change
 redis = require('redis')
-client = redis.createClient(40337, 'upnl.org')
+client = redis.createClient(dbcfg.port, dbcfg.host)
 
 class Stat
 	constructor: (@userId, @key, @jw, @jl, @fw, @fl, @yw, @yl)->
