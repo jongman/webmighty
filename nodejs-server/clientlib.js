@@ -743,6 +743,13 @@
       return window.field.showPlayerList();
     }
   };
+  now.notifyStat = function() {
+    var daily, total;
+    daily = now.userStat.daily;
+    total = now.userStat.total;
+    now.distributeMessage("오늘 " + daily.jw + "/" + daily.jl + " " + daily.fw + "/" + daily.fl + " " + daily.yw + "/" + daily.yl);
+    return now.distributeMessage("전체 " + total.jw + "/" + total.jl + " " + total.fw + "/" + total.fl + " " + total.yw + "/" + total.yl);
+  };
   getClassForChatUser = function(clientId, index) {
     var c;
     c = "";
@@ -776,10 +783,18 @@
     return $("#chatbox .toggle_member_list").text("(" + userList.length + ")");
   };
   now.receiveMessage = function(clientId, index, name, msg) {
-    var c;
+    var c, daily, total;
     c = getClassForChatUser(clientId, index);
     if (c !== "") {
       name = "<span class=\"" + c + "\">" + name + "</span>";
+    }
+    if (clientId === now.core.clientId && msg[0] === "/") {
+      if (msg.substr(1, msg.length) === "전적") {
+        daily = now.userStat.daily;
+        total = now.userStat.total;
+        now.distributeMessage("오늘 " + daily.jw + "/" + daily.jl + " " + daily.fw + "/" + daily.fl + " " + daily.yw + "/" + daily.yl);
+        now.distributeMessage("전체 " + total.jw + "/" + total.jl + " " + total.fw + "/" + total.fl + " " + total.yw + "/" + total.yl);
+      }
     }
     return window.field.addChatMessage(name, msg);
   };
@@ -815,18 +830,21 @@
     fbHandler = function(response) {
       $("#oneliner").text("");
       if (response.status === "connected" && (response.authResponse != null)) {
-        window.fbAccessToken = response.authResponse.accessToken;
+        now.fbAccessToken = window.fbAccessToken = response.authResponse.accessToken;
         now.image = "http://graph.facebook.com/" + response.authResponse.userID + "/picture";
         return FB.api('/me', function(user) {
           if (user != null) {
             now.name = user.name;
             now.fbUserID = user.id;
+            now.notifyChangeFBID(user.id);
             return now.notifyChangeName();
           }
         });
       } else {
         now.image = "";
         now.fbUserID = null;
+        now.notifyChangeFBID(null);
+        now.notifyChangeName();
         if (!allowGuestPlay) {
           return $("#oneliner").text("플레이하기 위해선 페이스북 로그인이 필요합니다.");
         }

@@ -1,4 +1,4 @@
-allowGuestPlay = false
+allowGuestPlay = true
 rule = require './rule'
 db = require './db'
 fb = require './facebook.cfg'
@@ -105,6 +105,7 @@ class Player
 		@fbUserID = null
 
 players = []
+users = {}
 getPlayerInfos = ->
 	[x.name, x.image] for x in players
 playerKeys = {}
@@ -155,6 +156,20 @@ everyone.now.notifyChangeName = ->
 everyone.now.notifyChangeFBID = (id) ->
 	if id == null
 		console.log "FB logout"
+	else
+		console.log "FB login #{id}"
+		self = this
+		db.getUserStat(id, (userStat)->
+			console.log userStat
+			users[self.user.clientId] = userStat
+			self.now.userStat = {
+				daily: userStat.daily
+				total: userStat.total
+			}
+			if players[self.user.clientId]?
+				self.now.notifyStat()
+				console.log self.now.userStat
+		)
 	
 rg.on 'join', ->
 	sendUserList()
@@ -331,10 +346,11 @@ everyone.now.readyGame = ->
 		console.log "guest not allowed"
 		return
 
+
 	for player in players
-		if @now.fbUserID? and player.name != "" and player.fbUserID == @now.fbUserId
+		if @now.fbUserID? and player.name != "" and player.fbUserID == @now.fbUserID
 			console.log "duplicated facebook user: #{player.name} #{@now.name}"
-			return
+			#return
 
 	pg.hasClient @user.clientId, (bool) ->
 		# if user is already set to ready, ignore it
@@ -348,6 +364,8 @@ everyone.now.readyGame = ->
 
 			@now.image ?= ""
 			@now.playerIndex = setReady @now.key, @user.clientId, @now.name, @now.image, @now.fbUserID
+			if @now.fbUserID?
+				@now.notifyStat()
 
 			pg.count (readyCount) ->
 				console.log "READY " + readyCount
@@ -600,11 +618,12 @@ endGame = ->
 	assertTrue 20 >= scores[0]+scores[1]+scores[2]+scores[3]+scores[4] # 묻는거 때문에 20안됨
 	rulers = [jugongIndex]
 	lastFriendIndex = rule.friendIndex
+	if lastFriendIndex == -1
+		lastFriendIndex = null
 	lastFriendIndex ?= jugongIndex
 	lastFriendIndex ?= 0
 	if rule.friendIndex? and rule.friendIndex != jugongIndex
 		rulers.push(rule.friendIndex)
-	jugongIndex = null
 	# 묻은게 여당 득점이므로 20 - 야당 먹은거로 여당 득점 계산
 	console.log "end of a game"
 	console.log "ruler: #{rulers}"
@@ -627,6 +646,25 @@ endGame = ->
 			console.log "여당 승리!!!"
 			everyone.now.notifyMsg "여당 승리!!!"
 			everyone.now.notifyVictory rule.Victory.Win
+		for player in players
+			console.log player
+			nowjs.getClient player.clientId, ->
+				console.log @now.playerIndex
+				if not @now.fbUserID? or not users[player.clientId]
+					return
+				if @now.playerIndex == jugongIndex
+					console.log player.name + ' jw'
+					users[player.clientId].inc_jw()
+				else if @now.playerIndex == rule.friendIndex
+					console.log player.name + ' fw'
+					users[player.clientId].inc_fw()
+				else
+					console.log player.name + ' yl'
+					users[player.clientId].inc_yl()
+				@now.userStat = {
+					daily: users[player.clientId].daily
+					total: users[player.clientId].total
+				}
 	else
 		# 야당 승리
 		if oppositeScore >= 11
@@ -639,6 +677,27 @@ endGame = ->
 			console.log "야당 승리!"
 			everyone.now.notifyMsg "야당 승리!"
 			everyone.now.notifyVictory rule.Victory.Lose
+		for player in players
+			console.log player
+			nowjs.getClient player.clientId, ->
+				console.log @now.playerIndex
+				if not @now.fbUserID? or not users[player.clientId]
+					return
+				if @now.playerIndex == jugongIndex
+					console.log player.name + ' jl'
+					users[player.clientId].inc_jl()
+				else if @now.playerIndex == rule.friendIndex
+					console.log player.name + ' fl'
+					users[player.clientId].inc_fl()
+				else
+					console.log player.name + ' yw'
+					users[player.clientId].inc_yw()
+				@now.userStat = {
+					daily: users[player.clientId].daily
+					total: users[player.clientId].total
+				}
+	pg.now.notifyStat()
+	jugongIndex = null
 	rule.resetGame()
 	setTimeout(->
 			changeState(everyone.now.VOTE)

@@ -611,6 +611,19 @@ now.resetField = ->
 	window.field.clearDialogs()
 	if now.state == now.WAITING_PLAYER
 		window.field.showPlayerList()
+
+
+################################################################################
+# Stat
+################################################################################
+
+now.notifyStat = () ->
+	daily = now.userStat.daily
+	total = now.userStat.total
+
+	now.distributeMessage "오늘 #{daily.jw}/#{daily.jl} #{daily.fw}/#{daily.fl} #{daily.yw}/#{daily.yl}"
+	now.distributeMessage "전체 #{total.jw}/#{total.jl} #{total.fw}/#{total.fl} #{total.yw}/#{total.yl}"
+
 ################################################################################
 # Miscellaneous
 ################################################################################
@@ -642,6 +655,12 @@ now.receiveMessage = (clientId, index, name, msg)->
 	c = getClassForChatUser clientId, index
 	if c != ""
 		name = "<span class=\"#{c}\">#{name}</span>"
+	if clientId == now.core.clientId and msg[0] == "/"
+		if msg.substr(1, msg.length) == "전적"
+			daily = now.userStat.daily
+			total = now.userStat.total
+			now.distributeMessage "오늘 #{daily.jw}/#{daily.jl} #{daily.fw}/#{daily.fl} #{daily.yw}/#{daily.yl}"
+			now.distributeMessage "전체 #{total.jw}/#{total.jl} #{total.fw}/#{total.fl} #{total.yw}/#{total.yl}"
 	window.field.addChatMessage name, msg
 
 now.notifyInAction = (index) ->
