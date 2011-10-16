@@ -481,6 +481,7 @@ now.notifyChangeState = (newState) ->
 	if newState != now.WAITING_PLAYER
 		window.field.hidePlayerList()
 	if newState == now.WAITING_PLAYER
+		myIndex = 0
 		window.field.setPlayers([])
 		window.field.showPlayerList()
 		window.field.setStatusBar (card)->
