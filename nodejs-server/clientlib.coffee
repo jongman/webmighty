@@ -483,6 +483,8 @@ now.notifyChangeState = (newState) ->
 	if newState == now.WAITING_PLAYER
 		window.field.setPlayers([])
 		window.field.showPlayerList()
+		window.field.setStatusBar (card)->
+			["웹마이티에 오신 것을 환영합니다!","마이티 #{card("s1")} 조커콜 #{card("c3")}"]
 		#$("#logwin").find("button").unbind().removeAttr("disabled")
 	if newState == now.VOTE
 		window.field.setStatusBar (card)->
@@ -535,6 +537,8 @@ now.notifyDealMiss = (index, hand) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "딜미스!")
 	# TODO show dealmiss hand
 	window.field.showDealMissHand(hand, users[index].name)
+	window.field.setStatusBar (card)->
+		["딜미스!", ""]
 
 now.notifyPass = (index) ->
 	window.field.playerMessage((getRelativeIndexFromIndex index), "패스")
@@ -694,19 +698,22 @@ onAllReady = ->
 	fbHandler = (response)->
 		$("#oneliner").text("")
 		if response.status == "connected" and response.authResponse?
-			window.fbAccessToken = response.authResponse.accessToken
+			now.fbAccessToken = window.fbAccessToken = response.authResponse.accessToken
 			now.image = "http://graph.facebook.com/" + response.authResponse.userID + "/picture"
 			FB.api('/me', (user)->
 				if user?
 					#image = document.getElementById('image');
 					#image.src = 'http://graph.facebook.com/' + user.id + '/picture';
 					now.name = user.name
-					now.notifyChangeName()
 					now.fbUserID = user.id
+					now.notifyChangeFBID(user.id)
+					now.notifyChangeName()
 			)
 		else
 			now.image = ""
 			now.fbUserID = null
+			now.notifyChangeFBID(null)
+			now.notifyChangeName()
 			if not allowGuestPlay
 				$("#oneliner").text("플레이하기 위해선 페이스북 로그인이 필요합니다.")
 

@@ -389,7 +389,7 @@ class PlayingField
 		for idx in [0...n]
 			if not @cardStack? or @cardStack.length == 0
 				@cardStack = []
-				card = new Card(this, face, "vertical", center.x, center.y)
+				card = new Card(this, "back", "vertical", center.x, center.y)
 				card.elem.fadeIn(0)
 				@cardStack.push(card)
 			card = @cardStack.pop()

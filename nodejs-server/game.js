@@ -529,7 +529,7 @@
       for (idx = 0; 0 <= n ? idx < n : idx > n; 0 <= n ? idx++ : idx--) {
         if (!(this.cardStack != null) || this.cardStack.length === 0) {
           this.cardStack = [];
-          card = new Card(this, face, "vertical", center.x, center.y);
+          card = new Card(this, "back", "vertical", center.x, center.y);
           card.elem.fadeIn(0);
           this.cardStack.push(card);
         }

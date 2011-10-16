@@ -591,6 +591,9 @@
     if (newState === now.WAITING_PLAYER) {
       window.field.setPlayers([]);
       window.field.showPlayerList();
+      window.field.setStatusBar(function(card) {
+        return ["웹마이티에 오신 것을 환영합니다!", "마이티 " + (card("s1")) + " 조커콜 " + (card("c3"))];
+      });
     }
     if (newState === now.VOTE) {
       window.field.setStatusBar(function(card) {
@@ -651,7 +654,10 @@
   now.notifyDealMiss = function(index, hand) {
     window.field.clearPlayerMessages();
     window.field.playerMessage(getRelativeIndexFromIndex(index), "딜미스!");
-    return window.field.showDealMissHand(hand, users[index].name);
+    window.field.showDealMissHand(hand, users[index].name);
+    return window.field.setStatusBar(function(card) {
+      return ["딜미스!", ""];
+    });
   };
   now.notifyPass = function(index) {
     return window.field.playerMessage(getRelativeIndexFromIndex(index), "패스");
@@ -814,8 +820,8 @@
         return FB.api('/me', function(user) {
           if (user != null) {
             now.name = user.name;
-            now.notifyChangeName();
-            return now.fbUserID = user.id;
+            now.fbUserID = user.id;
+            return now.notifyChangeName();
           }
         });
       } else {

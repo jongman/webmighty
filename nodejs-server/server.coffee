@@ -1,5 +1,6 @@
-allowGuestPlay = true
+allowGuestPlay = false
 rule = require './rule'
+db = require './db'
 fb = require './facebook.cfg'
 
 ################################################################################
@@ -32,6 +33,13 @@ server = http.createServer (req, res) ->
 
 	isHomeRequest = parseResult.pathname in ['/', '']
 	url = if isHomeRequest then '/test.html' else parseResult.pathname
+	if parseResult.pathname in ['/en', '/en/']
+		isHomeRequest = true
+		url = '/test.en.html'
+	if parseResult.pathname in ['/fb', '/fb/']
+		isHomeRequest = true
+		url = '/test.fb.html'
+
 	errorPath = false
 	if not (isHomeRequest or url.substr(0,7) == '/static')
 		errorPath = not (url in ["/rule.js", "/clientlib.js", "/game.js", "nowjs/now.js"])
@@ -144,6 +152,10 @@ sendUserList = ->
 everyone.now.notifyChangeName = ->
 	sendUserList()
 
+everyone.now.notifyChangeFBID = (id) ->
+	if id == null
+		console.log "FB logout"
+	
 rg.on 'join', ->
 	sendUserList()
 
@@ -225,8 +237,6 @@ enterState = (state) ->
 
 	else if state == everyone.now.VOTE
 		scores = [0,0,0,0,0]
-		lastFriendIndex = rule.friendIndex
-		lastFriendIndex ?= jugongIndex
 		lastFriendIndex ?= 0
 		rule.resetFriendOption()
 		redeal()
@@ -589,6 +599,9 @@ everyone.now.chooseCard = (card, option) ->
 endGame = ->
 	assertTrue 20 >= scores[0]+scores[1]+scores[2]+scores[3]+scores[4] # 묻는거 때문에 20안됨
 	rulers = [jugongIndex]
+	lastFriendIndex = rule.friendIndex
+	lastFriendIndex ?= jugongIndex
+	lastFriendIndex ?= 0
 	if rule.friendIndex? and rule.friendIndex != jugongIndex
 		rulers.push(rule.friendIndex)
 	jugongIndex = null
