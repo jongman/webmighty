@@ -481,7 +481,8 @@ now.notifyChangeState = (newState) ->
 	if newState != now.WAITING_PLAYER
 		window.field.hidePlayerList()
 	if newState == now.WAITING_PLAYER
-		myIndex = 0
+		if now.observer
+			myIndex = 0
 		window.field.setPlayers([])
 		window.field.showPlayerList()
 		window.field.setStatusBar (card)->
@@ -613,6 +614,33 @@ now.resetField = ->
 	if now.state == now.WAITING_PLAYER
 		window.field.showPlayerList()
 
+
+################################################################################
+# Replay
+################################################################################
+
+now.notifyReplay = (jugongIndex, replay) ->
+	buildMinimizedCardHtml = (face, content) ->
+		content ?= ""
+		'<span class="smallcard ' + face + '">'+content+'</span>'
+	turn = 1
+	window.field.addChatMessage "Replay", ""
+	for info in replay
+		[trick, winner] = info
+		s = ''
+		for i in [0...5]
+			idx = (i + jugongIndex) % 5
+			c = trick[idx]
+			if idx == winner
+				c += ' winner'
+			if idx == jugongIndex or idx == rule.friendIndex
+				c += ' rulercard'
+			s += buildMinimizedCardHtml c
+		if turn == 10
+			window.field.addChatHTML "", s
+		else
+			window.field.addChatHTML "", s
+		turn += 1
 
 ################################################################################
 # Stat

@@ -589,6 +589,9 @@
       window.field.hidePlayerList();
     }
     if (newState === now.WAITING_PLAYER) {
+      if (now.observer) {
+        myIndex = 0;
+      }
       window.field.setPlayers([]);
       window.field.showPlayerList();
       window.field.setStatusBar(function(card) {
@@ -743,6 +746,41 @@
       return window.field.showPlayerList();
     }
   };
+  now.notifyReplay = function(jugongIndex, replay) {
+    var c, i, idx, info, s, trick, turn, winner, _i, _len, _results;
+    buildMinimizedCardHtml = function(face, content) {
+      if (content == null) {
+        content = "";
+      }
+      return '<span class="smallcard ' + face + '">' + content + '</span>';
+    };
+    turn = 1;
+    window.field.addChatMessage("Replay", "");
+    _results = [];
+    for (_i = 0, _len = replay.length; _i < _len; _i++) {
+      info = replay[_i];
+      trick = info[0], winner = info[1];
+      s = '';
+      for (i = 0; i < 5; i++) {
+        idx = (i + jugongIndex) % 5;
+        c = trick[idx];
+        if (idx === winner) {
+          c += ' winner';
+        }
+        if (idx === jugongIndex || idx === rule.friendIndex) {
+          c += ' rulercard';
+        }
+        s += buildMinimizedCardHtml(c);
+      }
+      if (turn === 10) {
+        window.field.addChatHTML("", s);
+      } else {
+        window.field.addChatHTML("", s);
+      }
+      _results.push(turn += 1);
+    }
+    return _results;
+  };
   now.notifyStat = function() {
     var daily, total;
     daily = now.userStat.daily;
@@ -825,7 +863,7 @@
       }
     });
     window.field.setStatusBar(function(card) {
-      return ["웹마이티에 오신 것을 환영합니다!", "마이티 " + (card("s1")) + " 조커콜 " + (card("c3"))];
+      return ["웹마이티에 오신 것을 환영합니다! " + (card('s', 13)), "마이티 " + (card("s1")) + " 조커콜 " + (card("c3"))];
     });
     fbHandler = function(response) {
       $("#oneliner").text("");

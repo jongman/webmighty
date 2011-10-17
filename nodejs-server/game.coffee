@@ -804,6 +804,15 @@ class PlayingField
 		$("#chatbox .content")
 			.scrollTop($("#chatbox .content").prop("scrollHeight"))
 
+	addChatHTML: (name, msg)->
+		if name == ""
+			$("#chatbox .content")
+				.append(msg + "<BR>")
+		else
+			$("#chatbox .content")
+				.append(name+": " + msg + "<BR>")
+		@scrollChatToEnd()
+
 	addChatMessage: (name, msg)->
 		msg = $("#chatbox .escaper").text(msg).html()
 		$("#chatbox .content")

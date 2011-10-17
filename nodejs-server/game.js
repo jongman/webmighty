@@ -1095,6 +1095,14 @@
     PlayingField.prototype.scrollChatToEnd = function() {
       return $("#chatbox .content").scrollTop($("#chatbox .content").prop("scrollHeight"));
     };
+    PlayingField.prototype.addChatHTML = function(name, msg) {
+      if (name === "") {
+        $("#chatbox .content").append(msg + "<BR>");
+      } else {
+        $("#chatbox .content").append(name + ": " + msg + "<BR>");
+      }
+      return this.scrollChatToEnd();
+    };
     PlayingField.prototype.addChatMessage = function(name, msg) {
       msg = $("#chatbox .escaper").text(msg).html();
       $("#chatbox .content").append(name + ": " + msg + "<BR>");

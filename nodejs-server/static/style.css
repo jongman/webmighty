@@ -205,7 +205,7 @@ body {
 	background: url(background.jpg) repeat;
 }
 
-body, textarea, input, select, button { font-family: Helvetica, NanumGothic,나눔고딕; }
+body, textarea, input, select, button { font-family: Helvetica, NanumGothic,나눔고딕,맑은고딕,Dotum; }
 
 .card { background-image: url(cards_all.png); float: left; }
 .card.vertical { width: 71px; height: 96px; }
@@ -370,7 +370,7 @@ a:hover {
 #chatbox {
 	position:absolute;
 	left:820px;
-	width:200px;
+	width:400px;
 	height:600px;
 	margin: 20px;
 	overflow: visible;
@@ -485,6 +485,10 @@ a:hover {
 	-webkit-box-shadow: 0px 0px 8px #444;
 }
 
+.smallcard.rulercard {
+	background-color: rgba(150, 255, 255, 0.9);
+}
+
 .smallcard.dark {
 	background-color: rgba(140, 140, 140, 0.9);
 }
@@ -494,13 +498,17 @@ a:hover {
 	vertical-align:baseline;
 }
 
+.smallcard.winner {
+	border:2px outset #80F;
+}
+
 .smallcard.d, .smallcard.h, .smallcard.c, .smallcard.s, .smallcard.n {
 	background-color: transparent;
 	display:inline;
 	vertical-align:baseline;
 	width:auto;
 	height:auto;
-	font-size:inherit;
+	font-size:18px;
 	border-radius: 0px;
 	-moz-border-radius: 0px;
 	-webkit-border-radius: 0px;

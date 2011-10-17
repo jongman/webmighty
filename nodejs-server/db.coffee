@@ -18,13 +18,24 @@ class Stat
 	inc: (v) ->
 		this[v] *= 1
 		this[v] += 1
-		client.incr("#{@userId}:#{@key}:#{v}")
+		redisKey = "#{@userId}:#{@key}:#{v}"
+		client.incr redisKey
+		@setExpire redisKey
+
 	inc_jw: -> @inc('jw')
 	inc_jl: -> @inc('jl')
 	inc_fw: -> @inc('fw')
 	inc_fl: -> @inc('fl')
 	inc_yw: -> @inc('yw')
 	inc_yl: -> @inc('yl')
+	setExpire: (redisKey) ->
+		if @key == "daily"
+			current = new Date()
+			expireDate = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 6, 0, 0)
+			if(expireDate < current)
+				expireDate.setDate(expireDate.getDate()+1)
+			client.expireat(redisKey, Math.floor(Date.UTC(expireDate.getFullYear(), expireDate.getMonth(), expireDate.getDate(), 6, 0, 0, 0)/1000))
+
 	save: ->
 		client.set("#{@userId}:#{@key}:jw", @jw)
 		client.set("#{@userId}:#{@key}:jl", @jl)
@@ -33,16 +44,12 @@ class Stat
 		client.set("#{@userId}:#{@key}:yw", @yw)
 		client.set("#{@userId}:#{@key}:yl", @yl)
 		if @key == "daily"
-			current = new Date()
-			expireDate = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 6, 0, 0)
-			if(expireDate < current)
-				expireDate.setDate(expireDate.getDate()+1)
-			client.expireat("#{@userId}:daily:jw", expireDate.UTC())
-			client.expireat("#{@userId}:daily:jl", expireDate.UTC())
-			client.expireat("#{@userId}:daily:fw", expireDate.UTC())
-			client.expireat("#{@userId}:daily:fl", expireDate.UTC())
-			client.expireat("#{@userId}:daily:yw", expireDate.UTC())
-			client.expireat("#{@userId}:daily:yl", expireDate.UTC())
+			@setExpire "#{@userId}:daily:jw"
+			@setExpire "#{@userId}:daily:jl"
+			@setExpire "#{@userId}:daily:fw"
+			@setExpire "#{@userId}:daily:fl"
+			@setExpire "#{@userId}:daily:yw"
+			@setExpire "#{@userId}:daily:yl"
 
 class UserStat
 	constructor: (@id, @daily, @total) ->

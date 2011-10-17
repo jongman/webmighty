@@ -5,7 +5,7 @@ if (!(typeof exports !== "undefined" && exports !== null)) {
 }
 dbcfg = require('./db.cfg');
 redis = require('redis');
-client = redis.createClient(40337, 'upnl.org');
+client = redis.createClient(dbcfg.port, dbcfg.host);
 Stat = (function() {
   function Stat(userId, key, jw, jl, fw, fl, yw, yl) {
     var _ref, _ref2, _ref3, _ref4, _ref5, _ref6;
@@ -37,9 +37,12 @@ Stat = (function() {
     }
   }
   Stat.prototype.inc = function(v) {
+    var redisKey;
     this[v] *= 1;
     this[v] += 1;
-    return client.incr("" + this.userId + ":" + this.key + ":" + v);
+    redisKey = "" + this.userId + ":" + this.key + ":" + v;
+    client.incr(redisKey);
+    return this.setExpire(redisKey);
   };
   Stat.prototype.inc_jw = function() {
     return this.inc('jw');
@@ -59,8 +62,18 @@ Stat = (function() {
   Stat.prototype.inc_yl = function() {
     return this.inc('yl');
   };
-  Stat.prototype.save = function() {
+  Stat.prototype.setExpire = function(redisKey) {
     var current, expireDate;
+    if (this.key === "daily") {
+      current = new Date();
+      expireDate = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 6, 0, 0);
+      if (expireDate < current) {
+        expireDate.setDate(expireDate.getDate() + 1);
+      }
+      return client.expireat(redisKey, Math.floor(Date.UTC(expireDate.getFullYear(), expireDate.getMonth(), expireDate.getDate(), 6, 0, 0, 0) / 1000));
+    }
+  };
+  Stat.prototype.save = function() {
     client.set("" + this.userId + ":" + this.key + ":jw", this.jw);
     client.set("" + this.userId + ":" + this.key + ":jl", this.jl);
     client.set("" + this.userId + ":" + this.key + ":fw", this.fw);
@@ -68,17 +81,12 @@ Stat = (function() {
     client.set("" + this.userId + ":" + this.key + ":yw", this.yw);
     client.set("" + this.userId + ":" + this.key + ":yl", this.yl);
     if (this.key === "daily") {
-      current = new Date();
-      expireDate = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 6, 0, 0);
-      if (expireDate < current) {
-        expireDate.setDate(expireDate.getDate() + 1);
-      }
-      client.expireat("" + this.userId + ":daily:jw", expireDate.UTC());
-      client.expireat("" + this.userId + ":daily:jl", expireDate.UTC());
-      client.expireat("" + this.userId + ":daily:fw", expireDate.UTC());
-      client.expireat("" + this.userId + ":daily:fl", expireDate.UTC());
-      client.expireat("" + this.userId + ":daily:yw", expireDate.UTC());
-      return client.expireat("" + this.userId + ":daily:yl", expireDate.UTC());
+      this.setExpire("" + this.userId + ":daily:jw");
+      this.setExpire("" + this.userId + ":daily:jl");
+      this.setExpire("" + this.userId + ":daily:fw");
+      this.setExpire("" + this.userId + ":daily:fl");
+      this.setExpire("" + this.userId + ":daily:yw");
+      return this.setExpire("" + this.userId + ":daily:yl");
     }
   };
   return Stat;

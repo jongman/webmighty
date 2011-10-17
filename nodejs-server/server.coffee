@@ -421,9 +421,9 @@ allPassExceptOne = ->
 	for i in [0...votes.length]
 		if votes[i][1] == 20 # run
 			jugongIndex = i
-			jugongCount = 1
-			break
-		else if votes[i][0] != 'p' and votes[i][1] == 0 # someone not announce
+			return true
+	for i in [0...votes.length]
+		if votes[i][0] != 'p' and votes[i][1] == 0 # someone not announce
 			return false
 		else if votes[i][0] != 'p' and votes[i][1] > 10
 			jugongIndex = i
@@ -591,9 +591,11 @@ everyone.now.chooseCard = (card, option) ->
 					everyone.now.takeTrick currentTurn, lastTurnWinner
 				, 1000)
 			setTimeout(->
+					recordTurn currentTurn, rule.currentTrick, lastTurnWinner
 					currentTurn += 1
 					if currentTurn == 10
 						# end of all trick
+						everyone.now.notifyReplay(jugongIndex, (records[i] for i in [0...10]))
 						changeState everyone.now.END_GAME
 					else
 						rule.resetTrick(lastTurnWinner)
@@ -702,6 +704,13 @@ endGame = ->
 	setTimeout(->
 			changeState(everyone.now.VOTE)
 		, 5000)
+
+################################################################################
+# Replay
+################################################################################
+records = {}
+recordTurn = (turn, trick, winnerIndex) ->
+	records[turn] = [trick, winnerIndex]
 
 ################################################################################
 # Miscellaneous
