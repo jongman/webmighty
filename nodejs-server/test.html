@@ -133,6 +133,18 @@
 				<input class="value" type="text" size="30">
 				<button class="confirm">입력</button>
 			</div>
+			<div id="choose_friend_dialog" style="display:none;">
+				<div class="title">
+					프렌드를 골라주세요
+				</div>
+				<ul>
+					<li><button class="select nofriend" data-friend="no">노 프렌드</button><button class="select firsttrick" data-friend="first">초구 프렌드</button></li>
+					<li><button class="select mighty" data-friend="mighty"></button><button class="select joker" data-friend="joker"></button></li>
+					<li><button class="select g1" data-friend="g1"></button><button class="select g2" data-friend="g2"></button></li>
+					<li><button class="other">그 외 카드</button><div class="othercards"></div></li>
+				</ul>
+				<button class="confirm" disabled>프렌드를 선택하고 저를 눌러주세요!</button>
+			</div>
 			<div id="choose_suit_dialog" style="display:none;">
 				<div class="title">
 					조커로 부를 무늬를 골라주세요

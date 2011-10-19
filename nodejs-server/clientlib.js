@@ -1,5 +1,5 @@
 (function() {
-  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, allowGuestPlay, assertEqual, assertTrue, audiochannels, buildCommitmentString, buildMinimizedCardHtml, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getClassForChatUser, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
+  var FACE_ORDER, NetworkUser, SUIT_NAMES, VALUE_NAMES, VALUE_ORDER, a, allowGuestPlay, assertEqual, assertTrue, audiochannels, buildCommitmentString, buildMinimizedCardHtml, channel_max, checkForCommitment, client2index, commitmentIndex, doCommitment, friendHandler, getClassForChatUser, getIndexFromRelativeIndex, getLocalizedString, getRelativeIndexFromIndex, handBeforeRearrange, isJugong, jugongIndex, lang, lastSuit, loctable, myIndex, name2index, onAllReady, playSound, readyCount, renderFaceName, setFriendTitle, systemMsg, test, users;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -234,11 +234,23 @@
       return checkForCommitment(1);
     });
   };
+  handBeforeRearrange = [];
   now.requestRearrangeHand = function(additionalCards) {
     now.notifyImTakingAction();
     window.field.setSortOrder(FACE_ORDER());
     window.field.sortHands(0);
     return window.field.dealAdditionalCards(additionalCards, 0, function() {
+      var card;
+      handBeforeRearrange = (function() {
+        var _i, _len, _ref, _results;
+        _ref = window.field.hands[0];
+        _results = [];
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          card = _ref[_i];
+          _results.push(card.face);
+        }
+        return _results;
+      })();
       window.field.globalMessage("교체할 3장의 카드를 골라주세요.");
       return window.field.chooseMultipleCards(3, rule.currentPromise[0], rule.currentPromise[1], rule.getChangePromiseMinTargetTable(rule.currentPromise[0], rule.currentPromise[1]), function(chosen, newFace, newTarget) {
         var card;
@@ -305,7 +317,7 @@
     }));
   };
   now.requestChooseFriend = function() {
-    return window.field.prompt('프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)', null, function(x) {
+    return window.field.chooseFriend(handBeforeRearrange, rule.getMightyCard(), rule.currentPromise[0], function(x) {
       var _ref, _ref2, _ref3;
       if (x === 'nofriend') {
         return now.chooseFriendNone();
@@ -863,7 +875,7 @@
       }
     });
     window.field.setStatusBar(function(card) {
-      return ["웹마이티에 오신 것을 환영합니다! " + (card('s', 13)), "마이티 " + (card("s1")) + " 조커콜 " + (card("c3"))];
+      return ["웹마이티에 오신 것을 환영합니다!", "마이티 " + (card("s1")) + " 조커콜 " + (card("c3"))];
     });
     fbHandler = function(response) {
       $("#oneliner").text("");

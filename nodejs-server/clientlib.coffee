@@ -1,3 +1,4 @@
+#window.DEVELOPING = "To turn off developing mode, comment this line"
 window.LIBGAME = 1
 allowGuestPlay = false
 
@@ -199,12 +200,13 @@ now.receiveDealtCards = (cards) ->
 		checkForCommitment(1)
 
 # 주공 당선 후 손 정리
-
+handBeforeRearrange = []
 now.requestRearrangeHand = (additionalCards) ->
 	now.notifyImTakingAction()
 	window.field.setSortOrder(FACE_ORDER())
 	window.field.sortHands(0)
 	window.field.dealAdditionalCards(additionalCards, 0, ->
+			handBeforeRearrange = (card.face for card in window.field.hands[0])
 			# TODO 여기서 공약 변경도 동시에 이루어짐
 			window.field.globalMessage("교체할 3장의 카드를 골라주세요.")
 			window.field.chooseMultipleCards(3, rule.currentPromise[0], rule.currentPromise[1], rule.getChangePromiseMinTargetTable(rule.currentPromise[0], rule.currentPromise[1])
@@ -250,7 +252,8 @@ now.notifyRearrangeHand = (cards = ['back','back','back']) ->
 
 # 프렌드 선택
 now.requestChooseFriend = ->
-	window.field.prompt '프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)', null, (x)->
+	#window.field.prompt '프렌드 선택 (예: nofriend firsttrick joker mighty ca d10 hk s3)', null, (x)->
+	window.field.chooseFriend handBeforeRearrange, rule.getMightyCard(), rule.currentPromise[0], (x)->
 		if x == 'nofriend'
 			now.chooseFriendNone()
 		else if x == 'joker'

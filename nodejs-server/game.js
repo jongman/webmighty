@@ -1,5 +1,5 @@
 (function() {
-  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, COLLECTED_CARD_GAP, Card, ChangePromiseHelper, DEFAULT_SPEED_BASE, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, TEST_CARDS6, VALUE_NAMES, VALUE_ORDER, assert, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
+  var CARD_HEIGHT, CARD_OVERLAP, CARD_WIDTH, COLLECTED_CARD_GAP, Card, ChangePromiseHelper, DEFAULT_SPEED_BASE, DISAPPEAR_DIRECTION, PI, PLAYED_CARD_RADIUS, PLAYER_LOCATION, PROFILE_CARD_GAP, PROFILE_WIDTH, PlayingField, SCORE_CARD_VALUES, SPEED_BASE, SUIT_NAMES, TEST_CARDS, TEST_CARDS6, VALUE_NAMES, VALUE_ORDER, VALUE_SHORT_NAMES, assert, buildCardHtml, buildMinimizedCardHtml, field, floor, isScoreCard, lexicographic_compare, renderFaceName, runInterval;
   var __indexOf = Array.prototype.indexOf || function(item) {
     for (var i = 0, l = this.length; i < l; i++) {
       if (this[i] === item) return i;
@@ -85,6 +85,7 @@
     " ": "&nbsp;"
   };
   VALUE_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "잭", "퀸", "킹", "에이스"];
+  VALUE_SHORT_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
   floor = Math.floor;
   lexicographic_compare = function(a, b) {
     if (a === b) {
@@ -117,6 +118,18 @@
       }
     };
     return setTimeout(runner, interval);
+  };
+  buildCardHtml = function(face, content) {
+    if (content == null) {
+      content = "";
+    }
+    return '<span class="smallcard ' + face + '">' + content + '</span>';
+  };
+  buildMinimizedCardHtml = function(face, content) {
+    if (content == null) {
+      content = "";
+    }
+    return '<span class="smallcard inline ' + face + '">' + content + '</span>';
   };
   renderFaceName = function(face) {
     var suit, value;
@@ -731,6 +744,9 @@
       return $("#player_list_dialog .ready").unbind("click").click(handler);
     };
     PlayingField.prototype.showPlayerList = function() {
+      if (window.DEVELOPING) {
+        return;
+      }
       return $("#player_list_dialog").show();
     };
     PlayingField.prototype.hidePlayerList = function() {
@@ -1128,13 +1144,12 @@
       return SPEED_BASE = 0;
     };
     PlayingField.prototype.setStatusBar = function(htmlTxt) {
-      var buildMinimizedCardHtml, l, r, _ref;
-      buildMinimizedCardHtml = function(face, content) {
-        if (content == null) {
-          content = "";
-        }
-        return '<span class="smallcard inline ' + face + '">' + content + '</span>';
-      };
+      var l, r, _ref;
+      if (window.DEVELOPING != null) {
+        $("#statusbar .left").html("현재 개발중이므로 게임을 진행할 수 없습니다.");
+        $("#statusbar .right").html("<a href='http://mighty.redfeel.net/'>http://mighty.redfeel.net/</a>");
+        return;
+      }
       if (typeof htmlTxt === "function") {
         _ref = htmlTxt(buildMinimizedCardHtml), l = _ref[0], r = _ref[1];
         if (l == null) {
@@ -1149,6 +1164,153 @@
         $("#statusbar .left").html(htmlTxt);
         return $("#statusbar .right").html("");
       }
+    };
+    PlayingField.prototype.chooseFriend = function(hand, mighty, giru, callback) {
+      var card, giruNotInHand, giruNotInHandIndex, i, option, returnValue, updateConfirmButton, _ref;
+      if (hand == null) {
+        hand = [];
+      }
+      if (mighty == null) {
+        mighty = 's1';
+      }
+      if (giru == null) {
+        giru = 'd';
+      }
+      if (callback == null) {
+        callback = function() {};
+      }
+      option = "";
+      if (__indexOf.call(hand, mighty) >= 0) {
+        option = "rulercard ";
+      }
+      $("#choose_friend_dialog button.mighty").html(buildCardHtml(option + 'inline ' + mighty) + " 마이티 프렌드");
+      option = "";
+      if (__indexOf.call(hand, 'jr') >= 0) {
+        option = "rulercard ";
+      }
+      $("#choose_friend_dialog button.joker").html(buildCardHtml(option + 'inline jr') + " 조커 프렌드");
+      $("#choose_friend_dialog g1").show();
+      $("#choose_friend_dialog g2").show();
+      giruNotInHand = [];
+      giruNotInHandIndex = [];
+      for (i = _ref = VALUE_ORDER.length - 1; _ref <= 0 ? i <= 0 : i >= 0; _ref <= 0 ? i++ : i--) {
+        card = giru + VALUE_ORDER[i];
+        if (!(__indexOf.call(hand, card) >= 0)) {
+          giruNotInHand.push(card);
+          giruNotInHandIndex.push(i);
+        }
+      }
+      if (giruNotInHand.length >= 2) {
+        $("#choose_friend_dialog button.g1").html(buildCardHtml('inline ' + giruNotInHand[0]) + (" 기루다 " + VALUE_SHORT_NAMES[giruNotInHandIndex[0]] + " 프렌드"));
+        $("#choose_friend_dialog button.g2").html(buildCardHtml('inline ' + giruNotInHand[1]) + (" 기루다 " + VALUE_SHORT_NAMES[giruNotInHandIndex[1]] + " 프렌드"));
+      } else if (giruNotInHand.length === 1) {
+        $("#choose_friend_dialog button.g1").html(buildCardHtml('inline ' + giruNotInHand[0]) + (" 기루다 " + VALUE_SHORT_NAMES[giruNotInHandIndex[0]] + " 프렌드"));
+        $("#choose_friend_dialog button.g2").hide();
+      } else {
+        $("#choose_friend_dialog button.g1").hide();
+        $("#choose_friend_dialog button.g2").hide();
+      }
+      $("#choose_friend_dialog .confirm").attr("disabled", "").text("프렌드를 선택하고 저를 눌러주세요!");
+      updateConfirmButton = function(s) {
+        return $("#choose_friend_dialog button.confirm").html(s);
+      };
+      returnValue = null;
+      $("#choose_friend_dialog button.select").unbind().click(function() {
+        var kind, p;
+        kind = $(this).attr("data-friend");
+        if (kind === "no") {
+          returnValue = "nofriend";
+          p = Math.random();
+          if (p < 0.33) {
+            updateConfirmButton("친구따위 필요없어! 노 프렌드로 간다!");
+          } else if (p < 0.67) {
+            updateConfirmButton("무심한듯 시크하게 노 프렌드");
+          } else {
+            updateConfirmButton("노 프렌드");
+          }
+        } else if (kind === "first") {
+          returnValue = "firsttrick";
+          p = Math.random();
+          if (p < 0.5) {
+            updateConfirmButton("넌 한턴만 먹어주면 돼. 초구 프렌드~");
+          } else {
+            updateConfirmButton("초구 프렌드");
+          }
+        } else if (kind === "mighty") {
+          returnValue = "mighty";
+          p = Math.random();
+          if (p < 0.5) {
+            updateConfirmButton("마이티 프렌드");
+          } else {
+            updateConfirmButton("마이티 프렌드. 식상하지만 정석.");
+          }
+        } else if (kind === "joker") {
+          returnValue = "joker";
+          p = Math.random();
+          if (p < 0.33) {
+            updateConfirmButton("마이티 계의 콩! 조커 프렌드.");
+          } else if (p < 0.66) {
+            updateConfirmButton("조커 프렌드. 흠...");
+          } else {
+            updateConfirmButton("조커 프렌드");
+          }
+        } else if (kind === "g1") {
+          returnValue = giruNotInHand[0];
+          updateConfirmButton("기루다 " + VALUE_NAMES[giruNotInHandIndex[0]] + " 프렌드");
+        } else if (kind === "g2") {
+          returnValue = giruNotInHand[1];
+          updateConfirmButton("기루다 " + VALUE_NAMES[giruNotInHandIndex[1]] + " 프렌드");
+        }
+        return $("#choose_friend_dialog .confirm").removeAttr("disabled");
+      });
+      $("#choose_friend_dialog").removeClass('large');
+      $("#choose_friend_dialog .othercards").hide();
+      $("#choose_friend_dialog .other").show();
+      $("#choose_friend_dialog button.other").unbind().click(function() {
+        var f, i, s, _i, _len, _ref2, _ref3;
+        $("#choose_friend_dialog").addClass('large');
+        s = "";
+        _ref2 = ["s", "d", "c", "h"];
+        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+          f = _ref2[_i];
+          for (i = _ref3 = VALUE_ORDER.length - 1; _ref3 <= 0 ? i <= 0 : i >= 0; _ref3 <= 0 ? i++ : i--) {
+            card = f + VALUE_ORDER[i];
+            if (__indexOf.call(hand, card) >= 0) {
+              s += buildCardHtml(card + (" rulercard selectother\" data-friend=\"" + card));
+            } else {
+              s += buildCardHtml(card + (" selectother\" data-friend=\"" + card));
+            }
+          }
+          s += "<BR>";
+        }
+        $("#choose_friend_dialog .othercards").html(s);
+        $("#choose_friend_dialog .othercards").show();
+        $("#choose_friend_dialog .other").hide();
+        return $("#choose_friend_dialog .selectother").unbind().click(function() {
+          var kind, suitName;
+          kind = $(this).attr("data-friend");
+          returnValue = kind;
+          if (kind === mighty) {
+            updateConfirmButton("마이티 프렌드");
+          } else {
+            if (kind[0] === giru) {
+              suitName = "기루다";
+            } else {
+              suitName = SUIT_NAMES[kind[0]];
+            }
+            updateConfirmButton("" + suitName + " " + VALUE_NAMES[VALUE_ORDER.indexOf(kind[1])] + " 프렌드");
+          }
+          return $("#choose_friend_dialog .confirm").removeAttr("disabled");
+        });
+      });
+      $("#choose_friend_dialog .confirm").unbind().click(function() {
+        if (!(returnValue != null)) {
+          return;
+        }
+        $("#choose_friend_dialog").hide();
+        return callback(returnValue);
+      });
+      return $("#choose_friend_dialog").fadeIn(100);
     };
     PlayingField.prototype.choosePromise = function(minNoGiru, minOthers, canDealMiss, defaultSuit, defaultValue, callback) {
       var finish, helper, minTarget;
@@ -1253,6 +1415,12 @@
         $("#chatbox .content").addClass("reduced");
       }
       return window.field.scrollChatToEnd();
+    });
+    if (!(window.DEVELOPING != null)) {
+      return;
+    }
+    window.field.chooseFriend(['d1', 'dq', 'd10', 's1'], 's1', 'd', function(x) {
+      return alert(x);
     });
     if (window.LIBGAME != null) {
       return;

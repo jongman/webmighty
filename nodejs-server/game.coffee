@@ -42,6 +42,7 @@ SUIT_NAMES =
 	n: "노기루다"
 	" ": "&nbsp;"
 VALUE_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "잭", "퀸", "킹", "에이스"]
+VALUE_SHORT_NAMES = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 
 # UTILITIES
 floor = Math.floor
@@ -69,6 +70,14 @@ runInterval = (interval, funcs) ->
 	setTimeout(runner, interval)
 
 # 게임 관련 유틸리티
+
+buildCardHtml = (face, content) ->
+	content ?= ""
+	'<span class="smallcard ' + face + '">'+content+'</span>'
+
+buildMinimizedCardHtml = (face, content) ->
+	content ?= ""
+	'<span class="smallcard inline ' + face + '">'+content+'</span>'
 
 renderFaceName = (face) ->
 	suit = SUIT_NAMES[face[0]]
@@ -536,6 +545,8 @@ class PlayingField
 		$("#player_list_dialog .ready").unbind("click").click(handler)
 
 	showPlayerList: ->
+		if window.DEVELOPING
+			return
 		$("#player_list_dialog").show()
 
 	hidePlayerList: ->
@@ -838,9 +849,11 @@ class PlayingField
 		SPEED_BASE = 0
 
 	setStatusBar: (htmlTxt)->
-		buildMinimizedCardHtml = (face, content) ->
-			content ?= ""
-			'<span class="smallcard inline ' + face + '">'+content+'</span>'
+		if window.DEVELOPING?
+			$("#statusbar .left").html("현재 개발중이므로 게임을 진행할 수 없습니다.")
+			$("#statusbar .right").html("<a href='http://mighty.redfeel.net/'>http://mighty.redfeel.net/</a>")
+			return
+
 		if (typeof(htmlTxt) == "function")
 			[l, r] = htmlTxt(buildMinimizedCardHtml)
 			l ?= ""
@@ -850,6 +863,125 @@ class PlayingField
 		else
 			$("#statusbar .left").html(htmlTxt)
 			$("#statusbar .right").html("")
+
+	chooseFriend: (hand = [], mighty='s1', giru='d', callback=->) ->
+		option = ""
+		if mighty in hand
+			option = "rulercard "
+		$("#choose_friend_dialog button.mighty").html(buildCardHtml(option + 'inline '+ mighty) + " 마이티 프렌드")
+		option = ""
+		if 'jr' in hand
+			option = "rulercard "
+		$("#choose_friend_dialog button.joker").html(buildCardHtml(option + 'inline jr') + " 조커 프렌드")
+		$("#choose_friend_dialog g1").show()
+		$("#choose_friend_dialog g2").show()
+		giruNotInHand = []
+		giruNotInHandIndex = []
+		for i in [(VALUE_ORDER.length-1)..0]
+			card = giru + VALUE_ORDER[i]
+			if not (card in hand)
+				giruNotInHand.push(card)
+				giruNotInHandIndex.push(i)
+		if giruNotInHand.length >= 2
+			$("#choose_friend_dialog button.g1").html(buildCardHtml('inline '+ giruNotInHand[0]) + " 기루다 #{VALUE_SHORT_NAMES[giruNotInHandIndex[0]]} 프렌드")
+			$("#choose_friend_dialog button.g2").html(buildCardHtml('inline '+ giruNotInHand[1]) + " 기루다 #{VALUE_SHORT_NAMES[giruNotInHandIndex[1]]} 프렌드")
+		else if giruNotInHand.length == 1
+			$("#choose_friend_dialog button.g1").html(buildCardHtml('inline '+ giruNotInHand[0]) + " 기루다 #{VALUE_SHORT_NAMES[giruNotInHandIndex[0]]} 프렌드")
+			$("#choose_friend_dialog button.g2").hide()
+		else
+			$("#choose_friend_dialog button.g1").hide()
+			$("#choose_friend_dialog button.g2").hide()
+
+		$("#choose_friend_dialog .confirm").attr("disabled", "").text("프렌드를 선택하고 저를 눌러주세요!")
+		updateConfirmButton = (s) ->
+			$("#choose_friend_dialog button.confirm").html(s)
+
+		returnValue = null
+		$("#choose_friend_dialog button.select").unbind().click(->
+			kind = $(this).attr("data-friend")
+			if kind == "no"
+				returnValue = "nofriend"
+				p = Math.random()
+				if p < 0.33
+					updateConfirmButton "친구따위 필요없어! 노 프렌드로 간다!"
+				else if p < 0.67
+					updateConfirmButton "무심한듯 시크하게 노 프렌드"
+				else
+					updateConfirmButton "노 프렌드"
+			else if kind == "first"
+				returnValue = "firsttrick"
+				p = Math.random()
+				if p < 0.5
+					updateConfirmButton "넌 한턴만 먹어주면 돼. 초구 프렌드~"
+				else
+					updateConfirmButton "초구 프렌드"
+			else if kind == "mighty"
+				returnValue = "mighty"
+				p = Math.random()
+				if p < 0.5
+					updateConfirmButton "마이티 프렌드"
+				else
+					updateConfirmButton "마이티 프렌드. 식상하지만 정석."
+			else if kind == "joker"
+				returnValue = "joker"
+				p = Math.random()
+				if p < 0.33
+					updateConfirmButton "마이티 계의 콩! 조커 프렌드."
+				else if p < 0.66
+					updateConfirmButton "조커 프렌드. 흠..."
+				else
+					updateConfirmButton "조커 프렌드"
+			else if kind == "g1"
+				returnValue = giruNotInHand[0]
+				updateConfirmButton "기루다 #{VALUE_NAMES[giruNotInHandIndex[0]]} 프렌드"
+			else if kind == "g2"
+				returnValue = giruNotInHand[1]
+				updateConfirmButton "기루다 #{VALUE_NAMES[giruNotInHandIndex[1]]} 프렌드"
+			$("#choose_friend_dialog .confirm").removeAttr("disabled")
+		)
+
+		$("#choose_friend_dialog").removeClass 'large'
+		$("#choose_friend_dialog .othercards").hide()
+		$("#choose_friend_dialog .other").show()
+		$("#choose_friend_dialog button.other").unbind().click(->
+			$("#choose_friend_dialog").addClass 'large'
+			s = ""
+			for f in ["s","d","c","h"]
+				for i in [(VALUE_ORDER.length-1)..0]
+					card = f + VALUE_ORDER[i]
+					if card in hand
+						s += buildCardHtml(card + " rulercard selectother\" data-friend=\"#{card}") # injection!
+					else
+						s += buildCardHtml(card + " selectother\" data-friend=\"#{card}")
+				s+="<BR>"
+
+			$("#choose_friend_dialog .othercards").html(s)
+			$("#choose_friend_dialog .othercards").show()
+			$("#choose_friend_dialog .other").hide()
+			$("#choose_friend_dialog .selectother").unbind().click(->
+				
+				kind = $(this).attr("data-friend")
+				returnValue = kind
+				if kind == mighty
+					updateConfirmButton "마이티 프렌드"
+				else
+					if kind[0] == giru
+						suitName = "기루다"
+					else
+						suitName = SUIT_NAMES[kind[0]]
+					updateConfirmButton "#{suitName} #{VALUE_NAMES[VALUE_ORDER.indexOf(kind[1])]} 프렌드"
+				$("#choose_friend_dialog .confirm").removeAttr("disabled")
+			)
+		)
+
+		$("#choose_friend_dialog .confirm").unbind().click(->
+			if not returnValue?
+				return
+			$("#choose_friend_dialog").hide()
+			callback(returnValue)
+		)
+
+		$("#choose_friend_dialog").fadeIn(100)
 
 	choosePromise: (minNoGiru, minOthers, canDealMiss, defaultSuit=" ", defaultValue=0, callback=(res) ->) ->
 		minTarget =
@@ -947,6 +1079,11 @@ $(document).ready(->
 		window.field.scrollChatToEnd()
 	)
 
+	if not window.DEVELOPING?
+		return
+
+	# 프렌드 창 테스트
+	window.field.chooseFriend(['d1','dq','d10','s1'], 's1', 'd', (x) -> alert(x))
 	#$("button.prompt").click(->
 		#window.field.prompt("프롬프트 테스트", "기본값", (r) -> alert r))
 	#$("button.choose_promise").click(->

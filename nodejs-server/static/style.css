@@ -490,7 +490,7 @@ a:hover {
 }
 
 .smallcard.dark {
-	background-color: rgba(140, 140, 140, 0.9);
+	background-color: rgba(170, 170, 170, 0.9);
 }
 
 .smallcard.inline {
@@ -726,6 +726,43 @@ a:hover {
 
 #player_list_dialog ul li.unoccupied {
 	color: #fff;
+}
+
+/* 프렌드 고르기 */
+#choose_friend_dialog {
+	position: absolute;
+	top: -50px;
+	width: 400px;
+	margin: 0px auto;
+	padding: 0px;
+}
+
+#choose_friend_dialog.large {
+	width: 700px;
+	left: -159px;
+	top: -150px;
+	margin: 0px auto;
+}
+
+#choose_friend_dialog .selectother:hover {
+	background-color: rgba(255, 255, 255, 0.5);
+}
+
+#choose_friend_dialog .rulercard.selectother:hover {
+	background-color: rgba(150, 255, 255, 0.5);
+}
+
+#choose_friend_dialog ul {
+	list-style: none;
+	padding: 0px;
+}
+
+#choose_friend_dialog button.select {
+	width: 160px;
+	height:32px;
+	margin: 4px;
+	line-height: 30px;
+	padding:0px;
 }
 
 /* 무늬 고르기 */
