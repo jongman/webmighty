@@ -34,7 +34,7 @@ class Stat
 			expireDate = new Date(current.getFullYear(), current.getMonth(), current.getDate(), 6, 0, 0)
 			if(expireDate < current)
 				expireDate.setDate(expireDate.getDate()+1)
-			client.expireat(redisKey, Math.floor(Date.UTC(expireDate.getFullYear(), expireDate.getMonth(), expireDate.getDate(), 6, 0, 0, 0)/1000))
+			client.expireat(redisKey, Math.floor(expireDate.getTime()/1000))
 
 	save: ->
 		client.set("#{@userId}:#{@key}:jw", @jw)

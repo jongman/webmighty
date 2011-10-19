@@ -17,24 +17,36 @@ Stat = (function() {
     this.fl = fl;
     this.yw = yw;
     this.yl = yl;
-    if ((_ref = this.jw) == null) {
+        if ((_ref = this.jw) != null) {
+      _ref;
+    } else {
       this.jw = 0;
-    }
-    if ((_ref2 = this.jl) == null) {
+    };
+        if ((_ref2 = this.jl) != null) {
+      _ref2;
+    } else {
       this.jl = 0;
-    }
-    if ((_ref3 = this.fw) == null) {
+    };
+        if ((_ref3 = this.fw) != null) {
+      _ref3;
+    } else {
       this.fw = 0;
-    }
-    if ((_ref4 = this.fl) == null) {
+    };
+        if ((_ref4 = this.fl) != null) {
+      _ref4;
+    } else {
       this.fl = 0;
-    }
-    if ((_ref5 = this.yw) == null) {
+    };
+        if ((_ref5 = this.yw) != null) {
+      _ref5;
+    } else {
       this.yw = 0;
-    }
-    if ((_ref6 = this.yl) == null) {
+    };
+        if ((_ref6 = this.yl) != null) {
+      _ref6;
+    } else {
       this.yl = 0;
-    }
+    };
   }
   Stat.prototype.inc = function(v) {
     var redisKey;
@@ -70,7 +82,7 @@ Stat = (function() {
       if (expireDate < current) {
         expireDate.setDate(expireDate.getDate() + 1);
       }
-      return client.expireat(redisKey, Math.floor(Date.UTC(expireDate.getFullYear(), expireDate.getMonth(), expireDate.getDate(), 6, 0, 0, 0) / 1000));
+      return client.expireat(redisKey, Math.floor(expireDate.getTime() / 1000));
     }
   };
   Stat.prototype.save = function() {
