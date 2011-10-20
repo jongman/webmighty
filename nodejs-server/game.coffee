@@ -457,10 +457,12 @@ class PlayingField
 	setPlayerType: (player, typeName) ->
 		@players[player].profile_elem.find(".type").html(typeName).addClass(typeName)
 		elem = @players[player].profile_elem
-		if typeName.indexOf("주공") != -1 or typeName.indexOf("프렌드") != -1
+		elem.removeClass('ruler')
+		elem.removeClass('friend')
+		if typeName.indexOf("주공") != -1
 			elem.addClass('ruler')
-		else
-			elem.removeClass('ruler')
+		else if typeName.indexOf("프렌드") != -1
+			elem.addClass('friend')
 
 	playCard: (player, card, render_as=null) ->
 		if typeof(card) == "string"

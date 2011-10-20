@@ -628,22 +628,26 @@ now.notifyReplay = (jugongIndex, replay) ->
 		'<span class="smallcard ' + face + '">'+content+'</span>'
 	turn = 1
 	window.field.addChatMessage "Replay", ""
+	lastWinner = jugongIndex
 	for info in replay
 		[trick, winner] = info
 		s = ''
 		for i in [0...5]
-			idx = (i + jugongIndex) % 5
-			c = trick[idx]
+			idx = (i + lastWinner) % 5
+			c = trick[i]
 			if idx == winner
 				c += ' winner'
-			if idx == jugongIndex or idx == rule.friendIndex
+			if idx == jugongIndex
 				c += ' rulercard'
+			if idx == rule.friendIndex
+				c += ' friendcard'
 			s += buildMinimizedCardHtml c
 		if turn == 10
 			window.field.addChatHTML "", s
 		else
 			window.field.addChatHTML "", s
 		turn += 1
+		lastWinner = winner
 
 ################################################################################
 # Stat
@@ -671,7 +675,10 @@ getClassForChatUser = (clientId, index) ->
 	if index >= 0 and index < 5 and (jugongIndex? and index == jugongIndex or rule.friendIndex? and index == rule.friendIndex)
 		if c != ""
 			c += " "
-		c += "ruler"
+		if jugongIndex? and index == jugongIndex
+			c += "ruler"
+		else
+			c += "friend"
 	return c
 
 now.notifyUserList = (userList) ->

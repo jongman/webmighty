@@ -393,6 +393,10 @@ a:hover {
 	color:cyan;
 }
 
+#chatbox .friend {
+	color:#a6ffb3;
+}
+
 #chatbox .content {
 	height:582px;
 	overflow-y:auto;
@@ -487,6 +491,10 @@ a:hover {
 
 .smallcard.rulercard {
 	background-color: rgba(150, 255, 255, 0.9);
+}
+
+.smallcard.friendcard {
+	background-color: rgba(166, 255, 206, 0.9);
 }
 
 .smallcard.dark {
@@ -1011,9 +1019,11 @@ a:hover {
 }
 
 #playing_field .profile.ruler a {
-	/*border: 2px outset #dcc;*/
-	/*color: #26f;*/
 	color: cyan;
+}
+
+#playing_field .profile.friend a {
+	color: #a6ffb3;
 }
 
 #playing_field dl {

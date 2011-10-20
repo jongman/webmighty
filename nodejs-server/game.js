@@ -614,10 +614,12 @@
       var elem;
       this.players[player].profile_elem.find(".type").html(typeName).addClass(typeName);
       elem = this.players[player].profile_elem;
-      if (typeName.indexOf("주공") !== -1 || typeName.indexOf("프렌드") !== -1) {
+      elem.removeClass('ruler');
+      elem.removeClass('friend');
+      if (typeName.indexOf("주공") !== -1) {
         return elem.addClass('ruler');
-      } else {
-        return elem.removeClass('ruler');
+      } else if (typeName.indexOf("프렌드") !== -1) {
+        return elem.addClass('friend');
       }
     };
     PlayingField.prototype.playCard = function(player, card, render_as) {

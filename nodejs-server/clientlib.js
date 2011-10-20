@@ -759,7 +759,7 @@
     }
   };
   now.notifyReplay = function(jugongIndex, replay) {
-    var c, i, idx, info, s, trick, turn, winner, _i, _len, _results;
+    var c, i, idx, info, lastWinner, s, trick, turn, winner, _i, _len, _results;
     buildMinimizedCardHtml = function(face, content) {
       if (content == null) {
         content = "";
@@ -768,19 +768,23 @@
     };
     turn = 1;
     window.field.addChatMessage("Replay", "");
+    lastWinner = jugongIndex;
     _results = [];
     for (_i = 0, _len = replay.length; _i < _len; _i++) {
       info = replay[_i];
       trick = info[0], winner = info[1];
       s = '';
       for (i = 0; i < 5; i++) {
-        idx = (i + jugongIndex) % 5;
-        c = trick[idx];
+        idx = (i + lastWinner) % 5;
+        c = trick[i];
         if (idx === winner) {
           c += ' winner';
         }
-        if (idx === jugongIndex || idx === rule.friendIndex) {
+        if (idx === jugongIndex) {
           c += ' rulercard';
+        }
+        if (idx === rule.friendIndex) {
+          c += ' friendcard';
         }
         s += buildMinimizedCardHtml(c);
       }
@@ -789,7 +793,8 @@
       } else {
         window.field.addChatHTML("", s);
       }
-      _results.push(turn += 1);
+      turn += 1;
+      _results.push(lastWinner = winner);
     }
     return _results;
   };
@@ -816,7 +821,11 @@
       if (c !== "") {
         c += " ";
       }
-      c += "ruler";
+      if ((jugongIndex != null) && index === jugongIndex) {
+        c += "ruler";
+      } else {
+        c += "friend";
+      }
     }
     return c;
   };
